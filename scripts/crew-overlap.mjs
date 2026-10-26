@@ -89,13 +89,17 @@ export function suggestTent(tags) {
   return 'other';
 }
 
+// Decode the few HTML entities Steam uses in tag names, in a single pass so "&amp;#39;" stays "&#39;".
+const ENTITIES = { amp: '&', quot: '"', lt: '<', gt: '>', '#39': "'", apos: "'" };
+export const decodeEntities = (s) => String(s).replace(/&(amp|quot|lt|gt|#39|apos);/g, (_, e) => ENTITIES[e]);
+
 // User tags from a store page, in Steam's order (most voted first).
 export function parseStoreTags(html) {
   const tags = [];
   const re = /<a[^>]*class="app_tag"[^>]*>\s*([^<]+?)\s*<\/a>/g;
   let m;
   while ((m = re.exec(String(html))) && tags.length < 15) {
-    const tag = m[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'").trim();
+    const tag = decodeEntities(m[1]).trim();
     if (tag && tag !== '+') tags.push(tag);
   }
   return tags;
@@ -125,7 +129,8 @@ export function redact(text, key) {
 }
 
 const hours = (min) => Math.round(min / 60).toLocaleString('en-US');
-const escapeMd = (s) => String(s).replace(/\|/g, '\\|');
+// Markdown table cells: escape backslashes first, then pipes, and keep everything on one line.
+export const escapeMd = (s) => String(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/[\r\n]+/g, ' ');
 
 export function renderReport({ crew, skipped, dupes, rows, tracked, tags, minOwners, generated }) {
   const lines = [];

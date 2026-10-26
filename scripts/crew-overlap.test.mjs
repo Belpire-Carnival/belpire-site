@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseProfile, dedupeMembers, overlap, isMultiplayer, suggestTent, parseStoreTags, sideshowTags, searchesFor, redact, renderReport } from './crew-overlap.mjs';
+import { decodeEntities, escapeMd, parseProfile, dedupeMembers, overlap, isMultiplayer, suggestTent, parseStoreTags, sideshowTags, searchesFor, redact, renderReport } from './crew-overlap.mjs';
 
 test('parses every Steam profile link style', () => {
   assert.deepEqual(parseProfile('https://steamcommunity.com/profiles/76561190000000001/'), { steamid: '76561190000000001' });
@@ -80,4 +80,18 @@ test('report lists new shared games, tracked ones, skipped members and search su
   assert.match(md, /Already Here \(2 owners/);
   assert.match(md, /Skipped.*C/);
   assert.match(md, /"Online Co-Op","Survival"/);
+});
+
+test('entities decode once, never twice', () => {
+  assert.equal(decodeEntities('Crafting &amp; Building'), 'Crafting & Building');
+  assert.equal(decodeEntities('Rock &#39;n&#39; Roll'), "Rock 'n' Roll");
+  assert.equal(decodeEntities('&amp;#39;'), '&#39;');
+  assert.equal(decodeEntities('&amp;amp;'), '&amp;');
+});
+
+test('table cells escape backslashes and pipes', () => {
+  assert.equal(escapeMd('A|B'), 'A\\|B');
+  assert.equal(escapeMd('C:\\path'), 'C:\\\\path');
+  assert.equal(escapeMd('\\|'), '\\\\\\|');
+  assert.equal(escapeMd('two\nlines'), 'two lines');
 });
