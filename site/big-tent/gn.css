@@ -23,6 +23,8 @@
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 button.btn { border: 0; cursor: pointer; font: inherit; font-weight: 600; }
 button.btn:disabled { opacity: .5; cursor: not-allowed; }
+button.btn-ghost { border: 1px solid var(--line-strong); }
+button.btn-ghost:hover { border-color: var(--gold); }
 .btn-danger { border: 1px solid #C8364E; color: #F2B6C0; background: transparent; }
 .btn-danger:hover { background: rgba(200, 54, 78, .15); color: #F2B6C0; }
 .linklike { background: none; border: 0; padding: 10px 4px; min-height: 44px; font: inherit; color: var(--gold); text-decoration: underline; cursor: pointer; }
@@ -162,3 +164,14 @@ button.btn:disabled { opacity: .5; cursor: not-allowed; }
 }
 .slot.empty > span:last-child { justify-self: start; }
 .doom-sound { justify-self: end; font-size: 14px; padding: 4px 8px; min-height: 36px; }
+
+/* Discord connection check (Ringleaders) */
+.discord-check summary { cursor: pointer; font-family: var(--serif); font-weight: 700; letter-spacing: .06em; min-height: 44px; display: flex; align-items: center; color: var(--gold); }
+.checks-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.check { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--ground); }
+.check .mark { font-weight: 700; text-align: center; }
+.check.good .mark { color: #7FD69B; }
+.check.bad { border-color: #C8364E; }
+.check.bad .mark { color: #FF7A8C; }
+.check .fix { display: block; margin-top: 2px; font-size: 14px; color: var(--text-soft); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

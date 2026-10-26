@@ -55,6 +55,9 @@ body.jx h2::after { background-image: radial-gradient(circle, var(--sun) 0 2px, 
 @keyframes bulbs { 50% { border-color: var(--sun); opacity: .55; } }
 .roomcode-label { font-family: var(--show); letter-spacing: .3em; font-size: 13px; color: var(--aqua); margin: 0 0 14px; }
 .roomcode-url { margin: 14px 0 0; font-weight: 600; font-size: 14px; color: var(--text-soft); letter-spacing: .03em; }
+.roomcode-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 12px; padding: 8px 22px; border-radius: 999px; background: var(--sun); color: #1A1030; font-family: var(--show); font-size: 16px; letter-spacing: .04em; text-decoration: none; box-shadow: 0 4px 0 #B8901C; transition: transform .12s, box-shadow .12s; }
+.roomcode-link:hover { color: #1A1030; transform: translateY(-2px); box-shadow: 0 6px 0 #B8901C; }
+.roomcode-link:focus-visible { outline: 3px solid #FFF6E0; outline-offset: 3px; }
 .tiles { display: flex; gap: 10px; perspective: 600px; }
 .tiles span {
   width: clamp(54px, 7vw, 76px); aspect-ratio: 3 / 4; display: grid; place-items: center; border-radius: 12px;

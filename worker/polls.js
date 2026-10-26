@@ -9,6 +9,7 @@
 //                                    post a second message to #general
 //   POST /api/polls/:id/announce     managers: retry whichever Discord post didn't go through
 //   POST /api/polls/:id/cancel       managers: call it off
+//   GET  /api/polls/discord-check    managers: what the bot can and can't do in #general and The Main Stage
 //
 // Who's who comes from the Discord server itself, read with the bot: anyone in the server votes;
 // people holding a role in POLL_MANAGER_ROLE_IDS (RingMaster, RingMistress, Carnival Guard) manage.
@@ -17,7 +18,7 @@
 
 import { readSession } from './auth.js';
 import { pollStore } from './poll-db.js';
-import { getMember, postMessage, createVoiceEvent, eventUrl } from './discord-bot.js';
+import { getMember, postMessage, createVoiceEvent, eventUrl, explain, checkSetup } from './discord-bot.js';
 
 export const MAX_RANK = 4;
 const POINTS = [4, 3, 2, 1];
@@ -307,6 +308,14 @@ export async function handlePolls(request, env, ctx) {
       return json({ me, poll: publicPoll(poll, extra), upcoming, catalog });
     }
 
+    // GET /api/polls/discord-check (Ringleaders only)
+    if (request.method === 'GET' && parts.length === 1 && parts[0] === 'discord-check') {
+      if (!session) return fail(401, 'signin', 'Sign in with Discord first.');
+      const who = await whoIs(env, cfg, session, { fresh: true });
+      if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress and Carnival Guards can run this check.');
+      return json({ checks: await checkSetup(env) });
+    }
+
     if (request.method !== 'POST') return fail(405, 'method', 'Not allowed.');
     if (!sameSitePost(request)) return fail(403, 'forbidden', 'Blocked.');
     if (!session) return fail(401, 'signin', 'Sign in with Discord first.');
@@ -370,14 +379,16 @@ export async function handlePolls(request, env, ctx) {
       const closed = await store.close(poll.id, { results: standings, closedAt: Date.now(), closedByName: who.name });
       if (!closed) return fail(409, 'state', 'This poll was already closed.');
       let posted = false;
+      let reason = null;
       try {
         await postMessage(env, env.GENERAL_CHANNEL_ID, resultsMessage(poll, standings, ballots.length));
         await store.markResultsPosted(poll.id);
         posted = true;
       } catch (err) {
         console.warn(`Results post failed: ${err.message}`);
+        reason = explain(err);
       }
-      return json({ ok: true, posted });
+      return json({ ok: true, posted, reason });
     }
 
     if (action === 'schedule') {
@@ -390,32 +401,39 @@ export async function handlePolls(request, env, ctx) {
         event = await createVoiceEvent(env, { ...eventPayload(poll), start });
       } catch (err) {
         console.warn(`Event creation failed: ${err.message}`);
-        return fail(502, 'discord', 'Discord did not create the event. Check the bot can create events in The Main Stage, then try again.');
+        return fail(502, 'discord', `Discord did not create the event. ${explain(err)}`);
       }
       const ok = await store.schedule(poll.id, { eventId: event.id, start, scheduledByName: who.name });
       if (!ok) return fail(409, 'state', 'This poll was already scheduled.');
       let posted = false;
+      let reason = null;
       try {
         await postMessage(env, env.GENERAL_CHANNEL_ID, eventMessage(env, poll, event.id, start));
         await store.markEventPosted(poll.id);
         posted = true;
       } catch (err) {
         console.warn(`Event announcement failed: ${err.message}`);
+        reason = explain(err);
       }
-      return json({ ok: true, posted, eventUrl: eventUrl(env, event.id) });
+      return json({ ok: true, posted, reason, eventUrl: eventUrl(env, event.id) });
     }
 
     if (action === 'announce') {
-      if (poll.status === 'closed' && !poll.results_posted) {
-        const voters = (await store.ballots(poll.id)).length;
-        await postMessage(env, env.GENERAL_CHANNEL_ID, resultsMessage(poll, poll.results || [], voters));
-        await store.markResultsPosted(poll.id);
-        return json({ ok: true, posted: 'results' });
-      }
-      if (poll.status === 'scheduled' && !poll.event_posted) {
-        await postMessage(env, env.GENERAL_CHANNEL_ID, eventMessage(env, poll, poll.event_id, poll.event_start));
-        await store.markEventPosted(poll.id);
-        return json({ ok: true, posted: 'event' });
+      try {
+        if (poll.status === 'closed' && !poll.results_posted) {
+          const voters = (await store.ballots(poll.id)).length;
+          await postMessage(env, env.GENERAL_CHANNEL_ID, resultsMessage(poll, poll.results || [], voters));
+          await store.markResultsPosted(poll.id);
+          return json({ ok: true, posted: 'results' });
+        }
+        if (poll.status === 'scheduled' && !poll.event_posted) {
+          await postMessage(env, env.GENERAL_CHANNEL_ID, eventMessage(env, poll, poll.event_id, poll.event_start));
+          await store.markEventPosted(poll.id);
+          return json({ ok: true, posted: 'event' });
+        }
+      } catch (err) {
+        console.warn(`Retry post failed: ${err.message}`);
+        return fail(502, 'discord', `Discord did not take the post. ${explain(err)}`);
       }
       return json({ ok: true, posted: null });
     }
