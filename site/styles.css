@@ -57,7 +57,7 @@ p { margin: 0; }
 .btn-sm { padding: 10px 18px; font-size: 15px; }
 .btn-gold { background: var(--gold); color: var(--ink); }
 .btn-gold:hover { background: var(--gold-hover); color: var(--ink); }
-.btn-ghost { border: 1px solid var(--line-strong); color: var(--text); }
+.btn-ghost { border: 1px solid var(--line-strong); color: var(--text); background: transparent; font-family: inherit; cursor: pointer; }
 .btn-ghost:hover { border-color: var(--gold); color: var(--text); }
 .btn-outline { border: 1px solid var(--gold); color: var(--gold); }
 

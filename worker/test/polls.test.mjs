@@ -2,6 +2,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../index.js';
 import { seal, SESSION_COOKIE } from '../auth.js';
+import { channelPermissions, PERMS } from '../discord-bot.js';
 import { purgeOldBallots, doomPicks, doomEligible, safeArt, buildCatalog, validRanking, tally, winners, validStart, cleanTitle, pollConfig, eventPayload, _clearMemberCache, _clearCatalogCache } from '../polls.js';
 import { fakeD1 } from './helpers/d1.mjs';
 
@@ -26,7 +27,13 @@ const realFetch = globalThis.fetch;
 function setup() {
   _clearMemberCache();
   _clearCatalogCache();
-  discord = { messages: [], events: [], failPosts: false, failEvents: false };
+  discord = { messages: [], events: [], failPosts: false, failEvents: false, stageType: 2,
+    botRoles: ['600000000000000001'],
+    roles: [
+      { id: GUILD, permissions: String((1n << 10n) | (1n << 11n) | (1n << 14n) | (1n << 20n)) }, // @everyone: view, send, embed, connect
+      { id: '600000000000000001', permissions: String(1n << 44n) } // bot role: create events
+    ],
+    overwrites: { [GENERAL]: [], [STAGE]: [] } };
   const members = {
     [USERS.boss]: { nick: 'RingMaster', roles: [RINGMASTER_ROLE], user: { username: 'boss' } },
     [USERS.guard]: { roles: [GUARD_ROLE], user: { username: 'guard', global_name: 'Carnival Guard' } },
@@ -36,8 +43,18 @@ function setup() {
   globalThis.fetch = async (url, init = {}) => {
     const u = new URL(url);
     assert.equal(init.headers.Authorization, 'Bot bot-token');
+    if (u.pathname === `/api/v10/guilds/${GUILD}/members/700000000000000001`) return Response.json({ roles: discord.botRoles, user: { id: '700000000000000001' } });
     let m = u.pathname.match(/^\/api\/v10\/guilds\/(\d+)\/members\/(\d+)$/);
     if (m) return members[m[2]] ? Response.json(members[m[2]]) : Response.json({ code: 10007 }, { status: 404 });
+    if (u.pathname === '/api/v10/users/@me') return Response.json({ id: '700000000000000001', username: 'Belpire Bot' });
+    if (u.pathname === `/api/v10/guilds/${GUILD}/members/700000000000000001`) return Response.json({ roles: discord.botRoles, user: { id: '700000000000000001' } });
+    if (u.pathname === `/api/v10/guilds/${GUILD}/roles`) return Response.json(discord.roles);
+    m = u.pathname.match(/^\/api\/v10\/channels\/(\d+)$/);
+    if (m) {
+      if (m[1] === GENERAL) return Response.json({ id: GENERAL, name: 'general', type: 0, permission_overwrites: discord.overwrites[GENERAL] });
+      if (m[1] === STAGE) return Response.json({ id: STAGE, name: 'The Main Stage', type: discord.stageType, permission_overwrites: discord.overwrites[STAGE] });
+      return Response.json({ code: 10003 }, { status: 404 });
+    }
     m = u.pathname.match(/^\/api\/v10\/channels\/(\d+)\/messages$/);
     if (m) {
       if (discord.failPosts) return Response.json({ code: 50013 }, { status: 403 });
@@ -189,7 +206,7 @@ test('the whole night: open, vote, close to #general, schedule an event, announc
 
   // Close: tally, post results to #general, no more votes.
   r = await api(`/api/polls/${id}/close`, { as: 'guard', method: 'POST', body: {} });
-  assert.deepEqual(r.body, { ok: true, posted: true });
+  assert.deepEqual(r.body, { ok: true, posted: true, reason: null });
   assert.equal(discord.messages.length, 1);
   assert.equal(discord.messages[0].channel, GENERAL);
   assert.deepEqual(discord.messages[0].body.allowed_mentions, { parse: [] });
@@ -239,7 +256,7 @@ test('failed Discord posts can be retried; a failed event leaves the poll ready 
   await api(`/api/polls/${id}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-553850'] } });
   discord.failPosts = true;
   r = await api(`/api/polls/${id}/close`, { as: 'boss', method: 'POST', body: {} });
-  assert.deepEqual(r.body, { ok: true, posted: false });
+  assert.deepEqual(r.body, { ok: true, posted: false, reason: 'The bot is missing a permission there. Use "Check Discord setup" to see which one.' });
   r = await api('/api/polls/current', { as: 'boss' });
   assert.equal(r.body.poll.resultsPosted, false);
   discord.failPosts = false;
@@ -350,4 +367,62 @@ test('no wheel when the ballot has no horror, party or Jackbox games', async () 
   } finally {
     feed.tracked.pop();
   }
+});
+
+test('permission math follows Discord: roles, then @everyone, role and member overwrites', () => {
+  const guildId = '1';
+  const roles = [{ id: '1', permissions: String(PERMS.VIEW_CHANNEL | PERMS.SEND_MESSAGES) }, { id: '2', permissions: String(PERMS.EMBED_LINKS) }, { id: '9', permissions: String(PERMS.ADMINISTRATOR) }];
+  const base = channelPermissions({ guildId, roles, memberRoles: ['2'], memberId: '5' });
+  assert.equal(base, PERMS.VIEW_CHANNEL | PERMS.SEND_MESSAGES | PERMS.EMBED_LINKS);
+  const denied = channelPermissions({ guildId, roles, memberRoles: ['2'], memberId: '5', overwrites: [{ id: '1', allow: '0', deny: String(PERMS.SEND_MESSAGES) }] });
+  assert.equal(denied & PERMS.SEND_MESSAGES, 0n);
+  const roleAllows = channelPermissions({ guildId, roles, memberRoles: ['2'], memberId: '5', overwrites: [{ id: '1', allow: '0', deny: String(PERMS.SEND_MESSAGES) }, { id: '2', allow: String(PERMS.SEND_MESSAGES), deny: '0' }] });
+  assert.equal(roleAllows & PERMS.SEND_MESSAGES, PERMS.SEND_MESSAGES);
+  const memberDenies = channelPermissions({ guildId, roles, memberRoles: ['2'], memberId: '5', overwrites: [{ id: '5', allow: '0', deny: String(PERMS.VIEW_CHANNEL) }] });
+  assert.equal(memberDenies & PERMS.VIEW_CHANNEL, 0n);
+  const admin = channelPermissions({ guildId, roles, memberRoles: ['9'], memberId: '5', overwrites: [{ id: '1', allow: '0', deny: String(PERMS.VIEW_CHANNEL) }] });
+  assert.equal(admin & PERMS.VIEW_CHANNEL, PERMS.VIEW_CHANNEL);
+});
+
+test('a Stage channel gets a Stage event (entity_type 1)', async () => {
+  discord.stageType = 13;
+  let r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
+  const id = r.body.id;
+  await api(`/api/polls/${id}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-553850'] } });
+  await api(`/api/polls/${id}/close`, { as: 'boss', method: 'POST', body: {} });
+  r = await api(`/api/polls/${id}/schedule`, { as: 'boss', method: 'POST', body: { start: new Date(Date.now() + 86400 * 1000).toISOString() } });
+  assert.equal(r.status, 200);
+  assert.equal(discord.events[0].entity_type, 1);
+});
+
+test('failed event says why', async () => {
+  let r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
+  const id = r.body.id;
+  await api(`/api/polls/${id}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-553850'] } });
+  await api(`/api/polls/${id}/close`, { as: 'boss', method: 'POST', body: {} });
+  discord.failEvents = true;
+  r = await api(`/api/polls/${id}/schedule`, { as: 'boss', method: 'POST', body: { start: new Date(Date.now() + 86400 * 1000).toISOString() } });
+  assert.equal(r.status, 502);
+  assert.match(r.body.message, /missing a permission/);
+});
+
+test('Check Discord setup lists what the bot can and cannot do', async () => {
+  let r = await api('/api/polls/discord-check', { as: 'fan' });
+  assert.equal(r.status, 403);
+  r = await api('/api/polls/discord-check', { as: 'guard' });
+  assert.equal(r.status, 200);
+  assert.ok(r.body.checks.every((c) => c.ok), JSON.stringify(r.body.checks));
+  // #general denies Embed Links to @everyone; the voice channel denies Connect.
+  discord.overwrites[GENERAL] = [{ id: GUILD, allow: '0', deny: String(1n << 14n) }];
+  discord.overwrites[STAGE] = [{ id: GUILD, allow: '0', deny: String(1n << 20n) }];
+  r = await api('/api/polls/discord-check', { as: 'guard' });
+  const bad = r.body.checks.filter((c) => !c.ok).map((c) => c.label);
+  assert.deepEqual(bad, ['Bot can post embeds in #general', 'Bot can connect to The Main Stage']);
+  assert.ok(r.body.checks.find((c) => !c.ok).fix.includes('Embed Links'));
+  // A Stage channel also needs Stage moderator permissions.
+  discord.overwrites[GENERAL] = [];
+  discord.overwrites[STAGE] = [];
+  discord.stageType = 13;
+  r = await api('/api/polls/discord-check', { as: 'guard' });
+  assert.deepEqual(r.body.checks.filter((c) => !c.ok).map((c) => c.label), ['Bot has Stage permissions in The Main Stage']);
 });

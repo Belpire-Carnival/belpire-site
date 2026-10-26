@@ -407,7 +407,7 @@ function managerOpenControls(poll) {
     el('h2', { text: 'Run the poll' }),
     el('p', { class: 'meta', text: 'Closing voting posts the top four to #general. You set the date and time next.' }),
     el('div', { class: 'btn-row' }, [
-      confirmButton('Close voting', 'Click again to close and post results', () => act(`/api/polls/${poll.id}/close`, {}, (d) => (d.posted ? 'Voting closed. Results posted to #general.' : 'Voting closed, but the #general post failed. Use "Post to Discord again".'))),
+      confirmButton('Close voting', 'Click again to close and post results', () => act(`/api/polls/${poll.id}/close`, {}, (d) => (d.posted ? 'Voting closed. Results posted to #general.' : `Voting closed, but the #general post failed. ${d.reason || ''} Fix it, then use "Post to Discord again".`))),
       confirmButton('Cancel poll', 'Click again to cancel', () => act(`/api/polls/${poll.id}/cancel`, {}, 'Poll cancelled.'), 'btn btn-danger')
     ])
   ]);
@@ -423,7 +423,7 @@ function scheduleForm(poll) {
       return render();
     }
     go.disabled = true;
-    await act(`/api/polls/${poll.id}/schedule`, { start }, (d) => (d.posted ? 'Event created in The Main Stage and announced in #general.' : 'Event created, but the #general announcement failed. Use "Post to Discord again".'));
+    await act(`/api/polls/${poll.id}/schedule`, { start }, (d) => (d.posted ? 'Event created in The Main Stage and announced in #general.' : `Event created, but the #general announcement failed. ${d.reason || ''} Fix it, then use "Post to Discord again".`));
   });
   const kids = [
     el('h2', { text: 'Set the date' }),
@@ -512,6 +512,34 @@ function renderUpcoming() {
   }
 }
 
+// ---------------------------------------------------------------- Discord setup check (Ringleaders)
+
+function discordCheck() {
+  const out = el('ul', { class: 'checks-list', 'aria-live': 'polite' });
+  const run = button('Check Discord setup', async () => {
+    run.disabled = true;
+    out.replaceChildren(el('li', { class: 'meta', text: 'Asking Discord…' }));
+    const r = await call('/api/polls/discord-check');
+    run.disabled = false;
+    out.replaceChildren();
+    if (!r.ok) return out.append(el('li', { class: 'check bad', text: r.data.message || 'The check did not run. Try again.' }));
+    for (const c of r.data.checks) {
+      out.append(el('li', { class: `check ${c.ok ? 'good' : 'bad'}` }, [
+        el('span', { class: 'mark', 'aria-hidden': 'true', text: c.ok ? '✓' : '✗' }),
+        el('span', {}, [el('strong', { text: c.label }), c.fix ? el('span', { class: 'fix', text: c.fix }) : null]),
+        el('span', { class: 'visually-hidden', text: c.ok ? ' (ok)' : ' (needs fixing)' })
+      ]));
+    }
+    if (r.data.checks.every((c) => c.ok)) out.append(el('li', { class: 'meta', text: 'All good: the bot can post to #general and create events in The Main Stage.' }));
+  }, 'btn btn-ghost btn-sm');
+  return el('details', { class: 'panel discord-check' }, [
+    el('summary', { text: 'Discord connection' }),
+    el('p', { class: 'meta', text: 'If posts to #general or event creation fail, this shows exactly which permission the bot is missing.' }),
+    el('div', { class: 'btn-row' }, [run]),
+    out
+  ]);
+}
+
 // ---------------------------------------------------------------- render
 
 function render() {
@@ -542,6 +570,7 @@ function render() {
       if (me.manager) out.push(scheduleForm(poll));
     }
   }
+  if (me.manager) out.push(discordCheck());
   const who = whoBar();
   if (who) out.push(who);
   app.replaceChildren(...out);
