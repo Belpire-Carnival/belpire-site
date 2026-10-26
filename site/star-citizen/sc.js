@@ -1,6 +1,6 @@
 // The Star Citizen page front end. Reads /api/star-citizen (served by the Worker) and renders it.
 // Use the same permanent invite as the main site (site/app.js).
-const DISCORD_INVITE = 'https://discord.gg/YOUR-INVITE';
+const DISCORD_INVITE = 'https://discord.gg/belpire';
 const REFRESH_MS = 2 * 60 * 1000;
 
 const LABELS = { operational: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', notice: 'Notice', unknown: 'Unknown' };
