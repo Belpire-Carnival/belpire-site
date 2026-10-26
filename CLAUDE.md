@@ -26,3 +26,4 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 - Edit game nights, oddities or ringleaders: `site/index.html`.
 - Discord invite link: `DISCORD_INVITE` at the top of `site/app.js`.
 - Check before a PR: `npm run check`. Local preview: `npm run feed && npm run dev`.
+
