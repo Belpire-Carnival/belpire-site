@@ -1,7 +1,7 @@
 // Jackbox Night page: game picker, collection and patch notes.
 // Reads /jackbox/packs.json (the collection) and /data/feed.json (store art + news, built from Steam).
 // All text goes in with textContent; links must be https.
-import { allGames, fitting, pickOne, playerLabel } from './pick.mjs';
+import { allGames, fitting, pickOne, playerLabel } from './pick.js';
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const MIN_PLAYERS = 1;

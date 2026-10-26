@@ -115,10 +115,13 @@
       </div>
       <form class="game-search" id="game-search-form" role="search" autocomplete="off">
         <label for="game-search">Find a game</label>
-        <div class="combo">
-          <input id="game-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="game-suggestions" placeholder="Search patch notes and upcoming games" spellcheck="false" enterkeyhint="search">
-          <button type="button" class="search-clear" id="search-clear" hidden>Clear</button>
-          <ul id="game-suggestions" class="suggestions" role="listbox" aria-label="Matching games" hidden></ul>
+        <div class="search-row">
+          <div class="combo">
+            <input id="game-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="game-suggestions" placeholder="Search patch notes and upcoming games" spellcheck="false" enterkeyhint="search">
+            <ul id="game-suggestions" class="suggestions" role="listbox" aria-label="Matching games" hidden></ul>
+          </div>
+          <button type="submit" class="btn btn-gold search-go">Search</button>
+          <button type="button" class="btn btn-ghost search-clear" id="search-clear" hidden>Clear</button>
         </div>
         <p class="muted small search-status" id="search-status" aria-live="polite"></p>
       </form>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, buildIndex, suggest, matchesSearch, sourceLabel } from '../../site/search.mjs';
+import { normalize, buildIndex, suggest, matchesSearch, sourceLabel } from '../../site/search.js';
 
 const feed = {
   tracked: [

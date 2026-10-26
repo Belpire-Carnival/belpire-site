@@ -59,3 +59,9 @@ test('wrangler.jsonc parses and has no placeholders left', async () => {
   assert.doesNotMatch(src, /REPLACE_WITH_/, 'Fill in the real IDs in wrangler.jsonc before merging (see the private runbook).');
   for (const db of cfg.d1_databases || []) assert.match(db.database_id, /^[0-9a-f-]{36}$/, `D1 ${db.binding}: database_id should be a UUID`);
 });
+
+test('the site only ships .js modules (browsers refuse scripts served with the wrong type)', async () => {
+  const bad = [];
+  for await (const f of files(join(ROOT, 'site'))) if (f.endsWith('.mjs')) bad.push(relative(ROOT, f));
+  assert.deepEqual(bad, [], 'Rename these to .js; the site is served as static files.');
+});
