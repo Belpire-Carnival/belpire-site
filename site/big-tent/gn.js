@@ -1,5 +1,5 @@
 // The Big Tent: game-night ballot box and upcoming nights. Talks to /api/polls (Worker). Text always goes in with textContent.
-import { easternToIso, formatEastern, formatLocal } from './time.mjs';
+import { easternToIso, formatEastern, formatLocal } from './time.js';
 
 const MAX_RANK = 4;
 const POINTS = [4, 3, 2, 1];

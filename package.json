@@ -13,6 +13,6 @@
     "crew": "node scripts/crew-overlap.mjs",
     "dev": "npx --yes serve site -l 8080",
     "test": "node --test scripts/*.test.mjs worker/test/*.test.mjs",
-    "check": "node --check site/app.js && node --check site/search.mjs && node --check site/star-citizen/sc.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && node --check scripts/crew-overlap.mjs && node --check worker/index.js && node --check worker/auth.js && node --check site/join/join.js && node --check site/jackbox/jackbox.js && node --check site/jackbox/pick.mjs && node --check site/big-tent/gn.js && node --check site/big-tent/time.mjs && node --check worker/polls.js && node --check worker/poll-db.js && node --check worker/discord-bot.js && npm test"
+    "check": "node --check site/app.js && node --check site/search.js && node --check site/star-citizen/sc.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && node --check scripts/crew-overlap.mjs && node --check worker/index.js && node --check worker/auth.js && node --check site/join/join.js && node --check site/jackbox/jackbox.js && node --check site/jackbox/pick.js && node --check site/big-tent/gn.js && node --check site/big-tent/time.js && node --check worker/polls.js && node --check worker/poll-db.js && node --check worker/discord-bot.js && npm test"
   }
 }

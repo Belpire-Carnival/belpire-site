@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { allGames, fitting, pickOne, playerLabel } from '../../site/jackbox/pick.mjs';
+import { allGames, fitting, pickOne, playerLabel } from '../../site/jackbox/pick.js';
 
 const data = JSON.parse(await readFile(new URL('../../site/jackbox/packs.json', import.meta.url), 'utf8'));
 

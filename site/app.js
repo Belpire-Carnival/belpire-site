@@ -1,5 +1,5 @@
 // Belpire Carnival front end (ES module).
-import { buildIndex, suggest, matchesSearch, sourceLabel } from './search.mjs';
+import { buildIndex, suggest, matchesSearch, sourceLabel } from './search.js';
 
 const TENTS = {
   all: { blurb: 'Everything playing at the Belpire Carnival.' },
@@ -190,7 +190,13 @@ function choose(entry) {
   input.value = entry.name;
   closeSuggestions();
   applySearch({ appid: entry.appid, name: entry.name });
-  document.getElementById('midway').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  showResults();
+}
+
+// Bring the filtered Midway into view below the search box.
+function showResults() {
+  const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('midway').scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
 }
 
 function clearSearch() {
@@ -236,9 +242,14 @@ function setupSearch() {
     if (active >= 0 && shown[active]) return choose(shown[active]);
     const text = input.value.trim();
     if (!text) return clearSearch();
-    if (shown.length === 1) return choose(shown[0]);
+    const hits = suggest(searchIndex, text, 8);
+    // An exact name, or a single match, picks that game; otherwise filter by the words typed.
+    const exact = hits.find((h) => h.name.toLowerCase() === text.toLowerCase());
+    if (exact) return choose(exact);
+    if (hits.length === 1) return choose(hits[0]);
     closeSuggestions();
     applySearch({ text });
+    showResults();
   });
   document.getElementById('search-clear').addEventListener('click', clearSearch);
 }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { easternToIso, formatEastern } from '../../site/big-tent/time.mjs';
+import { easternToIso, formatEastern } from '../../site/big-tent/time.js';
 
 test('Eastern date + time becomes an exact instant on both sides of daylight saving', () => {
   assert.equal(easternToIso('2026-10-30', '20:00'), '2026-10-30T20:00:00-04:00'); // EDT
