@@ -1,0 +1,145 @@
+/* The Star Citizen Sideshow — "a carnival in deep space" theme.
+   An 80s sci-fi B-movie mood: starfield, nebula haze, CRT scanlines, glitching neon, HUD frames.
+   Layered on top of sc.css + fx.css. prefers-reduced-motion turns movement off (bottom). */
+
+body.sc {
+  --neon-pink: #FF4F9A;
+  --neon-cyan: #49E3F2;
+  --void: #07060B;
+  --glow-pink: 0 0 6px rgba(255, 79, 154, .85), 0 0 22px rgba(255, 79, 154, .45), 0 0 48px rgba(255, 79, 154, .2);
+  --glow-cyan: 0 0 6px rgba(73, 227, 242, .8), 0 0 20px rgba(73, 227, 242, .35);
+  background: var(--void);
+}
+
+/* ---------- Space backdrop ---------- */
+#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; display: block; }
+.nebula {
+  position: fixed; inset: -20%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 35% 30% at 78% 22%, rgba(255, 79, 154, .14), transparent 70%),
+    radial-gradient(ellipse 40% 35% at 15% 70%, rgba(92, 40, 140, .18), transparent 70%),
+    radial-gradient(ellipse 30% 25% at 60% 85%, rgba(122, 22, 37, .22), transparent 70%);
+  animation: nebula 60s ease-in-out infinite alternate;
+}
+@keyframes nebula { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-4%, 3%, 0) scale(1.08); } }
+.scanlines {
+  position: fixed; inset: 0; z-index: 59; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, .18) 0 1px, transparent 1px 3px);
+}
+.scanlines::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 160px; top: -160px;
+  background: linear-gradient(to bottom, transparent, rgba(73, 227, 242, .05), transparent);
+  animation: scan 9s linear infinite;
+}
+@keyframes scan { to { transform: translateY(calc(100vh + 160px)); } }
+
+/* Let the stars show through the page sections */
+body.sc .site-header { background: rgba(7, 6, 11, .72); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 40; }
+body.sc .band { background: rgba(14, 10, 20, .62); backdrop-filter: blur(3px); border-color: rgba(255, 79, 154, .14); }
+body.sc .site-footer { background: rgba(7, 6, 11, .8); }
+
+/* ---------- Hero: glitch title + the carnival planet ---------- */
+.sc-stage { position: relative; }
+.sc-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: center; gap: 24px; text-align: left; padding-block: 64px 48px; }
+.sc-hero .lede { margin-left: 0; }
+.sc-hero .jump { justify-content: flex-start; }
+.sc-hero .eyebrow { font-family: 'Chakra Petch', var(--sans); letter-spacing: .4em; color: var(--neon-cyan); text-shadow: var(--glow-cyan); }
+
+.glitch {
+  position: relative; font-family: 'Monoton', var(--display) !important; font-weight: 400 !important;
+  font-size: clamp(34px, 5.6vw, 72px) !important; line-height: 1.12 !important; letter-spacing: .02em;
+  color: #FFE9F3; text-shadow: var(--glow-pink);
+}
+.glitch::before, .glitch::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0;
+}
+.glitch::before { color: var(--neon-cyan); text-shadow: none; animation: glitch-a 7s infinite steps(1); }
+.glitch::after { color: var(--neon-pink); text-shadow: none; animation: glitch-b 7s infinite steps(1); }
+@keyframes glitch-a {
+  0%, 90%, 100% { opacity: 0; transform: none; clip-path: inset(0 0 0 0); }
+  91% { opacity: .8; transform: translate(-4px, -1px); clip-path: inset(12% 0 62% 0); }
+  93% { opacity: .8; transform: translate(3px, 1px); clip-path: inset(58% 0 18% 0); }
+  95% { opacity: .6; transform: translate(-2px, 0); clip-path: inset(30% 0 44% 0); }
+}
+@keyframes glitch-b {
+  0%, 90%, 100% { opacity: 0; transform: none; clip-path: inset(0 0 0 0); }
+  92% { opacity: .75; transform: translate(4px, 1px); clip-path: inset(66% 0 8% 0); }
+  94% { opacity: .75; transform: translate(-3px, -1px); clip-path: inset(6% 0 70% 0); }
+}
+
+.planet { width: 100%; height: auto; max-width: 520px; justify-self: center; overflow: visible; animation: hover-y 9s ease-in-out infinite; }
+@keyframes hover-y { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-12px) rotate(-4deg); } }
+.ring ellipse { fill: none; stroke-width: 14; }
+.ring-a { stroke: #7A1625; stroke-dasharray: 26 26; animation: ring-spin 6s linear infinite; }
+.ring-b { stroke: #EDE6D8; stroke-opacity: .85; stroke-dasharray: 26 26; stroke-dashoffset: 26; animation: ring-spin-b 6s linear infinite; }
+@keyframes ring-spin { to { stroke-dashoffset: -52; } }
+@keyframes ring-spin-b { from { stroke-dashoffset: 26; } to { stroke-dashoffset: -26; } }
+.orbit { transform-origin: 260px 180px; animation: orbit 14s linear infinite; }
+@keyframes orbit { to { transform: rotate(360deg); } }
+.moon { fill: #F3E6C8; filter: drop-shadow(0 0 6px #D9B26A); }
+.moon-halo { fill: none; stroke: var(--neon-cyan); stroke-opacity: .5; stroke-dasharray: 3 5; }
+
+/* ---------- Headings, chips and buttons in neon ---------- */
+body.sc h2 { text-shadow: 0 0 18px rgba(255, 79, 154, .25); }
+body.sc h2::after { background-image: radial-gradient(circle, var(--neon-pink) 0 2px, transparent 2.5px); filter: drop-shadow(0 0 4px rgba(255, 79, 154, .9)); }
+body.sc .jump a { border-color: rgba(73, 227, 242, .35); font-family: 'Chakra Petch', var(--sans); letter-spacing: .06em; transition: box-shadow .3s, border-color .3s, transform .2s; }
+body.sc .jump a:hover { border-color: var(--neon-cyan); box-shadow: var(--glow-cyan); transform: translateY(-2px); }
+body.sc .pill { font-family: 'Chakra Petch', var(--sans); }
+
+/* ---------- HUD frames on panels ---------- */
+body.sc .system, body.sc .news, body.sc .tool, body.sc .incident, body.sc .summary {
+  background-color: rgba(10, 8, 16, .78);
+  background-image:
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)), linear-gradient(var(--neon-cyan), var(--neon-cyan)),
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)), linear-gradient(var(--neon-cyan), var(--neon-cyan)),
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)), linear-gradient(var(--neon-cyan), var(--neon-cyan)),
+    linear-gradient(var(--neon-cyan), var(--neon-cyan)), linear-gradient(var(--neon-cyan), var(--neon-cyan));
+  background-repeat: no-repeat;
+  background-size: 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px, 14px 2px, 2px 14px;
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+  border-color: rgba(73, 227, 242, .14);
+}
+body.sc .tilt:hover { border-color: rgba(255, 79, 154, .55); box-shadow: 0 22px 50px rgba(0, 0, 0, .6), 0 0 26px rgba(255, 79, 154, .18); }
+body.sc .tilt::before { background: radial-gradient(circle at var(--gx, 50%) var(--gy, 0%), rgba(73, 227, 242, .14), transparent 45%); }
+
+/* ---------- Status: a radar sweep behind the summary, living status lights ---------- */
+body.sc .summary { position: relative; overflow: hidden; }
+body.sc .summary::before {
+  content: ''; position: absolute; left: 4px; top: 50%; width: 220px; height: 220px; margin-top: -110px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from 0deg, rgba(73, 227, 242, .28), transparent 25%), repeating-radial-gradient(circle, transparent 0 22px, rgba(73, 227, 242, .1) 22px 23px);
+  animation: radar 4s linear infinite; opacity: .7;
+}
+@keyframes radar { to { transform: rotate(360deg); } }
+body.sc .summary > * { position: relative; }
+body.sc .summary .dot { box-shadow: 0 0 0 0 currentColor; animation: ping 2.4s ease-out infinite; }
+body.sc .summary[data-state="operational"] .dot { color: rgba(95, 194, 127, .7); }
+body.sc .summary[data-state="degraded"] .dot { color: rgba(217, 178, 106, .8); }
+body.sc .summary[data-state="down"] .dot { color: rgba(224, 72, 92, .9); animation-duration: 1.2s; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 currentColor; } 80%, 100% { box-shadow: 0 0 0 14px transparent; } }
+body.sc .pill-operational { box-shadow: 0 0 12px rgba(95, 194, 127, .35); }
+body.sc .pill-degraded, body.sc .pill-notice { box-shadow: 0 0 12px rgba(217, 178, 106, .45); }
+body.sc .pill-down { animation: alarm 1.4s ease-in-out infinite; }
+body.sc .pill-maintenance { box-shadow: 0 0 12px rgba(110, 155, 224, .45); }
+@keyframes alarm { 0%, 100% { box-shadow: 0 0 6px rgba(224, 72, 92, .4); } 50% { box-shadow: 0 0 22px rgba(224, 72, 92, .9); } }
+
+/* Transmission cards: a quick "incoming" sweep as they appear */
+body.sc .news-grid > *, body.sc .tool-grid > * { animation: transmit .7s var(--ease-out) both; }
+body.sc .news-grid > :nth-child(2), body.sc .tool-grid > :nth-child(2) { animation-delay: .07s; }
+body.sc .news-grid > :nth-child(3), body.sc .tool-grid > :nth-child(3) { animation-delay: .14s; }
+body.sc .news-grid > :nth-child(n+4), body.sc .tool-grid > :nth-child(n+4) { animation-delay: .21s; }
+@keyframes transmit { from { opacity: 0; transform: translateY(14px); filter: brightness(2) blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* Closing glow in neon pink */
+body.sc .closing::before { background: radial-gradient(ellipse, rgba(255, 79, 154, .22), transparent 70%); }
+
+@media (max-width: 860px) {
+  .sc-hero { grid-template-columns: 1fr; text-align: center; padding-block: 40px 24px; }
+  .sc-hero .lede { margin-inline: auto; }
+  .sc-hero .jump { justify-content: center; }
+  .planet { max-width: 340px; order: -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch::before, .glitch::after, .scanlines::after { display: none; }
+  .planet { transform: rotate(-6deg); }
+}
