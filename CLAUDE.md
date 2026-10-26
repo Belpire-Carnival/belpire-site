@@ -7,7 +7,7 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 
 - Static site in `site/`: plain HTML, CSS and vanilla JS. No framework, no bundler, no npm dependencies. Keep it that way unless asked.
 - Games are grouped into three **tents**: `horror` (crimson), `party` (gold), `other` = "The Sideshow" (slate).
-- Hosted on **Cloudflare Pages via its GitHub integration**. Cloudflare runs `node scripts/cf-build.mjs`, which downloads the live `feed.json`, refreshes it from Steam (`scripts/update-feed.mjs`), then publishes `site/`.
+- Hosted on **Cloudflare Workers (static assets) via Workers Builds**, connected to GitHub. Config is in `wrangler.jsonc` (Worker name `belpire-site`; no server code). Cloudflare runs `node scripts/cf-build.mjs`, which downloads the live `feed.json` and refreshes it from Steam (`scripts/update-feed.mjs`); then `npx wrangler deploy` publishes `site/`.
 - `.github/workflows/refresh-feed.yml` calls a Cloudflare deploy hook every 6 hours. `ci.yml` runs `npm run check` (the required `test` check).
 
 ## Rules
