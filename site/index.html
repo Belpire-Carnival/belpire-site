@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/styles.css">
+  <script src="/common.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -26,10 +27,8 @@
       <div class="nav-links">
         <a href="#midway">The Midway</a>
         <a href="/star-citizen/">Star Citizen</a>
-        <a href="#nights">Game Nights</a>
-        <a href="#oddities">Hall of Oddities</a>
-        <a href="#ringleaders">Ringleaders</a>
-        <a class="btn btn-gold btn-sm" data-discord href="#">Join the Discord</a>
+        <a href="/members/">Members' Lounge</a>
+        <a class="btn btn-gold btn-sm" data-auth href="/auth/login">Log in with Discord</a>
       </div>
     </nav>
   </header>
@@ -45,7 +44,7 @@
       <p class="lede">A community for multiplayer horror and party games. Grab a ticket, pick a tent, and play something that screams back.</p>
       <div class="hero-ctas">
         <a class="btn btn-gold" data-discord href="#">Get your ticket on Discord</a>
-        <a class="btn btn-ghost" href="#nights">See game nights</a>
+        <a class="btn btn-ghost" data-auth href="/auth/login">Log in with Discord</a>
       </div>
     </section>
 
@@ -66,7 +65,7 @@
           <div class="ticket">
             <p class="ticket-no">TICKET 03</p>
             <h3>Pick your tent</h3>
-            <p>Grab the roles for the games you play and get pinged when a lobby opens.</p>
+            <p>Grab your game roles, then log in here with Discord to step inside the Members' Lounge.</p>
           </div>
         </div>
       </div>
@@ -116,67 +115,15 @@
       </div>
     </section>
 
-    <!-- Edit game nights here. Tent badge classes: badge-horror, badge-party, badge-other -->
-    <section id="nights" class="band" aria-labelledby="nights-h">
-      <div class="wrap section-inner">
-        <h2 id="nights-h">Tonight's Attractions</h2>
-        <p class="muted">All times Eastern. Show up, hop in voice, play.</p>
-        <div class="nights">
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-horror">HORROR</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-party">PARTY</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-other">SIDESHOW</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Drop images into site/assets/oddities/ and replace the placeholders -->
-    <section id="oddities" class="wrap section" aria-labelledby="odd-h">
-      <h2 id="odd-h">Hall of Oddities</h2>
-      <p class="muted">Clips, screams and screenshots from the crowd.</p>
-      <div class="odd-grid">
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-      </div>
-    </section>
-
-    <section id="ringleaders" class="band" aria-labelledby="ring-h">
-      <div class="wrap section-inner">
-        <h2 id="ring-h" class="center">Your Ringleaders</h2>
-        <div class="ringleaders">
-          <div class="ringleader">
-            <div class="avatar">[Avatar]</div>
-            <p class="role">RINGMASTER</p>
-            <h3>[Name]</h3>
-            <p>[A line about what you play and how you run the show]</p>
-          </div>
-          <div class="ringleader">
-            <div class="avatar">[Avatar]</div>
-            <p class="role">RINGMISTRESS</p>
-            <h3>[Name]</h3>
-            <p>[A line about what you play and how you run the show]</p>
-          </div>
+    <!-- Members-only content lives in site/members/ (served only after Discord login) -->
+    <section id="lounge" class="band" aria-labelledby="lounge-h">
+      <div class="wrap section-inner lounge-teaser">
+        <p class="eyebrow">MEMBERS ONLY</p>
+        <h2 id="lounge-h">Inside the Big Top</h2>
+        <p class="lede">Game nights, the Hall of Oddities and your Ringleaders are waiting in the Members' Lounge. Log in with your Discord account; if you're part of the Carnival, you're in.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-gold" data-auth href="/auth/login">Log in with Discord</a>
+          <a class="btn btn-ghost" data-discord href="#">Not in the server yet? Join</a>
         </div>
       </div>
     </section>
@@ -190,7 +137,7 @@
 
   <footer class="site-footer">
     <div class="wrap footer-row">
-      <span>© <span id="year">2026</span> Belpire Carnival</span>
+      <span>© <span data-year>2026</span> Belpire Carnival</span>
       <span>Game data from Steam. Not affiliated with Valve.</span>
     </div>
   </footer>
