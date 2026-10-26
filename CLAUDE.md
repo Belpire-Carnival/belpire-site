@@ -23,6 +23,8 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 - Use LF line endings (see `.gitattributes`).
 - **Keep `site/privacy/` truthful.** Today the site sets no cookies, has no analytics and stores nothing in the browser; the only third parties a visitor's browser contacts are Cloudflare, Google Fonts and Steam's image CDN. Any change to that (cookies, login, analytics, a new external origin in `_headers`) must update the Privacy Policy and its effective date in the same PR.
 
+- **Visual effects are decoration only.** `site/fx.css` + `site/fx.js` (grain, spotlights, big-top hero, scroll reveals, card tilt) load on every page; `site/star-citizen/sc-fx.css` + `sc-fx.js` add the space-carnival layer (canvas starfield, glitch title, ringed planet, HUD frames). Rules: every animation must be switched off under `prefers-reduced-motion: reduce`; content must be readable if the JS never runs; no inline styles or scripts (set CSS variables from JS instead) so the CSP stays strict; all art is original SVG/CSS, never characters or designs from films or games.
+
 ## Common tasks
 - Add a favorite game: edit `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
 - Edit game nights, oddities or ringleaders: `site/index.html`.

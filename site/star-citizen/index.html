@@ -11,11 +11,18 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&family=Monoton&family=Chakra+Petch:wght@500;600&display=swap">
   <link rel="stylesheet" href="/star-citizen/sc.css">
+  <link rel="stylesheet" href="/fx.css">
+  <link rel="stylesheet" href="/star-citizen/sc-fx.css">
   <script src="/star-citizen/sc.js" defer></script>
+  <script src="/fx.js" defer></script>
+  <script src="/star-citizen/sc-fx.js" defer></script>
 </head>
-<body>
+<body class="sc">
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div class="nebula" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
   <div class="stripe" aria-hidden="true"></div>
 
   <header class="site-header">
@@ -33,16 +40,44 @@
   </header>
 
   <main>
-    <section class="wrap hero">
-      <p class="eyebrow">A SIDESHOW ATTRACTION</p>
-      <h1>The Star Citizen Sideshow</h1>
-      <p class="lede">Live server status, the latest Comm-Link transmissions and the community tools we fly with, for the Belpire crowd in the &rsquo;verse.</p>
-      <nav class="jump" aria-label="On this page">
-        <a href="#status">Server Status</a>
-        <a href="#news">Comm-Link</a>
-        <a href="#tools">Tools</a>
-      </nav>
-    </section>
+    <div class="sc-stage">
+      <section class="wrap hero sc-hero">
+        <div class="sc-hero-text">
+        <p class="eyebrow">A SIDESHOW ATTRACTION</p>
+        <h1 class="glitch" data-text="The Star Citizen Sideshow">The Star Citizen Sideshow</h1>
+        <p class="lede">Live server status, the latest Comm-Link transmissions and the community tools we fly with, for the Belpire crowd in the &rsquo;verse.</p>
+        <nav class="jump" aria-label="On this page">
+          <a href="#status">Server Status</a>
+          <a href="#news">Comm-Link</a>
+          <a href="#tools">Tools</a>
+        </nav>
+        </div>
+      <svg class="planet" viewBox="0 0 520 360" aria-hidden="true">
+        <defs>
+          <radialGradient id="planet-body" cx="38%" cy="32%" r="75%">
+            <stop offset="0" stop-color="#5B2142"/><stop offset=".45" stop-color="#2A1030"/><stop offset="1" stop-color="#0B0710"/>
+          </radialGradient>
+          <radialGradient id="planet-glow" cx="50%" cy="50%" r="50%">
+            <stop offset=".55" stop-color="#FF4F9A" stop-opacity=".22"/><stop offset="1" stop-color="#FF4F9A" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="ring-back"><rect x="0" y="0" width="520" height="180"/></clipPath>
+          <clipPath id="ring-front"><rect x="0" y="180" width="520" height="180"/></clipPath>
+        </defs>
+        <circle cx="260" cy="180" r="150" fill="url(#planet-glow)"/>
+        <g clip-path="url(#ring-back)" class="ring">
+          <ellipse cx="260" cy="180" rx="240" ry="54" class="ring-a"/>
+          <ellipse cx="260" cy="180" rx="240" ry="54" class="ring-b"/>
+        </g>
+        <circle cx="260" cy="180" r="104" fill="url(#planet-body)"/>
+        <path d="M190 120 Q260 104 330 126 M170 160 Q260 146 350 168 M168 204 Q260 192 352 212 M186 244 Q260 236 334 252" stroke="#FF4F9A" stroke-opacity=".12" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <g clip-path="url(#ring-front)" class="ring">
+          <ellipse cx="260" cy="180" rx="240" ry="54" class="ring-a"/>
+          <ellipse cx="260" cy="180" rx="240" ry="54" class="ring-b"/>
+        </g>
+        <g class="orbit"><circle cx="260" cy="40" r="9" class="moon"/><circle cx="260" cy="40" r="15" class="moon-halo"/></g>
+      </svg>
+      </section>
+    </div>
 
     <section id="status" class="band" aria-labelledby="status-h">
       <div class="wrap section-inner">
