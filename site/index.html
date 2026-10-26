@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/fx.css">
-  <script src="/app.js" defer></script>
+  <script type="module" src="/app.js"></script>
   <script src="/fx.js" defer></script>
 </head>
 <body>
@@ -28,7 +28,8 @@
       <div class="nav-links">
         <a href="#midway">The Midway</a>
         <a href="/star-citizen/">Star Citizen</a>
-        <a href="#nights">Game Nights</a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
         <a href="#oddities">Hall of Oddities</a>
         <a href="#ringleaders">Ringleaders</a>
         <a class="btn btn-gold btn-sm" data-discord href="/join/">Join the Discord</a>
@@ -75,7 +76,7 @@
       <p class="lede">A community for multiplayer horror and party games. Grab a ticket, pick a tent, and play something that screams back.</p>
       <div class="hero-ctas">
         <a class="btn btn-gold" data-discord href="/join/">Get your ticket on Discord</a>
-        <a class="btn btn-ghost" href="#nights">See game nights</a>
+        <a class="btn btn-ghost" href="/big-tent/">See game nights</a>
       </div>
       </section>
     </div>
@@ -112,6 +113,15 @@
         <button type="button" data-tent="party" aria-pressed="false">Party Tent</button>
         <button type="button" data-tent="other" aria-pressed="false">The Sideshow</button>
       </div>
+      <form class="game-search" id="game-search-form" role="search" autocomplete="off">
+        <label for="game-search">Find a game</label>
+        <div class="combo">
+          <input id="game-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="game-suggestions" placeholder="Search patch notes and upcoming games" spellcheck="false" enterkeyhint="search">
+          <button type="button" class="search-clear" id="search-clear" hidden>Clear</button>
+          <ul id="game-suggestions" class="suggestions" role="listbox" aria-label="Matching games" hidden></ul>
+        </div>
+        <p class="muted small search-status" id="search-status" aria-live="polite"></p>
+      </form>
     </section>
 
     <section id="midway" class="wrap section" aria-labelledby="upcoming-h">
@@ -144,37 +154,21 @@
           <p>Live server status and the latest Comm-Link news from the &rsquo;verse.</p>
           <span class="attraction-cta">Step inside</span>
         </a>
+        <a class="attraction" href="/jackbox/">
+          <span class="badge badge-party">PARTY</span>
+          <h3>Jackbox Night</h3>
+          <p>Sixty-two games across fourteen boxes. Spin for tonight's pick and catch the latest patches.</p>
+          <span class="attraction-cta">Step inside</span>
+        </a>
       </div>
     </section>
 
-    <!-- Edit game nights here. Tent badge classes: badge-horror, badge-party, badge-other -->
+    <!-- Game nights live on their own page: site/big-tent/ -->
     <section id="nights" class="band" aria-labelledby="nights-h">
-      <div class="wrap section-inner">
-        <h2 id="nights-h">Tonight's Attractions</h2>
-        <p class="muted">All times Eastern. Show up, hop in voice, play.</p>
-        <div class="nights">
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-horror">HORROR</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-party">PARTY</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-          <div class="night">
-            <div class="night-day">[DAY]</div>
-            <div class="night-time">[TIME] ET</div>
-            <span class="badge badge-other">SIDESHOW</span>
-            <div class="night-game">[Game]</div>
-            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
-          </div>
-        </div>
+      <div class="wrap section-inner bigtent-teaser">
+        <h2 id="nights-h">The Big Tent</h2>
+        <p class="muted">Game nights live under the big top. Members rank the lineup, the top four take the stage, and the date lands in Discord under Events.</p>
+        <a class="btn btn-gold" href="/big-tent/">Step into the Big Tent</a>
       </div>
     </section>
 

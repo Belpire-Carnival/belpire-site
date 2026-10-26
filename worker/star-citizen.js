@@ -6,7 +6,7 @@
 //  • GET /api/star-citizen serves that snapshot to the page.
 //
 // Bindings (wrangler.jsonc): SC_DATA (KV).
-// Runtime secret (Cloudflare dashboard, optional): SC_DISCORD_WEBHOOK_URL.
+// Optional runtime secret: SC_DISCORD_WEBHOOK_URL.
 
 import { RSI_BASE, STATUS_BASE, parseStatus, parseIssues, parseCommLink } from './rsi.js';
 import { postEmbeds, newsEmbed, incidentEmbed, systemEmbed } from './discord.js';

@@ -2,6 +2,7 @@
 // Pulls Steam data into site/data/feed.json for the Belpire Carnival site.
 //  - "favorites": latest official news/patches for the games listed in config/games.json
 //  - "upcoming":  coming-soon games from Steam store searches (by tag), sorted into tents
+//  - "jackbox":   store art and recent official news for the boxes in site/jackbox/packs.json
 // Optionally posts new items to Discord when DISCORD_WEBHOOK_URL is set.
 // The Cloudflare build (scripts/cf-build.mjs) downloads the live site's feed.json first,
 // so "previous" is whatever is currently published — nothing is committed back to the repo.
@@ -17,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG_PATH = resolve(ROOT, 'config/games.json');
 const FEED_PATH = resolve(ROOT, 'site/data/feed.json');
+const JACKBOX_PATH = resolve(ROOT, 'site/jackbox/packs.json');
 const TENTS = new Set(['horror', 'party', 'other']);
 const UA = 'BelpireCarnivalFeed/1.0 (+https://belpire.com)';
 
@@ -210,6 +212,41 @@ async function fetchUpcoming(config, previous) {
   return out;
 }
 
+// ---------- tracked games (search + Big Tent polls) ----------
+
+// Name, tent and store art for every favorite. Art is looked up once and then reused from the live feed.
+async function fetchTracked(config, previous, news) {
+  const known = new Map(previous.filter((t) => t.image).map((t) => [Number(t.appid), t.image]));
+  for (const n of news) if (n.image && !known.has(Number(n.appid))) known.set(Number(n.appid), n.image);
+  const out = [];
+  for (const f of config.favorites || []) {
+    const appid = Number(f.appid);
+    if (!appid) continue;
+    let image = known.get(appid) || null;
+    if (!image) image = (await appDetails(appid).catch(() => null))?.header_image || null;
+    out.push({ appid, name: f.name, tent: TENTS.has(f.tent) ? f.tent : 'other', image });
+  }
+  return out;
+}
+
+// ---------- Jackbox page ----------
+
+// Store art (looked up once, then reused) and the latest official news for each box on the Jackbox page.
+async function fetchJackbox(previous) {
+  const data = await readJson(JACKBOX_PATH, null);
+  const packs = data?.packs || [];
+  if (!packs.length) return previous;
+  const images = { ...(previous?.images || {}) };
+  for (const p of packs) {
+    if (images[p.appid]) continue;
+    const d = await appDetails(p.appid).catch(() => null);
+    if (d?.header_image) images[p.appid] = d.header_image;
+  }
+  const config = { news: { perGame: 1, maxAgeDays: 180, officialOnly: true }, favorites: packs.map((p) => ({ appid: p.appid, name: p.name, tent: 'party' })) };
+  const news = await fetchFavorites(config, previous?.news || []);
+  return { images, news: news.slice(0, 8) };
+}
+
 // ---------- Discord ----------
 
 const TENT_COLORS = { horror: 0x7a1625, party: 0xd9b26a, other: 0x34404c };
@@ -268,11 +305,17 @@ async function main() {
   const prevFavorites = previous?.favorites || [];
   const prevUpcoming = previous?.upcoming || [];
 
+  const prevJackbox = previous?.jackbox || { images: {}, news: [] };
+
   const favorites = await fetchFavorites(config, prevFavorites);
   const upcoming = await fetchUpcoming(config, prevUpcoming);
+  const jackbox = await fetchJackbox(prevJackbox); // shown on /jackbox/ only, never posted to Discord
 
-  const content = { upcoming, favorites };
-  const prevContent = { upcoming: prevUpcoming, favorites: prevFavorites };
+  // Every tracked game (not just ones with fresh news) so the site search and polls can find them all.
+  const tracked = await fetchTracked(config, previous?.tracked || [], favorites);
+
+  const content = { tracked, upcoming, favorites, jackbox };
+  const prevContent = { tracked: previous?.tracked || [], upcoming: prevUpcoming, favorites: prevFavorites, jackbox: prevJackbox };
   if (previous && JSON.stringify(content) === JSON.stringify(prevContent)) {
     console.log('No changes in the Steam feed.');
     await setOutput('changed', 'false');

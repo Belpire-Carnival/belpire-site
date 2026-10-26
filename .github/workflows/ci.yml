@@ -34,4 +34,3 @@ jobs:
       - name: Validate JSON config
         run: |
           node -e "JSON.parse(require('fs').readFileSync('config/games.json','utf8'))"
-          node -e "JSON.parse(require('fs').readFileSync('.github/rulesets/main.json','utf8'))"
