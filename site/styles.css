@@ -179,3 +179,15 @@ p { margin: 0; }
 @media (max-width: 560px) {
   .news .capsule { flex-basis: 100%; width: 100%; }
 }
+
+/* Privacy Policy & Terms of Use */
+.legal { max-width: 760px; padding-block: 56px 72px; }
+.legal h1 { font-family: var(--display); font-weight: 900; font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 4px 0 8px; }
+.legal > .muted { margin-bottom: 28px; }
+.legal h2 { font-size: 24px; margin: 36px 0 10px; }
+.legal p, .legal li { color: var(--text-soft); }
+.legal p + p { margin-top: 12px; }
+.legal ul { padding-left: 22px; margin: 12px 0 0; display: flex; flex-direction: column; gap: 10px; }
+.legal strong { color: var(--text); }
+.footer-row a { color: var(--muted); }
+.footer-row a:hover { color: var(--text); }

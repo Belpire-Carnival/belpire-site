@@ -17,6 +17,7 @@ Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, a
 |---|---|
 | `site/` | The website (no build tooling). Edit game nights, oddities and ringleaders in `index.html`; set `DISCORD_INVITE` at the top of `app.js`. |
 | `site/_headers` | CSP, HSTS and other security headers, plus cache rules. |
+| `site/privacy/`, `site/terms/` | Privacy Policy and Terms of Use, linked in the footer. Update the Privacy Policy whenever the site starts collecting or sharing anything new. |
 | `site/404.html` | Not-found page. |
 | `wrangler.jsonc` | Cloudflare Worker config: name `belpire-site`, serves `site/`, runs `worker/` for `/api/*` and the 10-minute cron. |
 | `site/star-citizen/` | The Star Citizen page (belpire.com/star-citizen/). |
