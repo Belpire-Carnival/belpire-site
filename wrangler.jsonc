@@ -11,6 +11,9 @@
   "kv_namespaces": [
     { "binding": "SC_DATA", "id": "383c9c02baf3405b826636f5650f2078" }
   ],
+  "d1_databases": [
+    { "binding": "DB", "database_name": "belpire-polls", "database_id": "a4cd8c8c-56b3-44b8-9599-b86e3b0cd036" }
+  ],
   "triggers": {
     "crons": ["*/10 * * * *"]
   },

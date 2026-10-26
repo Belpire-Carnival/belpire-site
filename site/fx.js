@@ -4,8 +4,8 @@
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduce) return;
 
-  const REVEAL = '.section-head, .section-tents h2, .band h2, .tickets > *, .nights > *, .odd-grid > *, .ringleaders > *, .closing > *, .systems > *, .incidents > *, .tool-cat, .attraction';
-  const TILT = '.card, .news, .attraction, .night, .ringleader, .placeholder, .ticket, .system, .tool';
+  const REVEAL = '.section-head, .section-tents h2, .band h2, .tickets > *, .nights > *, .odd-grid > *, .ringleaders > *, .closing > *, .systems > *, .incidents > *, .tool-cat, .attraction, .box, .step, .patch';
+  const TILT = '.card, .news, .attraction, .night, .ringleader, .placeholder, .ticket, .system, .tool, .box, .patch';
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   // ---- Scroll reveals ----

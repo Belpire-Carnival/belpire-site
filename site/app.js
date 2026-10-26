@@ -1,4 +1,5 @@
-// Belpire Carnival front end.
+// Belpire Carnival front end (ES module).
+import { buildIndex, suggest, matchesSearch, sourceLabel } from './search.mjs';
 
 const TENTS = {
   all: { blurb: 'Everything playing at the Belpire Carnival.' },
@@ -7,8 +8,10 @@ const TENTS = {
   other: { label: 'SIDESHOW', badge: 'badge-other', blurb: 'Everything else the crowd plays together.' }
 };
 
-let feed = { upcoming: [], favorites: [] };
+let feed = { upcoming: [], favorites: [], tracked: [] };
 let currentTent = 'all';
+let search = null; // { appid, name } for a picked game, or { text } for free text
+let searchIndex = [];
 
 // Small DOM helper. Text is always set with textContent so feed data can never inject HTML.
 function el(tag, attrs = {}, children = []) {
@@ -54,7 +57,9 @@ function emptyState(message) {
   return el('p', { class: 'empty', text: message });
 }
 
+// While searching, the tent filter steps aside so a game is never hidden by the wrong tent.
 function matchesTent(item) {
+  if (search) return matchesSearch(item, search);
   return currentTent === 'all' || item.tent === currentTent;
 }
 
@@ -63,7 +68,7 @@ function renderUpcoming() {
   const items = feed.upcoming.filter(matchesTent);
   list.replaceChildren();
   if (!items.length) {
-    list.append(emptyState('Nothing announced in this tent yet. Check back soon.'));
+    list.append(emptyState(search ? `No upcoming release matches ${searchLabel()}.` : 'Nothing announced in this tent yet. Check back soon.'));
     return;
   }
   for (const g of items) {
@@ -88,7 +93,12 @@ function renderFavorites() {
   const items = feed.favorites.filter(matchesTent);
   list.replaceChildren();
   if (!items.length) {
-    list.append(emptyState('No recent news for this tent.'));
+    if (search?.appid) {
+      const steamNews = `https://store.steampowered.com/news/app/${search.appid}`;
+      list.append(el('p', { class: 'empty' }, [document.createTextNode(`No patch notes for ${search.name} in the last 45 days. `), el('a', { href: steamNews, target: '_blank', rel: 'noopener', text: 'Older news on Steam' })]));
+    } else {
+      list.append(emptyState(search ? `No recent patch notes match ${searchLabel()}.` : 'No recent news for this tent.'));
+    }
     return;
   }
   for (const n of items) {
@@ -111,9 +121,138 @@ function renderFavorites() {
   }
 }
 
+// ---------------------------------------------------------------- search (ARIA combobox)
+
+const searchLabel = () => (search?.appid ? search.name : `"${search?.text || ''}"`);
+let active = -1;
+let shown = [];
+
+function closeSuggestions() {
+  const input = document.getElementById('game-search');
+  const box = document.getElementById('game-suggestions');
+  box.hidden = true;
+  box.replaceChildren();
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
+  active = -1;
+  shown = [];
+}
+
+function highlight(i) {
+  const input = document.getElementById('game-search');
+  const options = document.querySelectorAll('#game-suggestions [role="option"]');
+  active = i;
+  options.forEach((o, n) => o.setAttribute('aria-selected', String(n === i)));
+  if (options[i]) {
+    input.setAttribute('aria-activedescendant', options[i].id);
+    options[i].scrollIntoView({ block: 'nearest' });
+  } else input.removeAttribute('aria-activedescendant');
+}
+
+function openSuggestions(text) {
+  const input = document.getElementById('game-search');
+  const box = document.getElementById('game-suggestions');
+  shown = suggest(searchIndex, text, 8);
+  box.replaceChildren();
+  if (!shown.length) {
+    box.append(el('li', { class: 'suggest-empty', role: 'presentation', text: 'No tracked or upcoming game by that name.' }));
+  }
+  shown.forEach((entry, i) => {
+    const option = el('li', { id: `game-opt-${i}`, role: 'option', 'aria-selected': 'false', class: 'suggest' }, [
+      tentBadge(entry.tent),
+      el('span', { class: 'suggest-name', text: entry.name }),
+      el('span', { class: 'suggest-src', text: sourceLabel(entry) })
+    ]);
+    option.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus in the input
+    option.addEventListener('click', () => choose(entry));
+    box.append(option);
+  });
+  box.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+  active = -1;
+}
+
+function applySearch(next) {
+  search = next;
+  const status = document.getElementById('search-status');
+  const clear = document.getElementById('search-clear');
+  clear.hidden = !search;
+  if (search) {
+    const count = feed.upcoming.filter(matchesTent).length + feed.favorites.filter(matchesTent).length;
+    status.textContent = `Showing ${searchLabel()}: ${count} item${count === 1 ? '' : 's'} below.`;
+  } else status.textContent = '';
+  renderUpcoming();
+  renderFavorites();
+}
+
+function choose(entry) {
+  const input = document.getElementById('game-search');
+  input.value = entry.name;
+  closeSuggestions();
+  applySearch({ appid: entry.appid, name: entry.name });
+  document.getElementById('midway').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+
+function clearSearch() {
+  const input = document.getElementById('game-search');
+  input.value = '';
+  closeSuggestions();
+  applySearch(null);
+  input.focus();
+}
+
+function setupSearch() {
+  const input = document.getElementById('game-search');
+  const form = document.getElementById('game-search-form');
+  input.addEventListener('input', () => {
+    const text = input.value.trim();
+    if (!text) {
+      closeSuggestions();
+      if (search) applySearch(null);
+      return;
+    }
+    openSuggestions(text);
+  });
+  input.addEventListener('keydown', (e) => {
+    const open = !document.getElementById('game-suggestions').hidden;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!open && input.value.trim()) openSuggestions(input.value.trim());
+      else if (shown.length) highlight((active + 1) % shown.length);
+    } else if (e.key === 'ArrowUp' && open && shown.length) {
+      e.preventDefault();
+      highlight(active <= 0 ? shown.length - 1 : active - 1);
+    } else if (e.key === 'Escape') {
+      if (open) {
+        e.preventDefault(); // don't let the browser also clear the box
+        closeSuggestions();
+      }
+      else if (input.value) clearSearch();
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(closeSuggestions, 120));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (active >= 0 && shown[active]) return choose(shown[active]);
+    const text = input.value.trim();
+    if (!text) return clearSearch();
+    if (shown.length === 1) return choose(shown[0]);
+    closeSuggestions();
+    applySearch({ text });
+  });
+  document.getElementById('search-clear').addEventListener('click', clearSearch);
+}
+
 function setTent(tent) {
   if (!TENTS[tent]) tent = 'all';
   currentTent = tent;
+  if (search) {
+    const input = document.getElementById('game-search');
+    if (input) input.value = '';
+    search = null;
+    document.getElementById('search-clear').hidden = true;
+    document.getElementById('search-status').textContent = '';
+  }
   for (const btn of document.querySelectorAll('[data-tent]')) {
     btn.setAttribute('aria-pressed', String(btn.dataset.tent === tent));
   }
@@ -129,13 +268,15 @@ async function loadFeed() {
     const data = await res.json();
     feed = {
       upcoming: Array.isArray(data.upcoming) ? data.upcoming : [],
-      favorites: Array.isArray(data.favorites) ? data.favorites : []
+      favorites: Array.isArray(data.favorites) ? data.favorites : [],
+      tracked: Array.isArray(data.tracked) ? data.tracked : []
     };
     const updated = document.getElementById('feed-updated');
     if (data.generatedAt) updated.textContent = `Pulled from Steam · updated ${formatDate(data.generatedAt)}`;
   } catch (err) {
     console.warn('Could not load feed', err);
   }
+  searchIndex = buildIndex(feed);
   setTent(currentTent);
 }
 
@@ -144,5 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => setTent(btn.dataset.tent));
   }
   document.getElementById('year').textContent = String(new Date().getFullYear());
+  setupSearch();
   loadFeed();
 });

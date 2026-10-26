@@ -1,0 +1,497 @@
+{
+  "styles": {
+    "trivia": "Trivia",
+    "drawing": "Drawing",
+    "writing": "Writing & jokes",
+    "bluffing": "Bluffing & deduction",
+    "wildcard": "Wildcard"
+  },
+  "packs": [
+    {
+      "name": "The Jackbox Party Pack",
+      "short": "Pack 1",
+      "appid": 331670,
+      "year": 2014,
+      "games": [
+        {
+          "name": "You Don't Know Jack 2015",
+          "min": 1,
+          "max": 4,
+          "style": "trivia"
+        },
+        {
+          "name": "Drawful",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "Word Spud",
+          "min": 2,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Lie Swatter",
+          "min": 1,
+          "max": 100,
+          "style": "trivia"
+        },
+        {
+          "name": "Fibbage XL",
+          "min": 2,
+          "max": 8,
+          "style": "bluffing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 2",
+      "short": "Pack 2",
+      "appid": 397460,
+      "year": 2015,
+      "games": [
+        {
+          "name": "Fibbage 2",
+          "min": 2,
+          "max": 8,
+          "style": "bluffing"
+        },
+        {
+          "name": "Earwax",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Bidiots",
+          "min": 3,
+          "max": 6,
+          "style": "drawing"
+        },
+        {
+          "name": "Quiplash XL",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Bomb Corp.",
+          "min": 1,
+          "max": 4,
+          "style": "wildcard"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 3",
+      "short": "Pack 3",
+      "appid": 434170,
+      "year": 2016,
+      "games": [
+        {
+          "name": "Quiplash 2",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Trivia Murder Party",
+          "min": 1,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Guesspionage",
+          "min": 2,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Tee K.O.",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "Fakin' It",
+          "min": 3,
+          "max": 6,
+          "style": "bluffing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 4",
+      "short": "Pack 4",
+      "appid": 610180,
+      "year": 2017,
+      "games": [
+        {
+          "name": "Fibbage 3",
+          "min": 2,
+          "max": 8,
+          "style": "bluffing"
+        },
+        {
+          "name": "Survive the Internet",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Monster Seeking Monster",
+          "min": 3,
+          "max": 7,
+          "style": "bluffing"
+        },
+        {
+          "name": "Bracketeering",
+          "min": 3,
+          "max": 16,
+          "style": "writing"
+        },
+        {
+          "name": "Civic Doodle",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 5",
+      "short": "Pack 5",
+      "appid": 774461,
+      "year": 2018,
+      "games": [
+        {
+          "name": "You Don't Know Jack: Full Stream",
+          "min": 1,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Split the Room",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Mad Verse City",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Zeeple Dome",
+          "min": 1,
+          "max": 6,
+          "style": "wildcard"
+        },
+        {
+          "name": "Patently Stupid",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 6",
+      "short": "Pack 6",
+      "appid": 1005300,
+      "year": 2019,
+      "games": [
+        {
+          "name": "Trivia Murder Party 2",
+          "min": 1,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Role Models",
+          "min": 3,
+          "max": 6,
+          "style": "bluffing"
+        },
+        {
+          "name": "Joke Boat",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Dictionarium",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Push The Button",
+          "min": 4,
+          "max": 10,
+          "style": "bluffing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 7",
+      "short": "Pack 7",
+      "appid": 1211630,
+      "year": 2020,
+      "games": [
+        {
+          "name": "Quiplash 3",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "The Devils and the Details",
+          "min": 3,
+          "max": 8,
+          "style": "wildcard"
+        },
+        {
+          "name": "Champ'd Up",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "Talking Points",
+          "min": 3,
+          "max": 8,
+          "style": "wildcard"
+        },
+        {
+          "name": "Blather 'Round",
+          "min": 2,
+          "max": 6,
+          "style": "bluffing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 8",
+      "short": "Pack 8",
+      "appid": 1552350,
+      "year": 2021,
+      "games": [
+        {
+          "name": "Drawful Animate",
+          "min": 3,
+          "max": 10,
+          "style": "drawing"
+        },
+        {
+          "name": "The Wheel of Enormous Proportions",
+          "min": 2,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Job Job",
+          "min": 3,
+          "max": 10,
+          "style": "writing"
+        },
+        {
+          "name": "The Poll Mine",
+          "min": 2,
+          "max": 10,
+          "style": "trivia"
+        },
+        {
+          "name": "Weapons Drawn",
+          "min": 4,
+          "max": 8,
+          "style": "bluffing"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 9",
+      "short": "Pack 9",
+      "appid": 1850960,
+      "year": 2022,
+      "games": [
+        {
+          "name": "Fibbage 4",
+          "min": 2,
+          "max": 8,
+          "style": "bluffing"
+        },
+        {
+          "name": "Roomerang",
+          "min": 4,
+          "max": 9,
+          "style": "bluffing"
+        },
+        {
+          "name": "Junktopia",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Nonsensory",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "Quixort",
+          "min": 1,
+          "max": 10,
+          "style": "trivia"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 10",
+      "short": "Pack 10",
+      "appid": 2216870,
+      "year": 2023,
+      "games": [
+        {
+          "name": "Tee K.O. 2",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "FixyText",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Hypnotorious",
+          "min": 4,
+          "max": 8,
+          "style": "bluffing"
+        },
+        {
+          "name": "Timejinx",
+          "min": 1,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Dodo Re Mi",
+          "min": 1,
+          "max": 9,
+          "style": "wildcard"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 11",
+      "short": "Pack 11",
+      "appid": 3364070,
+      "year": 2025,
+      "games": [
+        {
+          "name": "Doominate",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Hear Say",
+          "min": 2,
+          "max": 8,
+          "style": "wildcard"
+        },
+        {
+          "name": "Cookie Haus",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "Suspectives",
+          "min": 4,
+          "max": 8,
+          "style": "bluffing"
+        },
+        {
+          "name": "Legends of Trivia",
+          "min": 1,
+          "max": 6,
+          "style": "trivia"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Party Pack 12",
+      "short": "Pack 12",
+      "appid": 4199960,
+      "year": 2026,
+      "games": [
+        {
+          "name": "MegaPals",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Hyperface",
+          "min": 3,
+          "max": 8,
+          "style": "drawing"
+        },
+        {
+          "name": "We Forgot a Card",
+          "min": 3,
+          "max": 8,
+          "style": "writing"
+        },
+        {
+          "name": "Idol Factions",
+          "min": 2,
+          "max": 8,
+          "style": "trivia"
+        },
+        {
+          "name": "Debate and Switch",
+          "min": 2,
+          "max": 8,
+          "style": "wildcard"
+        }
+      ]
+    },
+    {
+      "name": "The Jackbox Survey Scramble",
+      "short": "Survey Scramble",
+      "appid": 2948640,
+      "year": 2024,
+      "note": "Six survey modes in one box, from Hilo to Dares.",
+      "games": [
+        {
+          "name": "The Jackbox Survey Scramble",
+          "min": 2,
+          "max": 10,
+          "style": "trivia"
+        }
+      ]
+    },
+    {
+      "name": "Trivia Murder Party 3",
+      "short": "Trivia Murder Party 3",
+      "appid": 3048060,
+      "year": 2026,
+      "note": "Early Access. The first Jackbox game with online matchmaking.",
+      "games": [
+        {
+          "name": "Trivia Murder Party 3",
+          "min": 1,
+          "max": 8,
+          "style": "trivia"
+        }
+      ]
+    }
+  ]
+}

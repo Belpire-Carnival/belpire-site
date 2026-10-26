@@ -1,13 +1,6 @@
 #!/usr/bin/env node
-// Cloudflare build command (Workers Builds or Pages):  node scripts/cf-build.mjs
-//
-// 1. Downloads the feed.json that's live right now (so we know what's already been posted).
-// 2. Refreshes it from Steam (scripts/update-feed.mjs).
-// 3. Cloudflare then publishes the site/ folder.
-//
-// Workers Builds sets WORKERS_CI_BRANCH (Pages sets CF_PAGES_BRANCH). Discord posts only
-// happen for production (main) builds, never for preview branches, even if a webhook
-// variable were present there.
+// Build step: loads the live feed.json (so already-posted items aren't repeated),
+// then refreshes it from Steam. Discord posts only happen on production builds.
 
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';

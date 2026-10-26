@@ -1,0 +1,8 @@
+{
+  "minOwners": 3,
+  "maxLookups": 40,
+  "members": [
+    { "name": "RingMaster", "profile": "https://steamcommunity.com/id/your-name/" },
+    { "name": "Crewmate", "profile": "https://steamcommunity.com/profiles/76561190000000000/" }
+  ]
+}

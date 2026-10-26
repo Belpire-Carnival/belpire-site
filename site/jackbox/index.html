@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jackbox Night — Belpire Carnival</title>
+  <meta name="description" content="The Belpire crew's Jackbox collection: pick a game for your group size, learn how to play over Discord, and catch the latest patches.">
+  <meta property="og:title" content="Jackbox Night — Belpire Carnival">
+  <meta property="og:url" content="https://belpire.com/jackbox/">
+  <meta name="theme-color" content="#120B1C">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600;700&family=Bungee&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fx.css">
+  <link rel="stylesheet" href="/jackbox/jx.css">
+  <script type="module" src="/jackbox/jackbox.js"></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body class="jx">
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/">Star Citizen</a>
+        <a href="/jackbox/" aria-current="page">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm" data-discord href="/join/">Join the Discord</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <div class="jx-stage">
+      <div class="sunburst" aria-hidden="true"></div>
+      <section class="wrap jx-hero">
+        <div class="jx-hero-text">
+          <p class="eyebrow">THE PARTY TENT PRESENTS</p>
+          <h1 class="showtitle">Jackbox <span>Night</span></h1>
+          <p class="lede">Fourteen boxes, sixty-two games and one phone each. Find a seat, watch for the room code, and try not to be the one who answers last.</p>
+          <ul class="stats" aria-label="The collection at a glance">
+            <li><b id="stat-boxes">14</b><span>boxes</span></li>
+            <li><b id="stat-games">62</b><span>games</span></li>
+            <li><b>16</b><span>max players</span></li>
+          </ul>
+          <nav class="jump" aria-label="On this page">
+            <a href="#pick">Pick a Game</a>
+            <a href="#howto">How to Play</a>
+            <a href="#collection">The Collection</a>
+            <a href="#patches">Patch Notes</a>
+          </nav>
+        </div>
+        <div class="roomcode" aria-hidden="true">
+          <p class="roomcode-label">ROOM CODE</p>
+          <div class="tiles"><span>?</span><span>?</span><span>?</span><span>?</span></div>
+          <p class="roomcode-url">Code is on the host's screen · jackbox.tv</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Game picker -->
+    <section id="pick" class="band" aria-labelledby="pick-h">
+      <div class="wrap section-inner">
+        <div class="section-head">
+          <h2 id="pick-h">Pick a Game</h2>
+          <p class="muted small">Tell us who showed up. We'll find what fits.</p>
+        </div>
+
+        <div class="picker">
+          <div class="picker-controls">
+            <div class="control">
+              <span class="control-label" id="players-label">Players</span>
+              <div class="stepper" role="group" aria-labelledby="players-label">
+                <button type="button" id="fewer" aria-label="One fewer player">−</button>
+                <output id="players" aria-live="polite">6</output>
+                <button type="button" id="more" aria-label="One more player">+</button>
+              </div>
+            </div>
+            <div class="control">
+              <span class="control-label" id="style-label">Kind of game</span>
+              <div class="chips" id="styles" role="group" aria-labelledby="style-label">
+                <button type="button" class="chip" data-style="all" aria-pressed="true">Anything</button>
+              </div>
+            </div>
+            <div class="control">
+              <span class="control-label" id="box-label">Boxes</span>
+              <div class="chips" role="group" aria-labelledby="box-label">
+                <button type="button" class="chip" id="newer" aria-pressed="false">Packs 7 and newer</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="spin-panel">
+            <button type="button" class="spin" id="spin">Spin the wheel</button>
+            <div class="winner" id="winner" aria-live="polite">
+              <p class="winner-kicker">Tonight's game</p>
+              <p class="winner-name" id="winner-name">Hit the button</p>
+              <p class="winner-meta" id="winner-meta">Set your crew size, then spin.</p>
+              <p class="winner-count"><span id="match-count">0</span> games fit your crew</p>
+            </div>
+            <div class="confetti" id="confetti" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <ul class="matches" id="matches" aria-label="Games that fit"></ul>
+      </div>
+    </section>
+
+    <!-- How to play -->
+    <section id="howto" class="wrap section" aria-labelledby="howto-h">
+      <div class="section-head">
+        <h2 id="howto-h">How to Play on Discord</h2>
+        <p class="muted small">Only the host needs to own the game</p>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <h3>Host starts the box</h3>
+          <p>Launch the pack on Steam and pick a game. Only the host needs to own it; everyone else plays free on their phone.</p>
+        </li>
+        <li class="step">
+          <h3>Go Live in voice</h3>
+          <p>Join a Belpire voice channel, click <strong>Share Your Screen</strong>, pick the game window and turn on sound so everyone hears the host.</p>
+        </li>
+        <li class="step">
+          <h3>Phones out</h3>
+          <p>Everyone opens <a href="https://jackbox.tv" target="_blank" rel="noopener">jackbox.tv</a> on a phone and types the four-letter room code from the host's screen. Each game gets a fresh code, so the host drops it in the voice chat every round.</p>
+        </li>
+        <li class="step">
+          <h3>Room's full?</h3>
+          <p>Extra people join as the <strong>audience</strong> and still vote. Most games cap at 8 players; Bracketeering takes 16.</p>
+        </li>
+      </ol>
+      <div class="tips">
+        <p class="tips-title">Host tips</p>
+        <ul>
+          <li><strong>Extended timers</strong> in the game's settings help when the stream lags a few seconds behind.</li>
+          <li><strong>Hide Room Code</strong> keeps randoms out if you're streaming somewhere public.</li>
+          <li><strong>Family-friendly</strong> filtering is there when younger players join.</li>
+          <li><strong>Trivia Murder Party 3</strong> has online matchmaking, so it works without streaming.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Collection -->
+    <section id="collection" class="band" aria-labelledby="collection-h">
+      <div class="wrap section-inner">
+        <div class="section-head">
+          <h2 id="collection-h">The Collection</h2>
+          <p class="muted small">Every box in the RingMaster's Steam library</p>
+        </div>
+        <div class="legend" id="legend" aria-label="Kinds of game"></div>
+        <div class="boxes" id="boxes"></div>
+      </div>
+    </section>
+
+    <!-- Patch notes -->
+    <section id="patches" class="wrap section" aria-labelledby="patches-h">
+      <div class="section-head">
+        <h2 id="patches-h">Patch Notes</h2>
+        <p class="muted small">Official Jackbox news from Steam, past six months</p>
+      </div>
+      <div class="patches" id="patch-list" aria-live="polite">
+        <p class="empty">Loading the latest from Steam…</p>
+      </div>
+    </section>
+
+    <section class="closing">
+      <h2>Grab a seat in the audience.</h2>
+      <p>Jackbox nights get called in the Belpire Discord. Get your ticket and we'll save you a phone slot.</p>
+      <a class="btn btn-gold" data-discord href="/join/">Get your ticket</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-col">
+      <p>This is an unofficial fan page, not affiliated with or endorsed by Jackbox Games. Game names belong to their owners; store art and news come from Steam.</p>
+      <p>© 2026 Belpire Carnival · <a href="/">belpire.com</a> · <a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></p>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>
