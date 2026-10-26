@@ -179,3 +179,13 @@ p { margin: 0; }
 @media (max-width: 560px) {
   .news .capsule { flex-basis: 100%; width: 100%; }
 }
+
+/* Members' Lounge & login */
+.hero-tight { padding-block: 56px 40px; }
+.hero-tight h1 { font-size: clamp(32px, 5.5vw, 64px); }
+.lounge-teaser { text-align: center; }
+.lounge-teaser .lede { margin-bottom: 0; }
+.user-chip { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-family: var(--sans); letter-spacing: 0; }
+.user-chip img { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--gold); }
+.logout { margin: 0; display: inline; }
+.logout button { font: 600 15px var(--sans); background: transparent; cursor: pointer; }
