@@ -10,6 +10,7 @@
   },
   // belpire-site.<account>.workers.dev stays on so PR preview URLs work.
   "workers_dev": true,
+  "previews": {},
   "preview_urls": true,
   "observability": {
     "logs": {
