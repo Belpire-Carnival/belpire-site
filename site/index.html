@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Belpire Carnival — Multiplayer horror &amp; party games</title>
+  <meta name="description" content="The Belpire Carnival is a community for multiplayer horror and party games. Join us on Discord.">
+  <meta property="og:title" content="Belpire Carnival">
+  <meta property="og:description" content="A community for multiplayer horror and party games. Step right up.">
+  <meta property="og:url" content="https://belpire.com/">
+  <meta name="theme-color" content="#0E0B10">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="#top">BELPIRE</a>
+      <div class="nav-links">
+        <a href="#midway">The Midway</a>
+        <a href="#nights">Game Nights</a>
+        <a href="#oddities">Hall of Oddities</a>
+        <a href="#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm" data-discord href="#">Join the Discord</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="wrap hero">
+      <div class="bulbs" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="eyebrow">THE BELPIRE CARNIVAL</p>
+      <h1>Step right up.</h1>
+      <p class="lede">A community for multiplayer horror and party games. Grab a ticket, pick a tent, and play something that screams back.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" data-discord href="#">Get your ticket on Discord</a>
+        <a class="btn btn-ghost" href="#nights">See game nights</a>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="admit">
+      <div class="wrap">
+        <h2 id="admit" class="center">Admit one</h2>
+        <div class="tickets">
+          <div class="ticket">
+            <p class="ticket-no">TICKET 01</p>
+            <h3>Join the Discord</h3>
+            <p>One click and you're through the gates.</p>
+          </div>
+          <div class="ticket">
+            <p class="ticket-no">TICKET 02</p>
+            <h3>Read the rules</h3>
+            <p>Stop by the Welcome Zone. Accepting the rules unlocks the rest of the grounds.</p>
+          </div>
+          <div class="ticket">
+            <p class="ticket-no">TICKET 03</p>
+            <h3>Pick your tent</h3>
+            <p>Grab the roles for the games you play and get pinged when a lobby opens.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section-tents" aria-labelledby="tents-h">
+      <h2 id="tents-h">Pick a tent</h2>
+      <p class="muted" id="tent-blurb">Everything playing at the Belpire Carnival.</p>
+      <div class="tent-filter" role="group" aria-label="Filter games by category">
+        <button type="button" data-tent="all" aria-pressed="true">All games</button>
+        <button type="button" data-tent="horror" aria-pressed="false">Horror Tent</button>
+        <button type="button" data-tent="party" aria-pressed="false">Party Tent</button>
+        <button type="button" data-tent="other" aria-pressed="false">The Sideshow</button>
+      </div>
+    </section>
+
+    <section id="midway" class="wrap section" aria-labelledby="upcoming-h">
+      <div class="section-head">
+        <h2 id="upcoming-h">Coming to the Carnival</h2>
+        <p class="muted">Upcoming games on Steam</p>
+      </div>
+      <div class="card-grid" id="upcoming-list" aria-live="polite"></div>
+    </section>
+
+    <section class="wrap section section-tight" aria-labelledby="favs-h">
+      <div class="section-head">
+        <h2 id="favs-h">Carnival Favorites</h2>
+        <p class="muted">Latest patches &amp; news for the games we play</p>
+      </div>
+      <div class="news-list" id="favorites-list" aria-live="polite"></div>
+      <p class="muted small" id="feed-updated"></p>
+    </section>
+
+    <!-- Edit game nights here. Tent badge classes: badge-horror, badge-party, badge-other -->
+    <section id="nights" class="band" aria-labelledby="nights-h">
+      <div class="wrap section-inner">
+        <h2 id="nights-h">Tonight's Attractions</h2>
+        <p class="muted">All times Eastern. Show up, hop in voice, play.</p>
+        <div class="nights">
+          <div class="night">
+            <div class="night-day">[DAY]</div>
+            <div class="night-time">[TIME] ET</div>
+            <span class="badge badge-horror">HORROR</span>
+            <div class="night-game">[Game]</div>
+            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
+          </div>
+          <div class="night">
+            <div class="night-day">[DAY]</div>
+            <div class="night-time">[TIME] ET</div>
+            <span class="badge badge-party">PARTY</span>
+            <div class="night-game">[Game]</div>
+            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
+          </div>
+          <div class="night">
+            <div class="night-day">[DAY]</div>
+            <div class="night-time">[TIME] ET</div>
+            <span class="badge badge-other">SIDESHOW</span>
+            <div class="night-game">[Game]</div>
+            <a class="btn btn-ghost btn-sm" href="#">RSVP on Discord</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Drop images into site/assets/oddities/ and replace the placeholders -->
+    <section id="oddities" class="wrap section" aria-labelledby="odd-h">
+      <h2 id="odd-h">Hall of Oddities</h2>
+      <p class="muted">Clips, screams and screenshots from the crowd.</p>
+      <div class="odd-grid">
+        <div class="placeholder">[Clip or screenshot]</div>
+        <div class="placeholder">[Clip or screenshot]</div>
+        <div class="placeholder">[Clip or screenshot]</div>
+        <div class="placeholder">[Clip or screenshot]</div>
+        <div class="placeholder">[Clip or screenshot]</div>
+        <div class="placeholder">[Clip or screenshot]</div>
+      </div>
+    </section>
+
+    <section id="ringleaders" class="band" aria-labelledby="ring-h">
+      <div class="wrap section-inner">
+        <h2 id="ring-h" class="center">Your Ringleaders</h2>
+        <div class="ringleaders">
+          <div class="ringleader">
+            <div class="avatar">[Avatar]</div>
+            <p class="role">RINGMASTER</p>
+            <h3>[Name]</h3>
+            <p>[A line about what you play and how you run the show]</p>
+          </div>
+          <div class="ringleader">
+            <div class="avatar">[Avatar]</div>
+            <p class="role">RINGMISTRESS</p>
+            <h3>[Name]</h3>
+            <p>[A line about what you play and how you run the show]</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <h2>The tents are open.</h2>
+      <p>Come in, find a lobby, and bring a friend you don't mind losing.</p>
+      <a class="btn btn-gold" data-discord href="#">Join the Belpire Carnival</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© <span id="year">2026</span> Belpire Carnival</span>
+      <span>Game data from Steam. Not affiliated with Valve.</span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

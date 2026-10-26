@@ -1,0 +1,37 @@
+name: Refresh Steam feed
+
+# Cloudflare Pages rebuilds on every push to main by itself (Git integration).
+# This workflow only pokes a Cloudflare deploy hook every 6 hours so the Steam
+# feed stays fresh between pushes. No checkout, no code, no repo write access.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *' # UTC
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: refresh-feed
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Trigger Cloudflare Pages build
+        env:
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CF_DEPLOY_HOOK" ]; then
+            echo "::error::CF_DEPLOY_HOOK secret is not set in the production environment"
+            exit 1
+          fi
+          case "$CF_DEPLOY_HOOK" in
+            https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/*) ;;
+            *) echo "::error::CF_DEPLOY_HOOK doesn't look like a Cloudflare Pages deploy hook URL"; exit 1 ;;
+          esac
+          curl -fsS --max-time 30 -X POST "$CF_DEPLOY_HOOK" -o /dev/null
+          echo "Build triggered."

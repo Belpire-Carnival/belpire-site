@@ -1,0 +1,17 @@
+{
+  "name": "belpire-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Belpire Carnival website — static site on Cloudflare Pages with a Steam feed",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/cf-build.mjs",
+    "feed": "node scripts/update-feed.mjs",
+    "dev": "npx --yes serve site -l 8080",
+    "test": "node --test scripts/*.test.mjs",
+    "check": "node --check site/app.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && npm test"
+  }
+}

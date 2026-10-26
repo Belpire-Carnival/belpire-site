@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Belpire Carnival big-top tent">
+  <rect width="512" height="512" fill="#0E0B10"/>
+  <circle cx="256.0" cy="30.0" r="6" fill="#D9B26A"/>
+  <circle cx="314.5" cy="37.7" r="6" fill="#F3E6C8"/>
+  <circle cx="369.0" cy="60.3" r="6" fill="#D9B26A"/>
+  <circle cx="415.8" cy="96.2" r="6" fill="#F3E6C8"/>
+  <circle cx="451.7" cy="143.0" r="6" fill="#D9B26A"/>
+  <circle cx="474.3" cy="197.5" r="6" fill="#F3E6C8"/>
+  <circle cx="482.0" cy="256.0" r="6" fill="#D9B26A"/>
+  <circle cx="474.3" cy="314.5" r="6" fill="#F3E6C8"/>
+  <circle cx="451.7" cy="369.0" r="6" fill="#D9B26A"/>
+  <circle cx="415.8" cy="415.8" r="6" fill="#F3E6C8"/>
+  <circle cx="369.0" cy="451.7" r="6" fill="#D9B26A"/>
+  <circle cx="314.5" cy="474.3" r="6" fill="#F3E6C8"/>
+  <circle cx="256.0" cy="482.0" r="6" fill="#D9B26A"/>
+  <circle cx="197.5" cy="474.3" r="6" fill="#F3E6C8"/>
+  <circle cx="143.0" cy="451.7" r="6" fill="#D9B26A"/>
+  <circle cx="96.2" cy="415.8" r="6" fill="#F3E6C8"/>
+  <circle cx="60.3" cy="369.0" r="6" fill="#D9B26A"/>
+  <circle cx="37.7" cy="314.5" r="6" fill="#F3E6C8"/>
+  <circle cx="30.0" cy="256.0" r="6" fill="#D9B26A"/>
+  <circle cx="37.7" cy="197.5" r="6" fill="#F3E6C8"/>
+  <circle cx="60.3" cy="143.0" r="6" fill="#D9B26A"/>
+  <circle cx="96.2" cy="96.2" r="6" fill="#F3E6C8"/>
+  <circle cx="143.0" cy="60.3" r="6" fill="#D9B26A"/>
+  <circle cx="197.5" cy="37.7" r="6" fill="#F3E6C8"/>
+  <g transform="translate(0 22)">
+    <defs><clipPath id="roof"><path d="M256 100 Q 200 200 116 250 L 396 250 Q 312 200 256 100 Z"/></clipPath></defs>
+    <line x1="256" y1="102" x2="256" y2="58" stroke="#D9B26A" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="258,58 302,70 258,82" fill="#D9B26A"/>
+    <g clip-path="url(#roof)">
+      <polygon points="256,100 100,262 139,262" fill="#8E1B2C"/><polygon points="256,100 139,262 178,262" fill="#EDE6D8"/><polygon points="256,100 178,262 217,262" fill="#8E1B2C"/><polygon points="256,100 217,262 256,262" fill="#EDE6D8"/><polygon points="256,100 256,262 295,262" fill="#8E1B2C"/><polygon points="256,100 295,262 334,262" fill="#EDE6D8"/><polygon points="256,100 334,262 373,262" fill="#8E1B2C"/><polygon points="256,100 373,262 412,262" fill="#EDE6D8"/>
+    </g>
+    <rect x="146.00" y="268" width="37.17" height="130" fill="#7A1625"/><rect x="182.67" y="268" width="37.17" height="130" fill="#1A1218"/><rect x="219.33" y="268" width="37.17" height="130" fill="#7A1625"/><rect x="256.00" y="268" width="37.17" height="130" fill="#1A1218"/><rect x="292.67" y="268" width="37.17" height="130" fill="#7A1625"/><rect x="329.33" y="268" width="37.17" height="130" fill="#1A1218"/>
+    <path d="M116 250 A17.5 17.5 0 0 0 151 250 Z" fill="#8E1B2C"/><path d="M151 250 A17.5 17.5 0 0 0 186 250 Z" fill="#EDE6D8"/><path d="M186 250 A17.5 17.5 0 0 0 221 250 Z" fill="#8E1B2C"/><path d="M221 250 A17.5 17.5 0 0 0 256 250 Z" fill="#EDE6D8"/><path d="M256 250 A17.5 17.5 0 0 0 291 250 Z" fill="#8E1B2C"/><path d="M291 250 A17.5 17.5 0 0 0 326 250 Z" fill="#EDE6D8"/><path d="M326 250 A17.5 17.5 0 0 0 361 250 Z" fill="#8E1B2C"/><path d="M361 250 A17.5 17.5 0 0 0 396 250 Z" fill="#EDE6D8"/>
+    <path d="M220 398 L220 322 A36 36 0 0 1 292 322 L292 398 Z" fill="#0E0B10" stroke="#D9B26A" stroke-width="5" stroke-linejoin="round"/>
+    <line x1="112" y1="400" x2="400" y2="400" stroke="#D9B26A" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

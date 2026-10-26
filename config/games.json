@@ -1,0 +1,19 @@
+{
+  "favorites": [],
+  "upcoming": {
+    "searches": [
+      { "tent": "horror", "tags": ["Horror", "Multiplayer"] },
+      { "tent": "party", "tags": ["Party Game"] }
+    ],
+    "maxPerSearch": 8,
+    "excludeContentDescriptors": [1, 3, 4]
+  },
+  "news": {
+    "perGame": 2,
+    "maxAgeDays": 45,
+    "officialOnly": true
+  },
+  "discord": {
+    "maxPostsPerRun": 10
+  }
+}

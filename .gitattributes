@@ -1,0 +1,3 @@
+# Keep LF line endings everywhere so bash scripts and workflows work from Windows too.
+* text=auto eol=lf
+*.png binary
