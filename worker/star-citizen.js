@@ -1,7 +1,8 @@
 // The Star Citizen page (belpire.com/star-citizen/).
 //
-//  • Every 10 minutes (Cron Trigger) refresh() reads RSI's status page JSON and the Comm-Link hub,
-//    stores one snapshot in KV, and posts new Comm-Links, new incidents and status changes to Discord.
+//  • Every 10 minutes (Cron Trigger) refresh() reads RSI's status page JSON and the Comm-Link hub
+//    (plus, hourly, the GitHub release feeds of tracked community tools), stores one snapshot in KV,
+//    and posts new Comm-Links, new incidents and status changes to Discord.
 //  • GET /api/star-citizen serves that snapshot to the page.
 //
 // Bindings (wrangler.jsonc): SC_DATA (KV).
@@ -9,6 +10,7 @@
 
 import { RSI_BASE, STATUS_BASE, parseStatus, parseIssues, parseCommLink } from './rsi.js';
 import { postEmbeds, newsEmbed, incidentEmbed, systemEmbed } from './discord.js';
+import { releasesFeedUrl, parseReleasesAtom } from './github.js';
 
 const UA = 'BelpireCarnival/1.0 (+https://belpire.com/star-citizen/)';
 const SNAPSHOT_KEY = 'sc:snapshot';
@@ -33,24 +35,45 @@ async function readJson(kv, key) {
   }
 }
 
-// Fetch all three sources independently; a failed source keeps its previous value.
+// Community tools whose GitHub releases are shown on the page (see site/star-citizen/tools.json).
+// Release feeds are checked at most hourly — they change rarely and GitHub is shared by everyone.
+export const TRACKED_REPOS = ['Osiris-DevWorks/smart-citizen', 'MrKraken/StarStrings'];
+const RELEASES_EVERY_MS = 55 * 60 * 1000;
+
+async function fetchReleases(previous, errors) {
+  const fresh = previous?.releasesCheckedAt && Date.now() - Date.parse(previous.releasesCheckedAt) < RELEASES_EVERY_MS;
+  if (fresh && previous.releases) return { releases: previous.releases, releasesCheckedAt: previous.releasesCheckedAt };
+  const releases = { ...(previous?.releases || {}) };
+  const results = await Promise.allSettled(TRACKED_REPOS.map((repo) => getText(releasesFeedUrl(repo)).then((xml) => parseReleasesAtom(xml, repo))));
+  results.forEach((r, i) => {
+    const repo = TRACKED_REPOS[i];
+    if (r.status === 'fulfilled' && r.value.length) releases[repo] = r.value;
+    else errors.push(`releases ${repo}: ${r.status === 'fulfilled' ? 'no releases parsed' : r.reason?.message}`);
+  });
+  return { releases, releasesCheckedAt: new Date().toISOString() };
+}
+
+// Fetch all sources independently; a failed source keeps its previous value.
 export async function buildSnapshot(previous) {
-  const [status, issues, news] = await Promise.allSettled([
+  const errors = [];
+  const [status, issues, news, rel] = await Promise.allSettled([
     getText(`${STATUS_BASE}/index.json`).then(parseStatus),
     getText(`${STATUS_BASE}/issues/index.json`).then((t) => parseIssues(t, 8)),
-    getText(`${RSI_BASE}/comm-link`).then((t) => parseCommLink(t, 12))
+    getText(`${RSI_BASE}/comm-link`).then((t) => parseCommLink(t, 12)),
+    fetchReleases(previous, errors)
   ]);
-  const errors = [];
   const pick = (r, name, prev, valid = () => true) => {
     if (r.status === 'fulfilled' && valid(r.value)) return r.value;
     errors.push(`${name}: ${r.status === 'fulfilled' ? 'nothing parsed (page layout may have changed)' : r.reason?.message}`);
     return prev;
   };
+  const releaseData = rel.status === 'fulfilled' ? rel.value : { releases: previous?.releases ?? {}, releasesCheckedAt: previous?.releasesCheckedAt ?? null };
   return {
     updatedAt: new Date().toISOString(),
     status: pick(status, 'status', previous?.status ?? null),
     incidents: pick(issues, 'incidents', previous?.incidents ?? []),
     news: pick(news, 'news', previous?.news ?? [], (v) => v.length > 0),
+    ...releaseData,
     errors
   };
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/Osiris-DevWorks/smart-citizen/releases</id>
+  <entry>
+    <id>tag:github.com,2008:Repository/1176322041/v2.4.0</id>
+    <updated>2026-10-11T17:17:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/Osiris-DevWorks/smart-citizen/releases/tag/v2.4.0"/>
+    <title>Smart Citizen v2.4.0</title>
+    <content type="html">&lt;p&gt;Placeholder notes&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1176322041/v2.3.1</id>
+    <updated>2026-08-28T23:35:56Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/Osiris-DevWorks/smart-citizen/releases/tag/v2.3.1"/>
+    <title>Smart Citizen v2.3.1</title>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/9/x</id>
+    <updated>2026-08-01T00:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://evil.example/releases/tag/x"/>
+    <title>Off-site link that must be ignored</title>
+  </entry>
+</feed>

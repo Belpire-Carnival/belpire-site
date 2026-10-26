@@ -92,6 +92,13 @@ The **Star Citizen** link in the top navigation opens a page showing live RSI se
 
 Nothing else changes: same build command, same deploy command, same domain.
 
+### The Toolbox (community tools)
+
+The Star Citizen page lists community tools from `site/star-citizen/tools.json`. Edit that file to add, remove or reword tools: each needs a `name`, an `https` `url`, a `kind` (`web`, `app`, `overlay`, `extension` or `game-file`) and a short `description`. The tests check every entry.
+
+- **Live versions:** a tool with a `releases` block shows its latest GitHub release. The Worker reads the repo's public release feed (`github.com/<owner>/<repo>/releases.atom`) at most once an hour. To track a new repo, also add it to `TRACKED_REPOS` in `worker/star-citizen.js`.
+- **StarStrings** shows its LIVE and PTU builds, plus a warning when RSI's status page shows a game patch newer than the last LIVE update.
+
 ### If RSI changes something
 
 - **Status shows "unavailable" or the news stops updating.** Open **belpire-site → Observability → Logs** and look for `Star Citizen refresh warnings`. The page keeps the last good data meanwhile.
