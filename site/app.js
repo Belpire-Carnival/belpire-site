@@ -1,6 +1,6 @@
 // Belpire Carnival front end.
 // Set your permanent Discord invite here (Server Settings > Invites > never expire).
-const DISCORD_INVITE = 'https://discord.gg/YOUR-INVITE';
+const DISCORD_INVITE = 'https://discord.gg/belpire';
 
 const TENTS = {
   all: { blurb: 'Everything playing at the Belpire Carnival.' },
