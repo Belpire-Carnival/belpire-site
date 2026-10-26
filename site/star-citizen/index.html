@@ -13,7 +13,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/star-citizen/sc.css">
-  <script src="/common.js" defer></script>
   <script src="/star-citizen/sc.js" defer></script>
 </head>
 <body>
@@ -25,8 +24,10 @@
       <div class="nav-links">
         <a href="/#midway">The Midway</a>
         <a href="/star-citizen/" aria-current="page">Star Citizen</a>
-        <a href="/members/">Members' Lounge</a>
-        <a class="btn btn-gold btn-sm" data-auth href="/auth/login?return=%2Fmembers%2F">Log in with Discord</a>
+        <a href="/#nights">Game Nights</a>
+        <a href="/#oddities">Hall of Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm" data-discord href="#">Join the Discord</a>
       </div>
     </nav>
   </header>
@@ -73,7 +74,7 @@
   <footer class="site-footer">
     <div class="wrap footer-col">
       <p>This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users is property of its respective owners. Status and Comm-Link information comes from robertsspaceindustries.com.</p>
-      <p>© <span data-year>2026</span> Belpire Carnival · <a href="/">belpire.com</a></p>
+      <p>© <span id="year">2026</span> Belpire Carnival · <a href="/">belpire.com</a></p>
     </div>
   </footer>
   <div class="stripe" aria-hidden="true"></div>

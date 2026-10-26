@@ -1,8 +1,7 @@
 // Cloudflare Workers config for belpire.com.
 // Workers Builds runs `npm run build` (scripts/cf-build.mjs: Steam feed) and then deploys:
 //   • site/      static pages, served straight from Cloudflare's edge
-//   • worker/    a little server code: Discord login, members-only pages, /api/*, and the
-//                Star Citizen refresh (Cron Trigger)
+//   • worker/    a little server code, only for /api/* and the Star Citizen refresh (Cron Trigger)
 // Preview builds run "npx wrangler preview" (Cloudflare › Settings › Build › Previews Base).
 {
   "name": "belpire-site", // must match the Worker's name in the Cloudflare dashboard
@@ -11,16 +10,8 @@
   "assets": {
     "directory": "site",
     "binding": "ASSETS",
-    // Only these paths run code; every other page is plain static files.
-    "run_worker_first": ["/api/*", "/auth/*", "/members", "/members/*"],
+    "run_worker_first": ["/api/*"], // only API requests run code; every page is plain static files
     "not_found_handling": "404-page"
-  },
-  "vars": {
-    // Discord login (see README › Members' Lounge). These IDs aren't secrets.
-    // Secrets DISCORD_CLIENT_SECRET and SESSION_SECRET are set in the Cloudflare dashboard.
-    "DISCORD_CLIENT_ID": "1564202978175356938",
-    "DISCORD_GUILD_ID": "1064732734351745114",
-    "DISCORD_REQUIRED_ROLE_IDS": "1563709044965769306" // optional: role ID(s), comma-separated; empty = any server member
   },
   "kv_namespaces": [
     // Workers KV namespace "belpire-site" (Storage & Databases › Workers KV). IDs aren't secrets.

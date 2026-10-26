@@ -12,6 +12,6 @@
     "feed": "node scripts/update-feed.mjs",
     "dev": "npx --yes serve site -l 8080",
     "test": "node --test scripts/*.test.mjs worker/test/*.test.mjs",
-    "check": "node --check site/app.js && node --check site/common.js && node --check site/denied/denied.js && node --check worker/auth.js && node --check site/star-citizen/sc.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && node --check worker/index.js && npm test"
+    "check": "node --check site/app.js && node --check site/star-citizen/sc.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && node --check worker/index.js && npm test"
   }
 }

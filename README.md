@@ -20,9 +20,7 @@ Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, a
 | `site/404.html` | Not-found page. |
 | `wrangler.jsonc` | Cloudflare Worker config: name `belpire-site`, serves `site/`, runs `worker/` for `/api/*` and the 10-minute cron. |
 | `site/star-citizen/` | The Star Citizen page (belpire.com/star-citizen/). |
-| `site/members/` | The Members' Lounge (members only, behind Discord login). |
-| `site/common.js` | Shared by every page: **`DISCORD_INVITE`** (set it here) and the login button state. |
-| `worker/` | Server code: Discord login (`auth.js`), members-only pages, `/api/*`, the RSI status and Comm-Link readers, and Discord alerts. Tests in `worker/test/`. |
+| `worker/` | Server code: `/api/star-citizen`, the RSI status and Comm-Link readers, and Discord alerts. Tests in `worker/test/`. |
 | `config/games.json` | Your favorite games (Steam app IDs + tent) and the upcoming-game searches. |
 | `scripts/cf-build.mjs` | Cloudflare's build command: loads the live feed, then runs the Steam refresh. |
 | `scripts/update-feed.mjs` | Steam → `site/data/feed.json`, plus Discord posts on production builds. |
@@ -182,38 +180,3 @@ Nothing else changes: same build command, same deploy command, same domain.
 
 - **Status shows "unavailable" or the news stops updating.** Open **belpire-site → Observability → Logs** and look for `Star Citizen refresh warnings`. The page keeps the last good data meanwhile.
 - **Comm-Link markup changed.** Update the regexes in `worker/rsi.js` and the fixture in `worker/test/fixtures/commlink.html`. The tests show exactly what's parsed.
-
-
----
-
-## Members' Lounge (Log in with Discord)
-
-Members log in with Discord to reach **belpire.com/members/**. That's where game nights, the Hall of Oddities and the Ringleaders live. The homepage feeds and the Star Citizen page stay public.
-
-- **What Discord shares:** only the user's identity and their membership in *your* server (scopes `identify guilds.members.read`). No email and no list of their other servers.
-- **Who gets in:** anyone in the server by default. To require a role (for example the role granted after accepting the rules in the Welcome Zone), set `DISCORD_REQUIRED_ROLE_IDS`.
-- **Sessions:** an encrypted, HttpOnly cookie that lasts 30 days, with membership re-checked against Discord every 24 hours. People who leave or lose the role are logged out within a day. Nothing is stored server-side.
-- **The repo is public,** so anything in `site/members/` is visible on GitHub. Login hides it on the website, but don't put true secrets there.
-
-### One-time setup
-
-1. **Create the Discord app.** Go to <https://discord.com/developers/applications> → **New Application**, and name it "Belpire Carnival".
-   - **OAuth2 → Redirects:** add `https://belpire.com/auth/callback` and save.
-   - **OAuth2 → Client ID:** copy it.
-   - **OAuth2 → Client Secret → Reset Secret:** copy it straight into Cloudflare (step 4). Never paste it in chat or commit it.
-   - You don't need a bot.
-2. **Copy the server ID.** In Discord, go to **User Settings → Advanced** and turn on **Developer Mode**. Then right-click the Belpire Carnival server icon → **Copy Server ID**.
-   - Optional: to require a role, go to **Server Settings → Roles**, right-click the role → **Copy Role ID**.
-3. **Put the IDs in `wrangler.jsonc`, through a PR.** Set `DISCORD_CLIENT_ID` and `DISCORD_GUILD_ID`, and optionally `DISCORD_REQUIRED_ROLE_IDS`. These aren't secrets.
-4. **Add the two secrets.** Go to Cloudflare → **belpire-site → Settings → Variables and Secrets** (the runtime section, not Build) and add both as type **Secret**:
-   - `DISCORD_CLIENT_SECRET`: the client secret from step 1.
-   - `SESSION_SECRET`: generate it in Git Bash with `openssl rand -base64 48` and paste it straight in.
-5. **Test it.** Open belpire.com → **Log in with Discord** → approve. You should land in the Members' Lounge with your name and avatar.
-
-Until all of this is set, login buttons are hidden and `/members/` explains the Lounge isn't open yet. The rest of the site works normally.
-
-### Good to know
-
-- **Log everyone out:** change `SESSION_SECRET`.
-- **The client secret leaked:** reset it in the Developer Portal and update `DISCORD_CLIENT_SECRET`.
-- **Someone is stuck on "Almost there":** they're missing the required role, or haven't completed Discord's membership screening.

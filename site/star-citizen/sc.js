@@ -1,4 +1,6 @@
 // The Star Citizen page front end. Reads /api/star-citizen (served by the Worker) and renders it.
+// Use the same permanent invite as the main site (site/app.js).
+const DISCORD_INVITE = 'https://discord.gg/belpire';
 const REFRESH_MS = 2 * 60 * 1000;
 
 const LABELS = { operational: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', notice: 'Notice', unknown: 'Unknown' };
@@ -118,6 +120,12 @@ async function load() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  for (const a of document.querySelectorAll('[data-discord]')) {
+    a.href = DISCORD_INVITE;
+    a.target = '_blank';
+    a.rel = 'noopener';
+  }
+  document.getElementById('year').textContent = String(new Date().getFullYear());
   load();
   setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
 });
