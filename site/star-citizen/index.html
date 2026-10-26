@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Star Citizen Sideshow — Belpire Carnival</title>
+  <meta name="description" content="Live Star Citizen server status and the latest Comm-Link news, from the Belpire Carnival community.">
+  <meta property="og:title" content="The Star Citizen Sideshow — Belpire Carnival">
+  <meta property="og:url" content="https://belpire.com/star-citizen/">
+  <meta name="theme-color" content="#0E0B10">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/star-citizen/sc.css">
+  <script src="/star-citizen/sc.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/" aria-current="page">Star Citizen</a>
+        <a href="/#nights">Game Nights</a>
+        <a href="/#oddities">Hall of Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm" data-discord href="#">Join the Discord</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <p class="eyebrow">A SIDESHOW ATTRACTION</p>
+      <h1>The Star Citizen Sideshow</h1>
+      <p class="lede">Live server status and the latest Comm-Link transmissions from the &rsquo;verse, for the Belpire crowd that flies.</p>
+    </section>
+
+    <section id="status" class="band" aria-labelledby="status-h">
+      <div class="wrap section-inner">
+        <div class="section-head">
+          <h2 id="status-h">Server Status</h2>
+          <a class="small" href="https://status.robertsspaceindustries.com/" target="_blank" rel="noopener">Official status page</a>
+        </div>
+        <div class="summary" id="summary" role="status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span><span id="summary-text">Checking the &rsquo;verse…</span>
+        </div>
+        <div class="systems" id="systems"></div>
+
+        <h3 class="sub-h">Incidents</h3>
+        <div class="incidents" id="incidents"></div>
+      </div>
+    </section>
+
+    <section id="news" class="wrap section" aria-labelledby="news-h">
+      <div class="section-head">
+        <h2 id="news-h">Comm-Link Transmissions</h2>
+        <a class="small" href="https://robertsspaceindustries.com/comm-link" target="_blank" rel="noopener">All Comm-Links on RSI</a>
+      </div>
+      <div class="news-grid" id="news-list" aria-live="polite"></div>
+      <p class="muted small" id="updated"></p>
+    </section>
+
+    <section class="closing">
+      <h2>Fly with the Carnival.</h2>
+      <p>Find a crew for your next run in the Belpire Discord.</p>
+      <a class="btn btn-gold" data-discord href="#">Join the Belpire Carnival</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-col">
+      <p>This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users is property of its respective owners. Status and Comm-Link information comes from robertsspaceindustries.com.</p>
+      <p>© <span id="year">2026</span> Belpire Carnival · <a href="/">belpire.com</a></p>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

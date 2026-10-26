@@ -2,7 +2,7 @@
   "name": "belpire-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Belpire Carnival website — static site on Cloudflare Workers with a Steam feed",
+  "description": "Belpire Carnival website — site on Cloudflare Workers with Steam and Star Citizen feeds",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -11,7 +11,7 @@
     "build": "node scripts/cf-build.mjs",
     "feed": "node scripts/update-feed.mjs",
     "dev": "npx --yes serve site -l 8080",
-    "test": "node --test scripts/*.test.mjs",
-    "check": "node --check site/app.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && npm test"
+    "test": "node --test scripts/*.test.mjs worker/test/*.test.mjs",
+    "check": "node --check site/app.js && node --check site/star-citizen/sc.js && node --check scripts/update-feed.mjs && node --check scripts/cf-build.mjs && node --check worker/index.js && npm test"
   }
 }
