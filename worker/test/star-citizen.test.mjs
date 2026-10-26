@@ -31,7 +31,9 @@ beforeEach(() => {
   upstream = {
     'https://status.robertsspaceindustries.com/index.json': fixture('status.json'),
     'https://status.robertsspaceindustries.com/issues/index.json': fixture('issues.json'),
-    'https://robertsspaceindustries.com/comm-link': fixture('commlink.html')
+    'https://robertsspaceindustries.com/comm-link': fixture('commlink.html'),
+    'https://github.com/Osiris-DevWorks/smart-citizen/releases.atom': fixture('smart-citizen.atom'),
+    'https://github.com/MrKraken/StarStrings/releases.atom': fixture('starstrings.atom')
   };
   globalThis.fetch = async (url, init = {}) => {
     const u = String(url);

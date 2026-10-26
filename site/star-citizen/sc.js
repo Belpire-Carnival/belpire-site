@@ -103,14 +103,104 @@ function renderNews(news) {
   }
 }
 
+// ---------------------------------------------------------------- Toolbox
+
+const KINDS = { web: 'Website', app: 'Windows app', overlay: 'Overlay', extension: 'Browser extension', 'game-file': 'Game file' };
+let toolsData = null;
+let lastSnap = null;
+
+function fmtDay(iso) {
+  const d = new Date(iso || '');
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Most recent game patch, from RSI status incidents (e.g. "Live Deployment", "Live Service Content Update").
+function latestLivePatch(incidents) {
+  const dates = (incidents || [])
+    .filter((i) => /live (deployment|service content update)/i.test(i.title || ''))
+    .map((i) => Date.parse(i.createdAt))
+    .filter(Number.isFinite);
+  return dates.length ? Math.max(...dates) : null;
+}
+
+function releaseInfo(tool, snap) {
+  const cfg = tool.releases;
+  const list = cfg && snap?.releases?.[cfg.repo];
+  if (!list?.length) return null;
+  const box = el('div', { class: 'tool-release' });
+  if (cfg.channels) {
+    for (const [label, tag] of Object.entries(cfg.channels)) {
+      const r = list.find((x) => x.tag === tag);
+      if (!r) continue;
+      const link = safeUrl(r.url);
+      box.append(el('span', { class: 'rel' }, [
+        el('span', { class: 'pill pill-type', text: label }),
+        link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: `updated ${fmtDay(r.updated)}` }) : document.createTextNode(`updated ${fmtDay(r.updated)}`)
+      ]));
+    }
+    const live = list.find((x) => x.tag === cfg.channels.LIVE);
+    const patch = latestLivePatch(snap?.incidents);
+    if (cfg.warnIfOlderThanLivePatch && live && patch && Date.parse(live.updated) < patch) {
+      box.append(el('p', { class: 'tool-warn', text: `The game was patched ${fmtDay(new Date(patch).toISOString())}, after this file's last LIVE update. Check for a newer release before installing.` }));
+    }
+  } else {
+    const r = list[0];
+    const link = safeUrl(r.url);
+    box.append(el('span', { class: 'rel' }, [
+      el('span', { class: 'pill pill-type', text: 'Latest' }),
+      link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: `${r.tag} · ${fmtDay(r.updated)}` }) : document.createTextNode(r.tag)
+    ]));
+  }
+  return box.childNodes.length ? box : null;
+}
+
+function renderTools() {
+  const root = document.getElementById('tool-categories');
+  if (!root || !toolsData) return;
+  root.replaceChildren();
+  for (const cat of toolsData.categories || []) {
+    const grid = el('div', { class: 'tool-grid' });
+    for (const tool of cat.tools || []) {
+      const link = safeUrl(tool.url);
+      if (!link) continue;
+      grid.append(el('article', { class: 'tool' }, [
+        el('div', { class: 'tool-head' }, [el('h4', { text: tool.name }), el('span', { class: 'pill pill-type', text: KINDS[tool.kind] || 'Website' })]),
+        el('p', { text: tool.description || '' }),
+        releaseInfo(tool, lastSnap),
+        tool.note ? el('p', { class: 'tool-note', text: tool.note }) : null,
+        el('a', { class: 'read', href: link, target: '_blank', rel: 'noopener', text: tool.kind === 'web' || tool.kind === 'extension' ? 'Open' : 'Get it' })
+      ]));
+    }
+    root.append(el('div', { class: 'tool-cat' }, [
+      el('h3', { class: 'sub-h', text: cat.name }),
+      cat.blurb ? el('p', { class: 'muted small', text: cat.blurb }) : null,
+      grid,
+      cat.footnote ? el('p', { class: 'tool-note', text: cat.footnote }) : null
+    ]));
+  }
+}
+
+async function loadTools() {
+  try {
+    const res = await fetch('/star-citizen/tools.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    toolsData = await res.json();
+    renderTools();
+  } catch (err) {
+    console.warn('Could not load tools', err);
+  }
+}
+
 async function load() {
   try {
     const res = await fetch('/api/star-citizen', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const snap = await res.json();
+    lastSnap = snap;
     renderStatus(snap.status);
     renderIncidents(snap.incidents);
     renderNews(snap.news);
+    renderTools();
     document.getElementById('updated').textContent = snap.updatedAt ? `Checked ${ago(snap.updatedAt)} · refreshes every few minutes` : '';
   } catch (err) {
     console.warn('Could not load snapshot', err);
@@ -126,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     a.rel = 'noopener';
   }
   document.getElementById('year').textContent = String(new Date().getFullYear());
+  loadTools();
   load();
   setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
 });

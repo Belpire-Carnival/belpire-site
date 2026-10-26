@@ -36,7 +36,12 @@
     <section class="wrap hero">
       <p class="eyebrow">A SIDESHOW ATTRACTION</p>
       <h1>The Star Citizen Sideshow</h1>
-      <p class="lede">Live server status and the latest Comm-Link transmissions from the &rsquo;verse, for the Belpire crowd that flies.</p>
+      <p class="lede">Live server status, the latest Comm-Link transmissions and the community tools we fly with, for the Belpire crowd in the &rsquo;verse.</p>
+      <nav class="jump" aria-label="On this page">
+        <a href="#status">Server Status</a>
+        <a href="#news">Comm-Link</a>
+        <a href="#tools">Tools</a>
+      </nav>
     </section>
 
     <section id="status" class="band" aria-labelledby="status-h">
@@ -62,6 +67,18 @@
       </div>
       <div class="news-grid" id="news-list" aria-live="polite"></div>
       <p class="muted small" id="updated"></p>
+    </section>
+
+    <!-- Tools list lives in /star-citizen/tools.json -->
+    <section id="tools" class="band" aria-labelledby="tools-h">
+      <div class="wrap section-inner">
+        <div class="section-head">
+          <h2 id="tools-h">The Toolbox</h2>
+          <p class="muted small">The community tools our pilots use every day</p>
+        </div>
+        <div id="tool-categories"></div>
+        <p class="muted small tools-disclaimer">These are independent community projects, not run by Belpire or Cloud Imperium. Downloads change files on your PC, so only use the official links above, and use them at your own discretion.</p>
+      </div>
     </section>
 
     <section class="closing">
