@@ -18,9 +18,9 @@
   "vars": {
     // Discord login (see README › Members' Lounge). These IDs aren't secrets.
     // Secrets DISCORD_CLIENT_SECRET and SESSION_SECRET are set in the Cloudflare dashboard.
-    "DISCORD_CLIENT_ID": "REPLACE_WITH_DISCORD_APPLICATION_ID",
-    "DISCORD_GUILD_ID": "REPLACE_WITH_DISCORD_SERVER_ID",
-    "DISCORD_REQUIRED_ROLE_IDS": "" // optional: role ID(s), comma-separated; empty = any server member
+    "DISCORD_CLIENT_ID": "1564202978175356938",
+    "DISCORD_GUILD_ID": "1064732734351745114",
+    "DISCORD_REQUIRED_ROLE_IDS": "1563709044965769306" // optional: role ID(s), comma-separated; empty = any server member
   },
   "kv_namespaces": [
     // Workers KV namespace "belpire-site" (Storage & Databases › Workers KV). IDs aren't secrets.
