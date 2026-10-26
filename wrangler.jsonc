@@ -1,28 +1,18 @@
-// Cloudflare Workers config for belpire.com.
-// Workers Builds runs `npm run build` (scripts/cf-build.mjs: Steam feed) and then deploys:
-//   • site/      static pages, served straight from Cloudflare's edge
-//   • worker/    a little server code, only for /api/* and the Star Citizen refresh (Cron Trigger)
-// Preview builds run "npx wrangler preview" (Cloudflare › Settings › Build › Previews Base).
 {
-  "name": "belpire-site", // must match the Worker's name in the Cloudflare dashboard
+  "name": "belpire-site",
   "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "site",
     "binding": "ASSETS",
-<<<<<<< ours
-    "run_worker_first": ["/api/*"], // only API requests run code; every page is plain static files
-=======
     "run_worker_first": ["/api/*", "/auth/*"],
->>>>>>> theirs
     "not_found_handling": "404-page"
   },
   "kv_namespaces": [
-    // Workers KV namespace "belpire-site" (Storage & Databases › Workers KV). IDs aren't secrets.
     { "binding": "SC_DATA", "id": "383c9c02baf3405b826636f5650f2078" }
   ],
   "triggers": {
-    "crons": ["*/10 * * * *"] // Star Citizen status + Comm-Link refresh
+    "crons": ["*/10 * * * *"]
   },
   "observability": {
     "logs": {
@@ -31,7 +21,6 @@
       "persist": true
     }
   },
-  // belpire-site.<account>.workers.dev stays on so PR preview URLs work.
   "workers_dev": true,
   "previews": {},
   "preview_urls": true
