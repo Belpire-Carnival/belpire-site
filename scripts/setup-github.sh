@@ -59,7 +59,7 @@ say "Preparing the local repository"
 [[ -d .git ]] || git init -q -b main
 git add -A
 if ! git diff --cached --quiet; then
-  git commit -q -m "Set up belpire.com: site, Steam feed, Cloudflare Pages build"
+  git commit -q -m "Set up belpire.com: site, Steam feed, Cloudflare build"
   ok "Committed local files"
 else
   ok "Nothing new to commit"
@@ -150,7 +150,7 @@ fi
 echo "    Cloudflare deploy hook URL (created in README step 4). Paste it now, or press Enter to add it later:"
 read -r -s HOOK; echo
 if [[ -n "$HOOK" ]]; then
-  if [[ "$HOOK" =~ ^https://api\.cloudflare\.com/client/v4/pages/webhooks/deploy_hooks/ ]]; then
+  if [[ "$HOOK" =~ ^https://api\.cloudflare\.com/client/v4/(workers/builds|pages/webhooks)/deploy_hooks/ ]]; then
     printf '%s' "$HOOK" | gh secret set CF_DEPLOY_HOOK --repo "$FULL" --env production && ok "production: CF_DEPLOY_HOOK"
   else
     warn "That doesn't look like a Cloudflare deploy hook URL; skipped"
@@ -175,12 +175,12 @@ cat <<EOF
 GitHub side is done: https://github.com/$FULL
 
 Next (README):
-  4. Cloudflare › Workers & Pages › Create › Pages › Connect to Git
+  4. Cloudflare › Workers & Pages › Create › Import a repository (Workers Builds)
        - GitHub app access: Only select repositories → $REPO
-       - Build command: node scripts/cf-build.mjs   Output directory: site
-       - Variables: NODE_VERSION=22, SITE_URL=$SITE_URL, DISCORD_WEBHOOK_URL (production, encrypted, optional)
-     Then Settings › Builds › Deploy hooks › add "steam-feed" on main, and run:
+       - Build command: node scripts/cf-build.mjs   Deploy command: npx wrangler deploy
+       - Build variables: NODE_VERSION=22, SITE_URL=$SITE_URL, DISCORD_WEBHOOK_URL (secret, optional)
+     Then Settings › Builds › Deploy Hooks › add "steam-feed" on main, and run:
        gh secret set CF_DEPLOY_HOOK --repo $FULL --env production
-  5. Custom domains: belpire.com and www.belpire.com
+  5. Settings › Domains & Routes: add belpire.com and www.belpire.com
   6. Drop the org-admin scope:  gh auth refresh --remove-scopes admin:org
 EOF

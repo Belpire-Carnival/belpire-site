@@ -1,9 +1,9 @@
 # Belpire Carnival — belpire.com
 
-Static site for the Belpire Carnival community. The code lives in GitHub (`Belpire-Carnival/belpire-site`, public), and Cloudflare Pages builds and hosts it through its GitHub integration.
+Static site for the Belpire Carnival community. The code lives in GitHub (`Belpire-Carnival/belpire-site`, public). Cloudflare hosts it as a static-assets Worker and builds it through Workers Builds, its GitHub integration.
 
 ```
- you ──PR──▶ GitHub ──CI (test)──▶ squash-merge to main ──▶ Cloudflare Pages build ──▶ belpire.com
+ you ──PR──▶ GitHub ──CI (test)──▶ squash-merge to main ──▶ Cloudflare Workers Build ──▶ belpire.com
                │                                                ▲
                └── every PR branch gets a Cloudflare preview URL │
  every 6h: GitHub Action ──POST deploy hook──────────────────────┘  (build refreshes the Steam feed)
@@ -17,6 +17,8 @@ Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, a
 |---|---|
 | `site/` | The website (no build tooling). Edit game nights, oddities and ringleaders in `index.html`; set `DISCORD_INVITE` at the top of `app.js`. |
 | `site/_headers` | CSP, HSTS and other security headers, plus cache rules. |
+| `site/404.html` | Not-found page. |
+| `wrangler.jsonc` | Cloudflare Worker config: name `belpire-site`, serves `site/`, no server code. |
 | `config/games.json` | Your favorite games (Steam app IDs + tent) and the upcoming-game searches. |
 | `scripts/cf-build.mjs` | Cloudflare's build command: loads the live feed, then runs the Steam refresh. |
 | `scripts/update-feed.mjs` | Steam → `site/data/feed.json`, plus Discord posts on production builds. |
@@ -79,31 +81,29 @@ Press Enter at the deploy hook prompt for now; you'll add it in step 4. The scri
 
 Settings that depend on your GitHub plan print a red `!` and are skipped instead of stopping the script.
 
-### 4. Connect Cloudflare Pages to the repo
+### 4. Connect Cloudflare to the repo (Workers Builds)
 
-1. **Cloudflare → Workers & Pages → Create → Pages → Connect to Git → GitHub.**
+1. **Cloudflare → Workers & Pages → Create → Import a repository → GitHub.**
 2. On GitHub's install screen, pick the **Belpire-Carnival** org and choose **Only select repositories → belpire-site**. Don't grant it every repo.
 3. Choose `belpire-site` and set up the build:
 
    | Setting | Value |
    |---|---|
-   | Project name | `belpire` |
-   | Production branch | `main` |
-   | Framework preset | None |
+   | Worker name | `belpire-site` (must match `name` in `wrangler.jsonc`) |
    | Build command | `node scripts/cf-build.mjs` |
-   | Build output directory | `site` |
+   | Deploy command | `npx wrangler deploy` |
+   | Non-production branch deploy command | `npx wrangler versions upload` |
    | Root directory | *(leave empty)* |
 
-4. Under **Environment variables**, add these for **Production**:
+4. Under the Worker's **Settings → Build → Variables and secrets**, add the build-time values. These are not the runtime "Variables and Secrets"; the site has no server code, so it needs no runtime variables.
    - `NODE_VERSION` = `22`
    - `SITE_URL` = `https://belpire.com`
-   - `DISCORD_WEBHOOK_URL` = your webhook, with **Encrypt** checked. This one is optional.
-
-   For **Preview**, add only `NODE_VERSION` and `SITE_URL`. Preview builds never post to Discord.
-5. Click **Save and Deploy.** The first build publishes to `belpire.pages.dev`.
-6. **Create the deploy hook for the 6-hour refresh.**
-   - Go to **Settings → Builds → Deploy hooks → Add deploy hook**, name it `steam-feed`, and set the branch to `main`.
-   - Copy the URL. Anyone holding it can trigger builds, so treat it as a secret.
+   - `DISCORD_WEBHOOK_URL` as a **Secret**. This one is optional. The build script drops it on every branch except `main`, so preview builds never post to Discord.
+5. Under **Settings → Build → Branch control**, set the production branch to `main` and turn on builds for non-production branches. Each PR then gets a preview URL.
+6. Deploy. The first build publishes to `belpire-site.<your-subdomain>.workers.dev`.
+7. **Create the deploy hook for the 6-hour refresh.**
+   - Go to **Settings → Builds → Deploy Hooks**, name it `steam-feed`, choose the `main` branch, and click **Create**.
+   - Copy the URL. It starts with `https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/`. The ID in it is the only credential, so treat the whole URL as a secret.
    - Store it in GitHub:
 
      ```bash
@@ -114,7 +114,7 @@ Settings that depend on your GitHub plan print a red `!` and are skipped instead
 
 ### 5. Point belpire.com at the site
 
-1. **Workers & Pages → belpire → Custom domains:** add `belpire.com`, then `www.belpire.com`. If the domain's DNS is on Cloudflare, the records are created for you; otherwise move the nameservers to Cloudflare first.
+1. **Workers & Pages → belpire-site → Settings → Domains & Routes → Add → Custom domain:** add `belpire.com`, then `www.belpire.com`. The domain's DNS must be on Cloudflare; the records and certificate are created for you.
 2. Add a Redirect Rule that sends `www` to the apex domain.
 3. Harden the zone:
    - **SSL/TLS → Edge Certificates:** turn on *Always Use HTTPS*, set *Minimum TLS* to 1.2, and leave HSTS off because `_headers` already sends it.
@@ -149,8 +149,9 @@ The PR runs `test`, and Cloudflare posts a preview link on it. Squash-merge, and
 ## Troubleshooting
 
 - **The push is rejected by a rule.** Your commit isn't signed. Check `git log --show-signature -1` and go back over step 1.
-- **Refresh workflow error: `CF_DEPLOY_HOOK secret is not set`.** Do step 4.6.
-- **A Cloudflare build fails with a Node error.** Check that `NODE_VERSION=22` is set for both Production and Preview.
+- **Refresh workflow error: `CF_DEPLOY_HOOK secret is not set`.** Do step 4.7.
+- **A Cloudflare build fails with a Node error.** Check that `NODE_VERSION=22` is set under the build's *Variables and secrets*.
+- **The build says the Worker name doesn't match.** The Worker's name in Cloudflare must equal `name` in `wrangler.jsonc` (`belpire-site`).
 - **The feed is empty after the first build.** Steam may have rate-limited the build. Run the refresh workflow again. The store endpoints are public but undocumented; when a search fails, the last good data stays up.
 - **The deploy hook leaked.** Delete it in Cloudflare, create a new one, and update the `CF_DEPLOY_HOOK` secret.
 - **A pinned action version is rejected.** SHA pinning is enforced, so a bare `@v7` reference fails. Use a full commit SHA with a `# vX.Y.Z` comment, as in the existing workflows.
