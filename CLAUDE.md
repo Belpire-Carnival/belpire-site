@@ -21,6 +21,7 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 - Accessibility: real `<button>`/`<a>` elements, visible focus, 4.5:1 text contrast, touch targets at least 44px, works at phone width.
 - Don't run `scripts/setup-github.sh`; the owner runs it themselves.
 - Use LF line endings (see `.gitattributes`).
+- **Keep `site/privacy/` truthful.** Today the site sets no cookies, has no analytics and stores nothing in the browser; the only third parties a visitor's browser contacts are Cloudflare, Google Fonts and Steam's image CDN. Any change to that (cookies, login, analytics, a new external origin in `_headers`) must update the Privacy Policy and its effective date in the same PR.
 
 ## Common tasks
 - Add a favorite game: edit `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
