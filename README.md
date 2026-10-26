@@ -2,6 +2,7 @@
 
 Static site for the Belpire Carnival community. The code lives in GitHub (`Belpire-Carnival/belpire-site`, public). Cloudflare hosts it as a static-assets Worker and builds it through Workers Builds, its GitHub integration.
 
+<<<<<<< ours
 ```
  you ──PR──▶ GitHub ──CI (test)──▶ squash-merge to main ──▶ Cloudflare Workers Build ──▶ belpire.com
                │                                                ▲
@@ -10,9 +11,13 @@ Static site for the Belpire Carnival community. The code lives in GitHub (`Belpi
 ```
 
 Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, and publishes `site/`. Nothing is ever committed by a bot, so `main` stays fully locked: changes land only through pull requests with passing tests and signed commits.
+=======
+**Visit:** [belpire.com](https://belpire.com) — get your Discord invite at [belpire.com/join](https://belpire.com/join/)
+>>>>>>> theirs
 
 ## What's in the repo
 
+<<<<<<< ours
 | Path | Purpose |
 |---|---|
 | `site/` | The website (no build tooling). Edit game nights, oddities and ringleaders in `index.html`; set `DISCORD_INVITE` at the top of `app.js`. |
@@ -33,6 +38,14 @@ Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, a
 | `brand/` | Org and RingMaster avatars (PNG and SVG). |
 
 ---
+=======
+- `site/` — the website: plain HTML, CSS and JavaScript, no framework.
+- `site/join/` — the box office: verify your Discord account to get the invite.
+- `site/star-citizen/` — the Star Citizen page: server status, Comm-Link news and community tools.
+- `worker/` — a small Cloudflare Worker behind the Star Citizen page and the Discord invite check.
+- `config/games.json` — the community's favorite games, grouped into tents (horror, party and The Sideshow).
+- `scripts/` — the build step that refreshes game news from Steam.
+>>>>>>> theirs
 
 
 Press Enter at the deploy hook prompt for now; you'll add it in step 4. The script does the following:

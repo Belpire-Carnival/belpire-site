@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Get your ticket — Belpire Carnival</title>
+  <meta name="description" content="Verify your Discord account to get an invite to the Belpire Carnival.">
+  <meta name="theme-color" content="#0E0B10">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fx.css">
+  <script src="/join/join.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/">Star Citizen</a>
+        <a href="/#nights">Game Nights</a>
+        <a href="/#ringleaders">Ringleaders</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap gate">
+    <div class="gate-ticket">
+      <p class="eyebrow">THE BOX OFFICE</p>
+      <h1 class="neon" data-text="Get your ticket.">Get your ticket.</h1>
+
+      <p class="gate-note" id="status" role="status" aria-live="polite" hidden></p>
+
+      <div id="signed-out">
+        <p class="lede">To keep bots and throwaway accounts out, our Discord invite is handed to anyone with a <strong>verified Discord account</strong>. You don't need to be in the server already.</p>
+        <a class="btn btn-gold" id="verify" href="/auth/login?return=/join/">Verify with Discord</a>
+        <p class="muted small gate-fine">Discord asks to share your username and email. We only use them to check that your account is verified: we never store your email, never see your password, and give up Discord's access right after the check. See the <a href="/privacy/">Privacy Policy</a>.</p>
+      </div>
+
+      <div id="signed-in" hidden>
+        <p class="lede">Welcome to the Carnival, <strong id="who">friend</strong>. Your ticket is ready.</p>
+        <a class="btn btn-gold" id="invite" href="/join/" target="_blank" rel="noopener">Open the Discord invite</a>
+        <form class="gate-signout" method="post" action="/auth/logout">
+          <button type="submit" class="linklike">Sign out</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© 2026 Belpire Carnival</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

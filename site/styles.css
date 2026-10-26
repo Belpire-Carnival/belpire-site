@@ -191,3 +191,14 @@ p { margin: 0; }
 .legal strong { color: var(--text); }
 .footer-row a { color: var(--muted); }
 .footer-row a:hover { color: var(--text); }
+
+/* Box office (/join/) */
+.gate { display: grid; place-items: center; padding-block: 72px 96px; min-height: 60vh; }
+.gate-ticket { max-width: 640px; width: 100%; text-align: center; border: 1px dashed var(--gold); border-radius: 10px; padding: clamp(28px, 6vw, 56px); background: var(--band); }
+.gate-ticket h1 { font-family: var(--display); font-weight: 900; font-size: clamp(34px, 7vw, 60px); line-height: 1.1; margin: 4px 0 0; }
+.gate-ticket .lede { margin: 20px auto 28px; }
+.gate-note { margin: 20px auto 0; max-width: 520px; padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text); }
+.gate-fine { margin: 24px auto 0; max-width: 480px; }
+.gate-signout { margin-top: 20px; }
+.linklike { background: none; border: 0; padding: 10px 12px; min-height: 44px; font: inherit; color: var(--gold); text-decoration: underline; cursor: pointer; }
+.linklike:hover { color: var(--gold-hover); }

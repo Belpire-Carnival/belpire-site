@@ -1,9 +1,10 @@
 // belpire-site Worker — belpire.com
 //
-// Almost everything is static files from site/, served straight from Cloudflare's edge.
-// This code only runs for /api/* (see run_worker_first in wrangler.jsonc) and for the Cron Trigger.
+// Almost everything is static files from site/. This code only runs for /api/* and /auth/*
+// (see run_worker_first in wrangler.jsonc) and for the Cron Trigger.
 
 import { handleSnapshot, refresh } from './star-citizen.js';
+import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -16,15 +17,31 @@ function json(body, status = 200, extra = {}) {
   return new Response(JSON.stringify(body), { status, headers: { ...API_HEADERS, ...extra } });
 }
 
+const methodNotAllowed = (allow) => json({ error: 'method not allowed' }, 405, { Allow: allow });
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
-    if (request.method !== 'GET' && request.method !== 'HEAD') return json({ error: 'method not allowed' }, 405, { Allow: 'GET, HEAD' });
+    const { pathname } = url;
+    const isGet = request.method === 'GET' || request.method === 'HEAD';
 
-    if (url.pathname === '/api/star-citizen') {
+    if (pathname.startsWith('/auth/')) {
+      if (pathname === '/auth/login') return isGet ? handleLogin(request, env) : methodNotAllowed('GET, HEAD');
+      if (pathname === '/auth/callback') return isGet ? handleCallback(request, env, ctx) : methodNotAllowed('GET, HEAD');
+      if (pathname === '/auth/logout') return request.method === 'POST' ? handleLogout(request) : methodNotAllowed('POST');
+      return json({ error: 'not found' }, 404);
+    }
+
+    if (!pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+    if (!isGet) return methodNotAllowed('GET, HEAD');
+
+    if (pathname === '/api/star-citizen') {
       const snapshot = await handleSnapshot(env, ctx);
       return json(snapshot, 200, { 'Cache-Control': 'public, max-age=60' });
+    }
+    if (pathname === '/api/invite') {
+      const { status, body } = await inviteFor(request, env);
+      return json(body, status, { 'Cache-Control': 'private, no-store', Vary: 'Cookie' });
     }
     return json({ error: 'not found' }, 404);
   },
