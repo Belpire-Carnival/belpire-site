@@ -67,6 +67,7 @@ p { margin: 0; }
 .nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; font-family: var(--serif); font-size: 15px; letter-spacing: .06em; }
 .nav-links a:not(.btn) { color: var(--text-soft); text-decoration: none; padding: 10px 0; }
 .nav-links a:not(.btn):hover { color: var(--text); }
+.nav-links a[aria-current="page"] { color: var(--gold); }
 
 /* Hero */
 .hero { padding-block: 88px 72px; text-align: center; }
@@ -138,6 +139,13 @@ p { margin: 0; }
 .news-body p { color: var(--text-soft); font-size: 16px; }
 .news > a { padding: 10px 4px; font-weight: 500; }
 #feed-updated { margin-top: 20px; }
+
+/* Sideshow attractions */
+.attraction { display: flex; flex-direction: column; gap: 10px; padding: 24px; background: var(--band); border: 1px solid var(--line); border-radius: 6px; color: var(--text); text-decoration: none; }
+.attraction:hover { border-color: var(--gold); color: var(--text); }
+.attraction .badge { align-self: flex-start; }
+.attraction p { color: var(--text-soft); }
+.attraction-cta { margin-top: auto; color: var(--gold); font-weight: 600; }
 
 .empty { padding: 32px; border: 1px dashed var(--line-strong); border-radius: 6px; color: var(--muted); text-align: center; grid-column: 1 / -1; }
 

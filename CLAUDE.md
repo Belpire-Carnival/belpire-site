@@ -7,7 +7,8 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 
 - Static site in `site/`: plain HTML, CSS and vanilla JS. No framework, no bundler, no npm dependencies. Keep it that way unless asked.
 - Games are grouped into three **tents**: `horror` (crimson), `party` (gold), `other` = "The Sideshow" (slate).
-- Hosted on **Cloudflare Workers (static assets) via Workers Builds**, connected to GitHub. Config is in `wrangler.jsonc` (Worker name `belpire-site`; no server code). Cloudflare runs `node scripts/cf-build.mjs`, which downloads the live `feed.json` and refreshes it from Steam (`scripts/update-feed.mjs`); then `npx wrangler deploy` publishes `site/`.
+- Hosted on **Cloudflare Workers via Workers Builds**, connected to GitHub. Config is in `wrangler.jsonc` (Worker name `belpire-site`). Cloudflare runs `npm run build` (`scripts/cf-build.mjs`: downloads the live `feed.json` and refreshes it from Steam), then `npx wrangler deploy` publishes `site/` as static assets plus `worker/`.
+- `worker/` is the only server code. It runs for `/api/*` and a 10-minute Cron Trigger. Today it powers the **Star Citizen page** (`site/star-citizen/`): RSI status from the cState JSON API (`status.robertsspaceindustries.com/index.json`, `/issues/index.json`) and Comm-Link news read from the public `/comm-link` hub (no feed exists), cached in KV (`SC_DATA`) and served at `/api/star-citizen`. It posts to Discord via the runtime secret `SC_DISCORD_WEBHOOK_URL`. Parsers are pure functions in `worker/rsi.js`, tested in `worker/test/`. Be polite to RSI (one fetch per source per 10 minutes), never hotlink RSI media or use RSI/CIG logos, and keep the unofficial-fan-site disclaimer in the page footer.
 - `.github/workflows/refresh-feed.yml` calls a Cloudflare deploy hook every 6 hours. `ci.yml` runs `npm run check` (the required `test` check).
 
 ## Rules

@@ -1,0 +1,45 @@
+{
+  "is": "issues",
+  "title": "Issues",
+  "baseURL": "https://status.robertsspaceindustries.com",
+  "pages": [
+      {
+        "is": "issue",
+        "title": "RSI Platform Maintenance",
+        "createdAt": "2026-10-21 14:30:00 +0000 UTC",
+        "lastMod": "2026-10-22 07:43:38 -0400 -0400",
+        "permalink": "https://status.robertsspaceindustries.com/issues/2026-10-21_rsi-platform-maintenance/",
+        "severity": "degraded",
+        "resolved": true,
+        "informational": false,
+        "resolvedAt": "2026-10-22 05:00:00",
+        "affected": ["Platform"],
+        "filename": "2026-10-21_rsi-platform-maintenance.md"
+      }
+    ,
+      {
+        "is": "issue",
+        "title": "Live Services Disruption",
+        "createdAt": "2026-10-26 07:00:00 +0000 UTC",
+        "permalink": "https://status.robertsspaceindustries.com/issues/2026-10-26_live-services-disruption/",
+        "severity": "disrupted",
+        "resolved": false,
+        "informational": false,
+        "affected": ["Persistent Universe"],
+        "filename": "2026-10-26_live-services-disruption.md"
+      }
+    ,
+      {
+        "is": "issue",
+        "title": "Live Deployment",
+        "createdAt": "2026-10-09 10:00:00 +0000 UTC",
+        "permalink": "https://status.robertsspaceindustries.com/issues/2026-10-09_live-deployment/",
+        "severity": "maintenance",
+        "resolved": true,
+        "informational": false,
+        "resolvedAt": "2026-10-09 14:00:00",
+        "affected": ["Persistent Universe", "Arena Commander"],
+        "filename": "2026-10-09_live-deployment.md"
+      }
+  ]
+}
