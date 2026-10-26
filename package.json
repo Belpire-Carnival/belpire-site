@@ -2,7 +2,7 @@
   "name": "belpire-site",
   "version": "1.0.0",
   "private": true,
-  "description": "Belpire Carnival website — static site on Cloudflare Pages with a Steam feed",
+  "description": "Belpire Carnival website — static site on Cloudflare Workers with a Steam feed",
   "type": "module",
   "engines": {
     "node": ">=20"

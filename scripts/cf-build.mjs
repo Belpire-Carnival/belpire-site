@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// Cloudflare Pages build command:  node scripts/cf-build.mjs
+// Cloudflare build command (Workers Builds or Pages):  node scripts/cf-build.mjs
 //
 // 1. Downloads the feed.json that's live right now (so we know what's already been posted).
 // 2. Refreshes it from Steam (scripts/update-feed.mjs).
 // 3. Cloudflare then publishes the site/ folder.
 //
-// Cloudflare sets CF_PAGES_BRANCH. Discord posts only happen for production (main) builds,
-// never for preview branches, even if a webhook variable were present there.
+// Workers Builds sets WORKERS_CI_BRANCH (Pages sets CF_PAGES_BRANCH). Discord posts only
+// happen for production (main) builds, never for preview branches, even if a webhook
+// variable were present there.
 
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -16,7 +17,7 @@ import { spawnSync } from 'node:child_process';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FEED_PATH = resolve(ROOT, 'site/data/feed.json');
 const SITE_URL = (process.env.SITE_URL || 'https://belpire.com').replace(/\/+$/, '');
-const branch = process.env.CF_PAGES_BRANCH || 'local';
+const branch = process.env.WORKERS_CI_BRANCH || process.env.CF_PAGES_BRANCH || 'local';
 const isProduction = branch === (process.env.PRODUCTION_BRANCH || 'main');
 
 console.log(`Belpire build — branch: ${branch} (${isProduction ? 'production' : 'preview'})`);

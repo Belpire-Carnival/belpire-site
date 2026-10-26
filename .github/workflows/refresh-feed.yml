@@ -1,6 +1,6 @@
 name: Refresh Steam feed
 
-# Cloudflare Pages rebuilds on every push to main by itself (Git integration).
+# Cloudflare (Workers Builds) rebuilds on every push to main by itself (Git integration).
 # This workflow only pokes a Cloudflare deploy hook every 6 hours so the Steam
 # feed stays fresh between pushes. No checkout, no code, no repo write access.
 
@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 5
     environment: production
     steps:
-      - name: Trigger Cloudflare Pages build
+      - name: Trigger Cloudflare build
         env:
           CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
         run: |
@@ -30,8 +30,9 @@ jobs:
             exit 1
           fi
           case "$CF_DEPLOY_HOOK" in
+            https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/*) ;;
             https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/*) ;;
-            *) echo "::error::CF_DEPLOY_HOOK doesn't look like a Cloudflare Pages deploy hook URL"; exit 1 ;;
+            *) echo "::error::CF_DEPLOY_HOOK doesn't look like a Cloudflare deploy hook URL"; exit 1 ;;
           esac
           curl -fsS --max-time 30 -X POST "$CF_DEPLOY_HOOK" -o /dev/null
           echo "Build triggered."

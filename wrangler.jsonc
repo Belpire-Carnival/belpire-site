@@ -1,0 +1,13 @@
+// Cloudflare Workers config for belpire.com — a static-assets-only Worker (no server code).
+// Workers Builds runs `node scripts/cf-build.mjs` first, then deploys the site/ folder.
+{
+  "name": "belpire-site", // must match the Worker's name in the Cloudflare dashboard
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "site",
+    "not_found_handling": "404-page"
+  },
+  // belpire-site.<account>.workers.dev stays on so PR preview URLs work.
+  "workers_dev": true,
+  "preview_urls": true
+}
