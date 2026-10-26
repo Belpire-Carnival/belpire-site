@@ -1,32 +1,29 @@
 # CLAUDE.md — belpire-site
 
-Project brief for Claude. Read README.md for the full runbook.
+Coding notes for Claude. Operational setup (GitHub, Cloudflare, secrets) is documented privately, not in this repo.
 
 ## What this is
 belpire.com, the public website for the **Belpire Carnival** Discord community (multiplayer horror and party games). Gothic-carnival theme: owners are the **RingMaster** and **RingMistress**.
 
-- Static site in `site/`: plain HTML, CSS and vanilla JS. No framework, no bundler, no npm dependencies. Keep it that way unless asked.
+- `site/` is plain HTML, CSS and vanilla JS. No framework, no bundler, no npm dependencies. Keep it that way unless asked.
 - Games are grouped into three **tents**: `horror` (crimson), `party` (gold), `other` = "The Sideshow" (slate).
-- Hosted on **Cloudflare Workers via Workers Builds**, connected to GitHub. Config is in `wrangler.jsonc` (Worker name `belpire-site`). Cloudflare runs `npm run build` (`scripts/cf-build.mjs`: downloads the live `feed.json` and refreshes it from Steam), then `npx wrangler deploy` publishes `site/` as static assets plus `worker/`.
-- `worker/` is the only server code. It runs for `/api/*` and a 10-minute Cron Trigger. Today it powers the **Star Citizen page** (`site/star-citizen/`): RSI status from the cState JSON API (`status.robertsspaceindustries.com/index.json`, `/issues/index.json`) and Comm-Link news read from the public `/comm-link` hub (no feed exists), cached in KV (`SC_DATA`) and served at `/api/star-citizen`. It posts to Discord via the runtime secret `SC_DISCORD_WEBHOOK_URL`. Parsers are pure functions in `worker/rsi.js`, tested in `worker/test/`. Be polite to RSI (one fetch per source per 10 minutes), never hotlink RSI media or use RSI/CIG logos, and keep the unofficial-fan-site disclaimer in the page footer. The page's **Toolbox** is data in `site/star-citizen/tools.json` (validated by `worker/test/tools.test.mjs`); tools with a `releases` block show their latest GitHub release, read hourly from `releases.atom` by `worker/github.js` for repos in `TRACKED_REPOS`. Only link official sources; never mirror downloads.
-- `.github/workflows/refresh-feed.yml` calls a Cloudflare deploy hook every 6 hours. `ci.yml` runs `npm run check` (the required `test` check).
+- `worker/` is the only server code (`/api/*` and a scheduled refresh). It powers the Star Citizen page in `site/star-citizen/`. Parsers are pure functions in `worker/rsi.js`, tested in `worker/test/`. Fetch each external source politely (at most once per refresh), never hotlink RSI media or use RSI/CIG logos, and keep the unofficial-fan-site disclaimer in the footer.
+- The Star Citizen **Toolbox** is data in `site/star-citizen/tools.json`, validated by `worker/test/tools.test.mjs`. Only link official sources; never mirror downloads.
 
 ## Rules
-- **Never commit secrets** (deploy hook URL, Discord webhook, tokens). They live in GitHub environment secrets or encrypted Cloudflare variables. Don't print them in logs.
+- **This repo is public.** Never commit secrets, URLs that act as credentials, account names, internal IDs, dashboard click-paths or infrastructure runbooks. Comments explain code, not how the hosting is set up.
 - `site/data/feed.json` is generated at build time and git-ignored. Never commit it.
-- Render all feed or external text with `textContent`; links must be `https:`. Never use `innerHTML` with data.
-- Keep `site/_headers` (CSP) in sync if you add any new external origin. Allowed today: Google Fonts and `*.steamstatic.com` images.
+- Render all external text with `textContent`; links must be `https:`. Never use `innerHTML` with data.
+- Keep `site/_headers` (CSP) in sync if you add any new external origin. Allowed today: Google Fonts and Steam image CDNs.
 - GitHub Actions: GitHub-owned actions only, pinned to a full commit SHA with a `# vX.Y.Z` comment. Workflows default to no permissions; grant per job.
-- `main` is protected by a ruleset: changes go through a PR, squash merge, signed commits, `test` must pass. Work on a branch.
+- Changes go through a PR from a branch, squash merge, signed commits, and the `test` check must pass.
 - Accessibility: real `<button>`/`<a>` elements, visible focus, 4.5:1 text contrast, touch targets at least 44px, works at phone width.
-- Don't run `scripts/setup-github.sh`; the owner runs it themselves.
 - Use LF line endings (see `.gitattributes`).
-- **Keep `site/privacy/` truthful.** Today the site sets no cookies, has no analytics and stores nothing in the browser; the only third parties a visitor's browser contacts are Cloudflare, Google Fonts and Steam's image CDN. Any change to that (cookies, login, analytics, a new external origin in `_headers`) must update the Privacy Policy and its effective date in the same PR.
-
-- **Visual effects are decoration only.** `site/fx.css` + `site/fx.js` (grain, spotlights, big-top hero, scroll reveals, card tilt) load on every page; `site/star-citizen/sc-fx.css` + `sc-fx.js` add the space-carnival layer (canvas starfield, glitch title, ringed planet, HUD frames). Rules: every animation must be switched off under `prefers-reduced-motion: reduce`; content must be readable if the JS never runs; no inline styles or scripts (set CSS variables from JS instead) so the CSP stays strict; all art is original SVG/CSS, never characters or designs from films or games.
+- **Keep `site/privacy/` truthful.** Today the site sets no cookies, has no analytics and stores nothing in the browser. Any change to that (cookies, login, analytics, a new external origin) must update the Privacy Policy and its effective date in the same PR.
+- **Visual effects are decoration only.** `site/fx.css` + `site/fx.js` load on every page; `site/star-citizen/sc-fx.css` + `sc-fx.js` add the space-carnival layer. Every animation must switch off under `prefers-reduced-motion: reduce`; content must be readable if JS never runs; no inline styles or scripts (set CSS variables from JS); all art is original, never characters or designs from films or games.
 
 ## Common tasks
-- Add a favorite game: edit `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
+- Add a favorite game: `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
 - Edit game nights, oddities or ringleaders: `site/index.html`.
 - Discord invite link: `DISCORD_INVITE` at the top of `site/app.js`.
-- Check before a PR: `npm run check`. Local preview: `npm run feed && npm run dev`.
+- Before a PR: `npm run check`. Local preview: `npm run feed && npm run dev`.
