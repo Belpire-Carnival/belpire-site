@@ -33,42 +33,6 @@ Each Cloudflare build downloads the live `feed.json`, refreshes it from Steam, a
 
 ---
 
-## Runbook
-
-### 1. Harden your GitHub account (once)
-
-On your personal settings (profile picture → **Settings**):
-
-- **Password and authentication:** add two security keys or passkeys, remove SMS, and save the recovery codes offline.
-- **Emails:** turn on *Keep my email addresses private* and *Block command line pushes that expose my email*.
-- **Code security** (under Security in the sidebar): turn on *Push protection for yourself*.
-- **SSH and GPG keys:** turn on *Vigilant mode* at the bottom of the page.
-- **Sign your commits with SSH.** The ruleset requires it:
-
-  ```bash
-  ssh-keygen -t ed25519-sk -C "github"      # hardware key; or -t ed25519 with a passphrase
-  git config --global user.email "<id>+<username>@users.noreply.github.com"
-  git config --global gpg.format ssh
-  git config --global user.signingkey ~/.ssh/id_ed25519_sk.pub
-  git config --global commit.gpgsign true
-  ```
-
-  On **SSH and GPG keys → New SSH key**, add the `.pub` key twice: once with *Key type: Signing Key* and once as an *Authentication Key*.
-
-### 2. Organization settings (`Belpire-Carnival`)
-
-- **Settings → Authentication security:** check *Require two-factor authentication*.
-- **Settings → Profile:** upload `brand/belpire-org-avatar.png`.
-- Leave **Advanced Security → Configurations** alone. Applying it org-wide would try to switch on paid features for any future private repo. The setup script turns on the free features for this public repo only.
-
-### 3. Create the repo and apply all GitHub settings
-
-Before running the script, fill in `config/games.json` and `DISCORD_INVITE` in `site/app.js`. Both can also be changed later through a PR.
-
-```bash
-gh auth login -s admin:org,repo,workflow
-scripts/setup-github.sh Belpire-Carnival belpire-site
-```
 
 Press Enter at the deploy hook prompt for now; you'll add it in step 4. The script does the following:
 
@@ -82,54 +46,6 @@ Press Enter at the deploy hook prompt for now; you'll add it in step 4. The scri
 | **Ruleset on `main`** | PR required, `test` must pass on an up-to-date branch, signed commits, linear history, review threads resolved, no force-push or deletion. |
 
 Settings that depend on your GitHub plan print a red `!` and are skipped instead of stopping the script.
-
-### 4. Connect Cloudflare to the repo (Workers Builds)
-
-1. **Cloudflare → Workers & Pages → Create → Import a repository → GitHub.**
-2. On GitHub's install screen, pick the **Belpire-Carnival** org and choose **Only select repositories → belpire-site**. Don't grant it every repo.
-3. Choose `belpire-site` and set up the build:
-
-   | Setting | Value |
-   |---|---|
-   | Worker name | `belpire-site` (must match `name` in `wrangler.jsonc`) |
-   | Build command | `node scripts/cf-build.mjs` |
-   | Deploy command | `npx wrangler deploy` |
-   | Non-production branch deploy command | `npx wrangler versions upload` |
-   | Root directory | *(leave empty)* |
-
-4. Under the Worker's **Settings → Build → Variables and secrets**, add the build-time values. These are not the runtime "Variables and Secrets"; the site has no server code, so it needs no runtime variables.
-   - `NODE_VERSION` = `22`
-   - `SITE_URL` = `https://belpire.com`
-   - `DISCORD_WEBHOOK_URL` as a **Secret**. This one is optional. The build script drops it on every branch except `main`, so preview builds never post to Discord.
-5. Under **Settings → Build → Branch control**, set the production branch to `main` and turn on builds for non-production branches. Each PR then gets a preview URL.
-6. Deploy. The first build publishes to `belpire-site.<your-subdomain>.workers.dev`.
-7. **Create the deploy hook for the 6-hour refresh.**
-   - Go to **Settings → Builds → Deploy Hooks**, name it `steam-feed`, choose the `main` branch, and click **Create**.
-   - Copy the URL. It starts with `https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/`. The ID in it is the only credential, so treat the whole URL as a secret.
-   - Store it in GitHub:
-
-     ```bash
-     gh secret set CF_DEPLOY_HOOK --repo Belpire-Carnival/belpire-site --env production
-     ```
-
-   - Test it with `gh workflow run refresh-feed.yml --repo Belpire-Carnival/belpire-site`. A new build should appear in Cloudflare.
-
-### 5. Point belpire.com at the site
-
-1. **Workers & Pages → belpire-site → Settings → Domains & Routes → Add → Custom domain:** add `belpire.com`, then `www.belpire.com`. The domain's DNS must be on Cloudflare; the records and certificate are created for you.
-2. Add a Redirect Rule that sends `www` to the apex domain.
-3. Harden the zone:
-   - **SSL/TLS → Edge Certificates:** turn on *Always Use HTTPS*, set *Minimum TLS* to 1.2, and leave HSTS off because `_headers` already sends it.
-   - **DNS → Settings:** enable DNSSEC. If the domain is registered elsewhere, add the DS record at your registrar.
-   - If the domain is registered through Cloudflare, confirm *Registrar Lock* is on.
-
-### 6. Tidy up
-
-```bash
-gh auth refresh --remove-scopes admin:org     # drop org-admin rights from your CLI token
-```
-
----
 
 ## Day-to-day
 
