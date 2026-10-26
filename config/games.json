@@ -1,5 +1,33 @@
 {
-  "favorites": [],
+  "favorites": [
+    { "appid": 1966720, "name": "Lethal Company", "tent": "horror" },
+    { "appid": 3241660, "name": "R.E.P.O.", "tent": "horror" },
+    { "appid": 1850740, "name": "Ghost Watchers", "tent": "horror" },
+    { "appid": 4406280, "name": "The Cabin Game", "tent": "horror" },
+    { "appid": 3883570, "name": "Invokyr", "tent": "horror" },
+    { "appid": 739630, "name": "Phasmophobia", "tent": "horror" },
+
+    { "appid": 1097150, "name": "Fall Guys", "tent": "party" },
+    { "appid": 2794590, "name": "Scam Line", "tent": "party" },
+    { "appid": 4954910, "name": "Scam With Your Friends", "tent": "party" },
+    { "appid": 3097560, "name": "Liar's Bar", "tent": "party" },
+    { "appid": 4069520, "name": "Super Battle Golf", "tent": "party" },
+    { "appid": 3527290, "name": "PEAK", "tent": "party" },
+    { "appid": 3949040, "name": "RV There Yet?", "tent": "party" },
+
+    { "appid": 2807960, "name": "Battlefield 6", "tent": "other" },
+    { "appid": 252950, "name": "Rocket League", "tent": "other" },
+    { "appid": 1085660, "name": "Destiny 2", "tent": "other" },
+    { "appid": 553850, "name": "Helldivers 2", "tent": "other" },
+    { "appid": 1623730, "name": "Palworld", "tent": "other" },
+    { "appid": 3041230, "name": "Windrose", "tent": "other" },
+    { "appid": 3533100, "name": "Wrap House Simulator", "tent": "other" },
+    { "appid": 2916430, "name": "Fast Food Simulator", "tent": "other" },
+    { "appid": 365590, "name": "The Division", "tent": "other" },
+    { "appid": 2221490, "name": "The Division 2", "tent": "other" },
+    { "appid": 460930, "name": "Ghost Recon Wildlands", "tent": "other" },
+    { "appid": 1144200, "name": "Ready or Not", "tent": "other" }
+  ],
   "upcoming": {
     "searches": [
       { "tent": "horror", "tags": ["Horror", "Multiplayer"] },
