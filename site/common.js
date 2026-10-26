@@ -1,6 +1,6 @@
 // Shared by every page: the Discord invite link and the login button state.
 // ▶ Set your permanent Discord invite here (Server Settings › Invites › never expire).
-const DISCORD_INVITE = 'https://discord.gg/YOUR-INVITE';
+const DISCORD_INVITE = 'https://discord.gg/belpire';
 
 function setDiscordLinks() {
   for (const a of document.querySelectorAll('[data-discord]')) {
