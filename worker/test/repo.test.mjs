@@ -77,3 +77,8 @@ test('every public page has a link-preview image that exists', async () => {
     assert.match(html, /<meta property="og:image:alt" content="[^"]+">/, `${page}: missing og:image:alt`);
   }
 });
+
+test('home page images point at files that exist', async () => {
+  const html = await readFile(join(ROOT, 'site', 'index.html'), 'utf8');
+  for (const [, src] of html.matchAll(/<img [^>]*src="\/([^"]+)"/g)) await readFile(join(ROOT, 'site', src));
+});

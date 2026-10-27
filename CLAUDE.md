@@ -30,7 +30,7 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 
 ## Common tasks
 - Add a favorite game: `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
-- Edit game nights, oddities or ringleaders: `site/index.html`. Ringleader names and avatars load live from Discord (`worker/ringleaders.js`, `site/ringleaders.js`): the bot reads the user IDs in the `RINGLEADER_IDS` runtime secret (card order), caches 6 hours in KV, and proxies avatars so browsers never contact Discord. Never commit those IDs.
+- Edit game nights, oddities or ringleaders: `site/index.html`. Ringleader avatars are animated WebP files in `site/ringleaders/` (224×224); swap the file to change one.
 - Link previews (Discord, social): each page has Open Graph tags pointing at a 1200×630 JPEG in `site/og/` (checked by `repo.test.mjs`). Original art only.
 - Add a Jackbox box: append it to `site/jackbox/packs.json` (Steam app ID, year, games with player ranges and a style).
 - Discord invite link: a runtime secret, changed in the hosting dashboard, not in code.

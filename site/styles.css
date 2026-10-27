@@ -169,9 +169,6 @@ p { margin: 0; }
 .role { font-family: var(--serif); letter-spacing: .2em; font-size: 13px; color: var(--gold); }
 .ringleader h3 { font-size: 22px; margin: 6px 0 8px; }
 .ringleader p:last-child { color: var(--text-soft); }
-.monogram { font-family: var(--display); font-weight: 900; font-size: 30px; color: var(--gold); }
-.ringleader h3 a { color: var(--text); text-decoration: none; border-bottom: 1px dashed var(--line-strong); }
-.ringleader h3 a:hover, .ringleader h3 a:focus-visible { color: var(--gold-hover); border-bottom-color: var(--gold); }
 .ringleader[data-slot="2"] .avatar { border-color: #8FD14F; }
 .ringleader[data-slot="2"] .role { color: #8FD14F; }
 
