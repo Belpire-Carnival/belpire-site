@@ -1,7 +1,7 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../index.js';
-import { profileFrom, ringleaderIds, publicView } from '../ringleaders.js';
+import { profileFrom, ringleaderIds, publicView, isDiscordCdn } from '../ringleaders.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -26,7 +26,7 @@ function fakeDiscord(calls) {
     calls.push(url);
     const m = url.match(/\/guilds\/\d+\/members\/(\d+)$/);
     if (m) return members[m[1]] ? Response.json(members[m[1]]) : new Response('{}', { status: 404 });
-    if (url.startsWith('https://cdn.discordapp.com/')) return new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': url.includes('.gif') ? 'image/gif' : 'image/png' } });
+    if (new URL(url).host === 'cdn.discordapp.com') return new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': url.includes('.gif') ? 'image/gif' : 'image/png' } });
     return new Response('nope', { status: 500 });
   };
 }
@@ -59,7 +59,10 @@ test('GET /api/ringleaders returns public profiles and caches them', async () =>
   assert.deepEqual(body.leaders.map((l) => l.name), ['Ringmaster One', 'Bravo', 'charlie']);
   assert.equal(body.leaders[1].profile, `https://discord.com/users/${IDS[1]}`);
   assert.match(body.leaders[0].avatar, /^\/api\/ringleaders\/avatar\/0\?v=a_abc$/);
-  assert.ok(!JSON.stringify(body).includes('cdn.discordapp.com'), 'CDN URLs stay server-side');
+  for (const l of body.leaders) {
+    assert.equal(new URL(l.avatar, 'https://belpire.com').host, 'belpire.com', 'avatars are served from our own origin');
+    assert.equal(new URL(l.profile).host, 'discord.com');
+  }
   assert.ok(e.SC_DATA.m.has('ringleaders:v1'));
   calls.length = 0;
   await worker.fetch(new Request('https://belpire.com/api/ringleaders'), e, { waitUntil: () => {} });
@@ -89,4 +92,11 @@ test('no secret configured → empty list, page keeps its written cards', async 
 test('publicView never leaks internal fields', () => {
   const v = publicView([{ slot: 0, role: 'RingMaster', name: 'x', id: IDS[0], avatarSrc: 'https://cdn.discordapp.com/a.png', version: 'h' }]);
   assert.deepEqual(Object.keys(v[0]).sort(), ['avatar', 'name', 'profile', 'role', 'slot']);
+});
+
+test('isDiscordCdn accepts only https on the exact CDN host', () => {
+  assert.ok(isDiscordCdn('https://cdn.discordapp.com/avatars/1/a.png'));
+  for (const bad of ['http://cdn.discordapp.com/a.png', 'https://cdn.discordapp.com.evil.test/a.png', 'https://evil.test/cdn.discordapp.com/a.png', 'https://evil.test/?u=https://cdn.discordapp.com/a.png', 'not a url']) {
+    assert.equal(isDiscordCdn(bad), false, bad);
+  }
 });

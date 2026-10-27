@@ -14,6 +14,14 @@
     img.onload = () => box.replaceChildren(img);
     img.src = src;
   };
+  const isDiscordProfile = (href) => {
+    try {
+      const u = new URL(href);
+      return u.protocol === 'https:' && u.host === 'discord.com' && /^\/users\/\d{17,20}$/.test(u.pathname);
+    } catch {
+      return false;
+    }
+  };
   // A card can carry its own animated avatar (data-avatar, a file under /ringleaders/); it wins over Discord's.
   const own = (card) => (card.dataset.avatar || '').startsWith('/ringleaders/') ? card.dataset.avatar : null;
   for (const card of cards) if (own(card)) showAvatar(card, own(card));
@@ -27,7 +35,7 @@
     if (!card) continue;
     const nameEl = card.querySelector('.rl-name');
     if (nameEl && typeof l.name === 'string') {
-      if (typeof l.profile === 'string' && l.profile.startsWith('https://discord.com/users/')) {
+      if (isDiscordProfile(l.profile)) {
         const a = document.createElement('a');
         a.href = l.profile;
         a.target = '_blank';

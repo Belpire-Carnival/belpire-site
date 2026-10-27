@@ -12,6 +12,16 @@ const CACHE_TTL = 6 * 60 * 60; // seconds
 const CDN = 'https://cdn.discordapp.com';
 const SNOWFLAKE = /^\d{17,20}$/;
 
+// Only ever fetch avatars over https from Discord's CDN host itself.
+export function isDiscordCdn(src) {
+  try {
+    const u = new URL(src);
+    return u.protocol === 'https:' && u.host === 'cdn.discordapp.com';
+  } catch {
+    return false;
+  }
+}
+
 export function ringleaderIds(env) {
   return String(env.RINGLEADER_IDS || '')
     .split(',')
@@ -75,7 +85,7 @@ export async function handleRingleaders(request, env, ctx, json) {
   const m = pathname.match(/^\/api\/ringleaders\/avatar\/(\d)$/);
   if (!m) return json({ error: 'not found' }, 404);
   const leader = (await load(env, ctx)).find((l) => l.slot === Number(m[1]));
-  if (!leader || !leader.avatarSrc.startsWith(`${CDN}/`)) return json({ error: 'not found' }, 404);
+  if (!leader || !isDiscordCdn(leader.avatarSrc)) return json({ error: 'not found' }, 404);
   const res = await fetch(leader.avatarSrc, { cf: { cacheTtl: 86400, cacheEverything: true } });
   const type = res.headers.get('Content-Type') || '';
   if (!res.ok || !/^image\/(png|gif|webp|jpeg)$/.test(type)) return json({ error: 'avatar unavailable' }, 502);
