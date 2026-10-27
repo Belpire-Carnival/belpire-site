@@ -31,6 +31,7 @@ belpire.com, the public website for the **Belpire Carnival** Discord community (
 ## Common tasks
 - Add a favorite game: `config/games.json` → `favorites` (`appid` from the Steam store URL, `tent`).
 - Edit game nights, oddities or ringleaders: `site/index.html`.
+- Link previews (Discord, social): each page has Open Graph tags pointing at a 1200×630 JPEG in `site/og/` (checked by `repo.test.mjs`). Original art only.
 - Add a Jackbox box: append it to `site/jackbox/packs.json` (Steam app ID, year, games with player ranges and a style).
 - Discord invite link: a runtime secret, changed in the hosting dashboard, not in code.
 - Crew overlap (shared games + Sideshow search ideas): `npm run crew` on the owner's PC. Reads git-ignored `crew.local.json` and `STEAM_API_KEY`, writes git-ignored `crew-report.md`. Never commit crew Steam IDs or the report.
