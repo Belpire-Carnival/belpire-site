@@ -13,6 +13,40 @@ let currentTent = 'all';
 let search = null; // { appid, name } for a picked game, or { text } for free text
 let searchIndex = [];
 
+// Long lists start with a few items and a "Show more" button; changing the tent or search collapses them again.
+const PREVIEW_COUNT = 6;
+const expanded = { 'upcoming-list': false, 'favorites-list': false };
+function collapseLists() {
+  for (const k of Object.keys(expanded)) expanded[k] = false;
+}
+
+function showMore(list, total, render) {
+  let row = list.nextElementSibling?.classList.contains('show-more-row') ? list.nextElementSibling : null;
+  if (total <= PREVIEW_COUNT) {
+    row?.remove();
+    return;
+  }
+  if (!row) {
+    row = el('div', { class: 'show-more-row' });
+    list.after(row);
+  }
+  const open = expanded[list.id];
+  const btn = el('button', {
+    type: 'button',
+    class: 'btn btn-ghost show-more',
+    'aria-expanded': String(open),
+    'aria-controls': list.id,
+    text: open ? 'Show less' : `Show more (${total - PREVIEW_COUNT})`
+  });
+  btn.addEventListener('click', () => {
+    expanded[list.id] = !open;
+    render();
+    list.nextElementSibling?.querySelector('.show-more')?.focus({ preventScroll: !open });
+  });
+  row.replaceChildren(btn);
+}
+const visible = (list, items) => (expanded[list.id] ? items : items.slice(0, PREVIEW_COUNT));
+
 // Small DOM helper. Text is always set with textContent so feed data can never inject HTML.
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -67,11 +101,12 @@ function renderUpcoming() {
   const list = document.getElementById('upcoming-list');
   const items = feed.upcoming.filter(matchesTent);
   list.replaceChildren();
+  showMore(list, items.length, renderUpcoming);
   if (!items.length) {
     list.append(emptyState(search ? `No upcoming release matches ${searchLabel()}.` : 'Nothing announced in this tent yet. Check back soon.'));
     return;
   }
-  for (const g of items) {
+  for (const g of visible(list, items)) {
     const chips = el('div', { class: 'chips' }, [tentBadge(g.tent), ...(g.tags || []).slice(0, 3).map((t) => el('span', { class: 'badge', text: t }))]);
     const link = safeUrl(g.url);
     list.append(
@@ -92,6 +127,7 @@ function renderFavorites() {
   const list = document.getElementById('favorites-list');
   const items = feed.favorites.filter(matchesTent);
   list.replaceChildren();
+  showMore(list, items.length, renderFavorites);
   if (!items.length) {
     if (search?.appid) {
       const steamNews = `https://store.steampowered.com/news/app/${search.appid}`;
@@ -101,7 +137,7 @@ function renderFavorites() {
     }
     return;
   }
-  for (const n of items) {
+  for (const n of visible(list, items)) {
     const link = safeUrl(n.url);
     list.append(
       el('article', { class: 'news' }, [
@@ -174,6 +210,7 @@ function openSuggestions(text) {
 
 function applySearch(next) {
   search = next;
+  collapseLists();
   const status = document.getElementById('search-status');
   const clear = document.getElementById('search-clear');
   clear.hidden = !search;
@@ -257,6 +294,7 @@ function setupSearch() {
 function setTent(tent) {
   if (!TENTS[tent]) tent = 'all';
   currentTent = tent;
+  collapseLists();
   if (search) {
     const input = document.getElementById('game-search');
     if (input) input.value = '';

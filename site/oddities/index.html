@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hall of Oddities — Belpire Carnival</title>
+  <meta name="description" content="Clips, screams and screenshots from the Belpire Carnival crowd. Discord members can add their own.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Belpire Carnival">
+  <meta property="og:title" content="Hall of Oddities — Belpire Carnival">
+  <meta property="og:description" content="Clips, screams and screenshots from the crowd. Add yours and react to the rest.">
+  <meta property="og:url" content="https://belpire.com/oddities/">
+  <meta property="og:image" content="https://belpire.com/og/home.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Belpire Carnival: a striped big-top tent under marquee lights">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0E0B10">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fx.css">
+  <script src="/oddities.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/">Star Citizen</a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
+        <a href="/oddities/" aria-current="page">Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm" data-discord href="/join/">Join the Discord</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap section odd-page" id="oddities" data-oddities="full" aria-labelledby="odd-h">
+    <header class="odd-head">
+      <p class="eyebrow">STEP RIGHT UP… IF YOU DARE</p>
+      <h1 id="odd-h" class="neon" data-text="Hall of Oddities">Hall of Oddities</h1>
+      <p class="lede">Clips, screams and screenshots from the crowd. Members of the Belpire Discord can add their own and react to the rest.</p>
+    </header>
+
+    <section class="odd-panel" id="odd-panel" aria-label="Add an oddity">
+      <p>Members of the Belpire Discord can add screenshots and clips.</p>
+      <a class="btn btn-gold" href="/auth/login?return=%2Foddities%2F">Verify with Discord</a>
+    </section>
+    <section class="odd-queue" id="odd-queue" aria-label="Waiting for review" hidden></section>
+    <section class="odd-wing" aria-labelledby="odd-pics-h">
+      <div class="odd-wing-head">
+        <h2 id="odd-pics-h" class="odd-wing-title">The Gallery of Grotesques</h2>
+        <p class="muted small">Screenshots from the crowd, hung in gilded frames</p>
+      </div>
+      <div class="odd-grid" id="odd-pictures"><p class="muted odd-empty">Hanging the portraits…</p></div>
+    </section>
+    <section class="odd-wing" aria-labelledby="odd-clips-h">
+      <div class="odd-wing-head">
+        <h2 id="odd-clips-h" class="odd-wing-title">The Scream Reel</h2>
+        <p class="muted small">Clips from the crowd. Hover to preview, click for sound</p>
+      </div>
+      <div class="odd-grid odd-grid-clips" id="odd-clips"><p class="muted odd-empty">Threading the projector…</p></div>
+    </section>
+
+    <details class="odd-how">
+      <summary>House rules</summary>
+      <p>Horror is the point, so game, film and make-up gore is welcome. No nudity or sexual content, no real-world gore or violence, no hate, and no one's personal details. Pictures are scanned automatically before they go up; clips are watched by a RingMaster, RingMistress or Carnival Guard first. Members can report anything that slips through. Full rules are in the <a href="/terms/">Terms of Use</a>.</p>
+    </details>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© 2026 Belpire Carnival</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>
