@@ -6,6 +6,7 @@
 import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
+import { handleRingleaders } from './ringleaders.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -37,6 +38,7 @@ export default {
     if (pathname === '/api/polls' || pathname.startsWith('/api/polls/')) return handlePolls(request, env, ctx);
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
+    if (pathname === '/api/ringleaders' || pathname.startsWith('/api/ringleaders/')) return handleRingleaders(request, env, ctx, json);
     if (pathname === '/api/star-citizen') {
       const snapshot = await handleSnapshot(env, ctx);
       return json(snapshot, 200, { 'Cache-Control': 'public, max-age=60' });
