@@ -169,8 +169,12 @@ p { margin: 0; }
 .role { font-family: var(--serif); letter-spacing: .2em; font-size: 13px; color: var(--gold); }
 .ringleader h3 { font-size: 22px; margin: 6px 0 8px; }
 .ringleader p:last-child { color: var(--text-soft); }
-.ringleader[data-slot="2"] .avatar { border-color: #8FD14F; }
-.ringleader[data-slot="2"] .role { color: #8FD14F; }
+/* Role colors match the Belpire Discord roles. --rl-text is the same hue, lightened where needed for 4.5:1 contrast. */
+.ringleader[data-slot="0"] { --rl: #1F8B4C; --rl-text: #1F8B4C; }
+.ringleader[data-slot="1"] { --rl: #C2185B; --rl-text: #E0457B; }
+.ringleader[data-slot="2"] { --rl: #F1C40F; --rl-text: #F1C40F; }
+.ringleader[data-slot] .avatar { border-color: var(--rl); box-shadow: 0 0 18px color-mix(in srgb, var(--rl) 35%, transparent); }
+.ringleader[data-slot] .role, .ringleader[data-slot] h3 { color: var(--rl-text); }
 
 /* Closing + footer */
 .closing { text-align: center; padding: 96px 24px 72px; }
