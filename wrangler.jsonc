@@ -14,6 +14,11 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "belpire-polls", "database_id": "a4cd8c8c-56b3-44b8-9599-b86e3b0cd036" }
   ],
+  // Hall of Oddities: uploaded screenshots and clips, and the AI safety scan for pictures.
+  "r2_buckets": [
+    { "binding": "ODDITIES", "bucket_name": "belpire-oddities" }
+  ],
+  "ai": { "binding": "AI" },
   "triggers": {
     "crons": ["*/10 * * * *"]
   },

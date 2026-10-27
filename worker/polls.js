@@ -218,6 +218,11 @@ async function whoIs(env, cfg, session, { fresh = false } = {}) {
   return value;
 }
 
+// Membership and Ringleader status for other features (Hall of Oddities), with the same short cache.
+export function memberInfo(env, session, opts) {
+  return whoIs(env, pollConfig(env), session, opts);
+}
+
 let catalogCache = null;
 async function loadCatalog(env, origin) {
   if (catalogCache && catalogCache.until > Date.now()) return catalogCache.value;

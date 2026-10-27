@@ -6,6 +6,7 @@
 import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
+import { handleOddities, purgeStaleUploads } from './oddities.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -35,6 +36,7 @@ export default {
 
     if (!pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (pathname === '/api/polls' || pathname.startsWith('/api/polls/')) return handlePolls(request, env, ctx);
+    if (pathname === '/api/oddities' || pathname.startsWith('/api/oddities/')) return handleOddities(request, env, ctx);
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
     if (pathname === '/api/star-citizen') {
@@ -51,5 +53,6 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refresh(env, { notify: true }));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
+    ctx.waitUntil(purgeStaleUploads(env).catch((err) => console.warn(`Oddity upload cleanup failed: ${err.message}`)));
   }
 };

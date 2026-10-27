@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/fx.css">
   <script type="module" src="/app.js"></script>
+  <script src="/oddities.js" defer></script>
   <script src="/fx.js" defer></script>
 </head>
 <body>
@@ -37,6 +38,7 @@
         <a href="/star-citizen/">Star Citizen</a>
         <a href="/jackbox/">Jackbox</a>
         <a href="/big-tent/">The Big Tent</a>
+        <a href="/oddities/">Oddities</a>
         <a href="#oddities">Hall of Oddities</a>
         <a href="#ringleaders">Ringleaders</a>
         <a class="btn btn-gold btn-sm" data-discord href="/join/">Join the Discord</a>
@@ -183,16 +185,27 @@
     </section>
 
     <!-- Drop images into site/assets/oddities/ and replace the placeholders -->
-    <section id="oddities" class="wrap section" aria-labelledby="odd-h">
-      <h2 id="odd-h">Hall of Oddities</h2>
-      <p class="muted">Clips, screams and screenshots from the crowd.</p>
-      <div class="odd-grid">
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
-        <div class="placeholder">[Clip or screenshot]</div>
+    <section id="oddities" class="wrap section" aria-labelledby="odd-h" data-oddities="showcase">
+      <div class="section-head">
+        <h2 id="odd-h">Hall of Oddities</h2>
+        <p class="muted">Clips, screams and screenshots from the crowd</p>
+      </div>
+      <section class="odd-wing" aria-labelledby="odd-pics-h">
+        <div class="odd-wing-head">
+          <h3 id="odd-pics-h" class="odd-wing-title">The Gallery of Grotesques</h3>
+          <p class="muted small">Screenshots from the crowd, hung in gilded frames</p>
+        </div>
+        <div class="odd-grid" id="odd-pictures"><p class="muted odd-empty">Hanging the portraits…</p></div>
+      </section>
+      <section class="odd-wing" aria-labelledby="odd-clips-h">
+        <div class="odd-wing-head">
+          <h3 id="odd-clips-h" class="odd-wing-title">The Scream Reel</h3>
+          <p class="muted small">Clips from the crowd. Hover to preview, click for sound</p>
+        </div>
+        <div class="odd-grid odd-grid-clips" id="odd-clips"><p class="muted odd-empty">Threading the projector…</p></div>
+      </section>
+      <div class="show-more-row">
+        <a class="btn btn-gold" href="/oddities/">Enter the Hall of Oddities</a>
       </div>
     </section>
 

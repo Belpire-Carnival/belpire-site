@@ -67,7 +67,7 @@ test('the site only ships .js modules (browsers refuse scripts served with the w
 });
 
 test('every public page has a link-preview image that exists', async () => {
-  const pages = ['index.html', 'big-tent/index.html', 'jackbox/index.html', 'star-citizen/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
+  const pages = ['index.html', 'oddities/index.html', 'big-tent/index.html', 'jackbox/index.html', 'star-citizen/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
   for (const page of pages) {
     const html = await readFile(join(ROOT, 'site', page), 'utf8');
     const img = html.match(/<meta property="og:image" content="https:\/\/belpire\.com\/([^"]+)">/);
