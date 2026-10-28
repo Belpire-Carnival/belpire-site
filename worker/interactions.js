@@ -7,7 +7,7 @@
 
 import { pollConfig } from './polls.js';
 import { PRIZES, prizeById } from './prizes.js';
-import { punch, playShell, checkIn, redeem, award, summary, highScores, ticketsText, RULES, TicketError } from './tickets.js';
+import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, summary, highScores, ticketsText, RULES, TicketError } from './tickets.js';
 
 const EPHEMERAL = 64;
 const enc = new TextEncoder();
@@ -20,6 +20,15 @@ export const COMMANDS = [
     name: 'find-the-pea', description: 'The shell game: pick a shell and win tickets if the pea is under it', type: 1,
     options: [{ type: 4, name: 'shell', description: 'Which shell?', required: true, choices: [{ name: 'Left', value: 1 }, { name: 'Middle', value: 2 }, { name: 'Right', value: 3 }] }]
   },
+  {
+    name: 'ring-toss', description: 'Toss a ring at the bottles: near rows are easier, far rows pay more', type: 1,
+    options: [{ type: 3, name: 'row', description: 'Which row?', required: true, choices: [
+      { name: `Front (${RULES.ringRows.front.odds / 10}% · ${RULES.ringRows.front.prize} tickets)`, value: 'front' },
+      { name: `Middle (${RULES.ringRows.middle.odds / 10}% · ${RULES.ringRows.middle.prize} tickets)`, value: 'middle' },
+      { name: `Back (${RULES.ringRows.back.odds / 10}% · ${RULES.ringRows.back.prize} tickets)`, value: 'back' }
+    ] }]
+  },
+  { name: 'high-striker', description: 'Swing the mallet. Ring the bell for the jackpot', type: 1 },
   { name: 'checkin', description: 'Check in to tonight\'s show from The Main Stage to earn attendance tickets', type: 1 },
   { name: 'high-scores', description: 'The Midway High Scores: most tickets won', type: 1 },
   { name: 'prizes', description: 'What\'s in the Prize Booth', type: 1 },
@@ -99,6 +108,17 @@ async function run(env, interaction) {
       const r = await playShell(env, uid, name, pick);
       const shells = PEA_SHELLS.map((s, i) => (i === r.pea ? '🟢' : s)).join(' ');
       return reply(`${shells}\n${r.win ? `**Found it!** +${ticketsText(r.amount)}.` : 'Not under that one. The barker grins.'} Balance: ${ticketsText(r.balance)}. ${r.playsLeft ? `${r.playsLeft} ${r.playsLeft === 1 ? 'game' : 'games'} left today.` : 'That\'s all your games for today.'}`);
+    }
+    case 'ring-toss': {
+      const r = await playRings(env, uid, name, String(opt(data, 'row') || ''));
+      const left = r.playsLeft ? `${r.playsLeft} ${r.playsLeft === 1 ? 'ring' : 'rings'} left today.` : 'That\'s all your rings for today.';
+      return reply(`⭕ You toss at the **${r.row}** row… ${r.win ? `*clink!* **Ringer!** +${ticketsText(r.amount)}.` : 'it bounces off the bottle necks.'} Balance: ${ticketsText(r.balance)}. ${left}`);
+    }
+    case 'high-striker': {
+      const r = await swingStriker(env, uid, name);
+      const meter = `${'▰'.repeat(r.height)}${'▱'.repeat(10 - r.height)}`;
+      const left = r.playsLeft ? `${r.playsLeft} ${r.playsLeft === 1 ? 'swing' : 'swings'} left today.` : 'That\'s all your swings for today.';
+      return reply(`🔨 *WHAM!* ${meter} ${r.bell ? '🔔 **DING DING DING!**' : `**${r.label}**`}${r.amount ? ` +${ticketsText(r.amount)}.` : '.'} Balance: ${ticketsText(r.balance)}. ${left}`);
     }
     case 'checkin': {
       const r = await checkIn(env, uid, name);

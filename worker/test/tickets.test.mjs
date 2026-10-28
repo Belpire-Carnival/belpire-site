@@ -249,6 +249,8 @@ test('slash commands: signature checked, same bank as the website', async () => 
   await post('/api/tickets/award', 'boss', { userId: U.fan, amount: 200 });
   assert.match((await signedInteraction(keys, slash('tickets', U.fan))).body.data.content, /\*\*210 tickets\*\*/);
   const pea = await signedInteraction(keys, slash('find-the-pea', U.fan, [{ name: 'shell', value: 2 }]));
+  assert.match((await signedInteraction(keys, slash('ring-toss', U.fan, [{ name: 'row', value: 'back' }]))).body.data.content, /back\*\* row… (\*clink!\*|it bounces)/);
+  assert.match((await signedInteraction(keys, slash('high-striker', U.fan))).body.data.content, /WHAM!\* [▰▱]{10}/);
   assert.match(pea.body.data.content, /Found it|Not under that one/);
   assert.match((await signedInteraction(keys, slash('redeem', U.fan, [{ name: 'prize', value: 'ballot-pick' }]))).body.data.content, /belpire\.com\/me/);
   assert.match((await signedInteraction(keys, slash('redeem', U.fan, [{ name: 'prize', value: 'fan-favorite' }]))).body.data.content, /Fan Favorite badge\*\* ordered/);
@@ -312,4 +314,56 @@ test('the High Scores message stays tidy', () => {
   assert.match(msg, /A quiet week/);
   assert.match(msg, /🥇 everyone x · 5 tickets/);
   assert.ok(msg.length <= 2000);
+});
+
+test('Ring Toss: pick a row, odds and prizes by row, five tosses a day', async () => {
+  assert.equal((await post('/api/tickets/games/rings', 'fan', { row: 'roof' })).status, 400);
+  assert.equal((await post('/api/tickets/games/rings', 'fan', { row: '__proto__' })).status, 400);
+  let total = 0;
+  for (let i = 0; i < RULES.ringPlays; i++) {
+    const row = ['front', 'middle', 'back'][i % 3];
+    const r = await post('/api/tickets/games/rings', 'fan', { row });
+    assert.equal(r.status, 200);
+    assert.equal(r.body.row, row);
+    assert.ok(r.body.bottle >= 0 && r.body.bottle < 4);
+    assert.equal(r.body.amount, r.body.win ? RULES.ringRows[row].prize : 0);
+    assert.equal(r.body.playsLeft, RULES.ringPlays - i - 1);
+    total += r.body.amount;
+  }
+  assert.equal((await post('/api/tickets/games/rings', 'fan', { row: 'front' })).status, 429);
+  const me = (await call('/api/tickets', { as: 'fan' })).body;
+  assert.equal(me.wallet.balance, total);
+  assert.equal(me.games.rings.left, 0);
+  assert.equal(me.games.shell.left, RULES.shellPlays, 'each game has its own daily count');
+});
+
+test('High Striker: heights match the prize table, three swings a day', async () => {
+  const tiers = RULES.strikerTiers;
+  assert.equal(tiers.at(-1).upTo, 1000);
+  for (let i = 0; i < RULES.strikerPlays; i++) {
+    const r = await post('/api/tickets/games/striker', 'fan2', {});
+    assert.equal(r.status, 200);
+    const tier = tiers.find((x) => x.heights.includes(r.body.height));
+    assert.ok(tier, 'height is on the scale');
+    assert.equal(r.body.amount, tier.prize);
+    assert.equal(r.body.bell, r.body.height === 10);
+  }
+  assert.equal((await post('/api/tickets/games/striker', 'fan2', {})).status, 429);
+});
+
+test('the games are fair over many plays (house odds match the posted odds)', async () => {
+  const { playRings, swingStriker } = await import('../tickets.js');
+  RULES.ringPlays = 3000;
+  RULES.strikerPlays = 3000;
+  try {
+    let ringers = 0;
+    for (let i = 0; i < 3000; i++) if ((await playRings(env, U.fan, 'Fan One', 'front')).win) ringers++;
+    assert.ok(Math.abs(ringers / 3000 - 0.6) < 0.05, `front row ${ringers / 3000}`);
+    let bells = 0;
+    for (let i = 0; i < 3000; i++) if ((await swingStriker(env, U.fan2, 'Fan Two')).bell) bells++;
+    assert.ok(Math.abs(bells / 3000 - 0.05) < 0.02, `bell ${bells / 3000}`);
+  } finally {
+    RULES.ringPlays = 5;
+    RULES.strikerPlays = 3;
+  }
 });

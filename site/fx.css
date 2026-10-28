@@ -187,3 +187,14 @@ h2::after {
   .beam-l { transform: rotate(-12deg); }
   .beam-r { transform: rotate(12deg); }
 }
+
+/* ---------- Page scenes: a dim carnival backdrop behind the content (The Big Tent, Ticket Booth, Oddities) ---------- */
+.scene { position: fixed; left: 0; right: 0; bottom: 0; height: min(52vh, 480px); z-index: -1; pointer-events: none; background: no-repeat center bottom / auto 100%; opacity: .32;
+  -webkit-mask-image: linear-gradient(to top, #000 50%, transparent); mask-image: linear-gradient(to top, #000 50%, transparent); }
+.scene::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 55% 60% at 50% 100%, rgba(217, 178, 106, .16), transparent 70%); animation: scene-glow 7s ease-in-out infinite; }
+.scene[data-scene="bigtop"] { background-image: url("/assets/scenes/bigtop.svg"); }
+.scene[data-scene="booth"] { background-image: url("/assets/scenes/booth.svg"); }
+.scene[data-scene="sideshow"] { background-image: url("/assets/scenes/sideshow.svg"); opacity: .14; height: min(44vh, 400px); }
+@keyframes scene-glow { 50% { opacity: .55; } }
+@media (max-width: 640px) { .scene { height: 34vh; opacity: .24; } }
+@media (prefers-reduced-motion: reduce) { .scene::after { animation: none; } }
