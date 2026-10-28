@@ -4,7 +4,7 @@
 //   - answering Yes to the onboarding question, which gives them the Game Night (Pending) role in Discord;
 //     the cron picks those up every 10 minutes (needs the Server Members intent), or
 //   - pressing "Request a Game Night pass" on The Big Tent, which gives them the Pending role too.
-// Each new request posts a short note to MOD_CHANNEL_ID (optional). Ringleaders approve or deny on The Big Tent:
+// Each new request posts a short note to MOD_CHANNEL_ID (optional). Ringleaders approve or deny Backstage:
 // approve → Game Night on, Pending off; deny → Pending off, with an optional reason sent by DM.
 //
 //   GET  /api/passes                    me: { status }, plus the queue for Ringleaders
@@ -96,7 +96,7 @@ async function noteMods(env, cfg, uid, name, source) {
   const how = source === 'onboarding' ? 'answered Yes during onboarding' : 'asked on belpire.com';
   try {
     await postMessage(env, cfg.modChannel, {
-      content: `🎟️ **${name.replace(/[*_`~|>\\]/g, '')}** (<@${uid}>) wants a Game Night pass. They ${how}.\nReview it Backstage: https://belpire.com/big-tent/#passes`
+      content: `🎟️ **${name.replace(/[*_`~|>\\]/g, '')}** (<@${uid}>) wants a Game Night pass. They ${how}.\nReview it Backstage: https://belpire.com/backstage/#bs-passes`
     });
   } catch (err) {
     console.warn(`Pass note to mods failed: ${explain(err)}`);

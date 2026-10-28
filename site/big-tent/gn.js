@@ -4,6 +4,9 @@ import { easternToIso, formatEastern, formatLocal } from './time.js';
 const MAX_RANK = 4;
 const POINTS = [4, 3, 2, 1];
 const app = document.getElementById('gn-app');
+// The same script runs Backstage (/backstage/), the Ringleaders' staff page, which shows only the tools.
+const BACKSTAGE = document.body?.dataset.page === 'backstage';
+let arrived = false; // jump to #section once, after the first render
 let state = null; // { me, polls, poll (the one on screen), upcoming, catalog }
 let pollId = new URLSearchParams(location.search).get('poll'); // which of several polls is on screen
 let ranking = []; // candidate keys, best first
@@ -75,7 +78,7 @@ function flashNode() {
 function signInBlock(text) {
   return el('div', { class: 'panel' }, [
     el('p', { text }),
-    el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/auth/login?return=/big-tent/', text: 'Verify with Discord' })]),
+    el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: `/auth/login?return=${BACKSTAGE ? '/backstage/' : '/big-tent/'}`, text: 'Verify with Discord' })]),
     el('p', { class: 'meta', text: 'We only check your Discord account and server membership; see the Privacy Policy.' })
   ]);
 }
@@ -83,8 +86,9 @@ function signInBlock(text) {
 function whoBar() {
   if (!state.me.signedIn) return null;
   const form = el('form', { method: 'post', action: '/auth/logout' }, [el('button', { type: 'submit', class: 'linklike', text: 'Sign out' })]);
-  const role = state.me.manager ? ' · can run polls' : state.me.member ? '' : ' · not in the server yet';
-  return el('div', { class: 'who' }, [el('span', { text: `Signed in as ${state.me.name}${role}` }), form]);
+  const role = state.me.manager ? ' · Ringleader' : state.me.member ? '' : ' · not in the server yet';
+  const door = state.me.manager && !BACKSTAGE ? el('a', { class: 'btn btn-ghost btn-sm', href: '/backstage/', text: 'Go Backstage' }) : null;
+  return el('div', { class: 'who' }, [el('span', { text: `Signed in as ${state.me.name}${role}` }), door, form].filter(Boolean));
 }
 
 // Two-step confirm without browser dialogs: the first click arms the button.
@@ -577,17 +581,19 @@ function createForm() {
     groups.get(c.group).push(c);
   }
   const title = el('input', { id: 'gn-title', type: 'text', maxlength: '60', value: 'Game Night', autocomplete: 'off' });
-  const count = el('span', { class: 'meta', text: '0 selected' });
+  const count = el('span', { class: 'meta', text: `${(state.prizePicks || []).length} selected` });
   const filter = el('input', { class: 'board-filter', type: 'search', placeholder: 'Filter games', 'aria-label': 'Filter the game list' });
   const lists = el('div', { class: 'picklist' });
   const boxes = [];
+  // Prize Booth "Put a game on the ballot" orders arrive pre-ticked.
+  const picks = new Map((state.prizePicks || []).map((p) => [p.key, p.by]));
   for (const [group, items] of groups) {
     const ul = el('ul', { class: 'checks' });
     for (const c of items) {
-      const box = el('input', { type: 'checkbox', value: c.key });
+      const box = el('input', { type: 'checkbox', value: c.key, checked: picks.has(c.key) });
       box.addEventListener('change', () => { count.textContent = `${boxes.filter((b) => b.checked).length} selected`; });
       boxes.push(box);
-      ul.append(el('li', { 'data-name': c.name.toLowerCase() }, [el('label', {}, [box, thumb(c, 'thumb thumb-sm'), el('span', { text: c.players ? `${c.name} · ${c.players}` : c.name })])]));
+      ul.append(el('li', { 'data-name': c.name.toLowerCase() }, [el('label', {}, [box, thumb(c, 'thumb thumb-sm'), el('span', { text: c.players ? `${c.name} · ${c.players}` : c.name }), picks.has(c.key) ? el('span', { class: 'prize-pick', text: `🎟 ${picks.get(c.key)}'s pick` }) : null])]));
     }
     lists.append(el('section', {}, [el('h3', { text: group }), ul]));
   }
@@ -601,12 +607,13 @@ function createForm() {
       flash = { kind: 'error', text: 'Pick at least two games.' };
       return render();
     }
-    act('/api/polls', { title: title.value, candidates }, 'Voting is open. Share the link in Discord!');
+    act('/api/polls', { title: title.value, candidates }, (d) => `Voting is open. Share the link in Discord!${d.prizePicks ? ` ${d.prizePicks} Prize Booth pick${d.prizePicks === 1 ? '' : 's'} delivered.` : ''}`);
   });
   return el('div', { class: 'panel' }, [
     el('h2', { text: 'Start a poll' }),
     el('div', { class: 'field' }, [el('label', { for: 'gn-title', text: 'Name' }), title]),
     el('div', { class: 'btn-row' }, [el('span', { class: 'label meta', text: 'Games on the ballot (2–24)' }), count]),
+    (state.prizePicks || []).length ? el('p', { class: 'prize-picks-note', text: `🎟 ${state.prizePicks.length} game${state.prizePicks.length === 1 ? '' : 's'} bought at the Prize Booth ${state.prizePicks.length === 1 ? 'is' : 'are'} pre-ticked. Opening the poll with ${state.prizePicks.length === 1 ? 'it' : 'them'} completes the order${state.prizePicks.length === 1 ? '' : 's'}.` }) : null,
     filter,
     lists,
     el('div', { class: 'btn-row' }, [open])
@@ -702,7 +709,7 @@ function discordCheck() {
     if (r.data.checks.every((c) => c.ok)) out.append(el('li', { class: 'meta', text: 'All good: the bot can post to #general and create events in The Main Stage.' }));
   }, 'btn btn-ghost btn-sm');
   return el('details', { class: 'panel discord-check' }, [
-    el('summary', { text: 'Discord connection' }),
+    el('summary', { text: 'Check the bot\'s permissions' }),
     el('p', { class: 'meta', text: 'If posts to #general or event creation fail, this shows exactly which permission the bot is missing.' }),
     el('div', { class: 'btn-row' }, [run]),
     out
@@ -721,6 +728,8 @@ function renderBackstage() {
   }
   stage.hidden = false;
   const pollSlot = document.getElementById('gn-backstage-poll');
+  const live = (state.polls || []).length;
+  document.getElementById('bs-polls-count')?.replaceChildren(live ? `${live} running` : 'none running');
   const tools = [];
   for (const p of state.polls || []) {
     tools.push(el('section', { class: 'backstage-poll' }, [
@@ -737,9 +746,40 @@ function renderBackstage() {
   document.dispatchEvent(new CustomEvent('belpire:backstage'));
 }
 
+// The Backstage page: a gate for everyone else, the tools for Ringleaders.
+function renderStaffPage() {
+  const gate = document.getElementById('backstage-gate');
+  const stage = document.getElementById('backstage');
+  const { me } = state;
+  if (!me.manager) {
+    stage.hidden = true;
+    gate.hidden = false;
+    const block = !me.signedIn
+      ? signInBlock('Backstage is for the RingMaster, RingMistress and Carnival Guards. Verify with Discord to come through.')
+      : el('div', { class: 'panel' }, [
+        el('h2', { text: 'Staff only' }),
+        el('p', { text: 'This door is for the Ringleaders. If you think you should be back here, ask the RingMaster in Discord.' }),
+        el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/big-tent/', text: 'Back to The Big Tent' })])
+      ]);
+    gate.replaceChildren(...[block, whoBar()].filter(Boolean));
+    return;
+  }
+  gate.hidden = true;
+  gate.replaceChildren();
+  document.getElementById('backstage-flash').replaceChildren(...[flashNode()].filter(Boolean));
+  renderBackstage();
+  document.getElementById('backstage-who').replaceChildren(...[whoBar()].filter(Boolean));
+  if (!arrived) {
+    arrived = true;
+    const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (target) requestAnimationFrame(() => target.scrollIntoView());
+  }
+}
+
 // ---------------------------------------------------------------- render
 
 function render() {
+  if (BACKSTAGE) return renderStaffPage();
   const { me, poll } = state;
   const out = [];
   const f = flashNode();
@@ -769,7 +809,6 @@ function render() {
       if (voters) out.push(voters);
     }
   }
-  renderBackstage();
   const who = whoBar();
   if (who) out.push(who);
   app.replaceChildren(...out);
@@ -779,7 +818,7 @@ function render() {
 async function load(resetBallot = true) {
   const r = await call('/api/polls/current');
   if (!r.ok) {
-    app.replaceChildren(el('div', { class: 'panel' }, [el('p', { text: r.data.message || 'The ballot box is closed for a moment. Try again shortly.' })]));
+    (app || document.getElementById('backstage-gate')).replaceChildren(el('div', { class: 'panel' }, [el('p', { text: r.data.message || 'The ballot box is closed for a moment. Try again shortly.' })]));
     return;
   }
   state = r.data;

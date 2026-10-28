@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Backstage — Belpire Carnival</title>
+  <meta name="description" content="Staff only: the Ringleaders' control room for Belpire game nights.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Belpire Carnival">
+  <meta property="og:title" content="Backstage — Belpire Carnival">
+  <meta property="og:description" content="Staff only. The Ringleaders' control room.">
+  <meta property="og:url" content="https://belpire.com/backstage/">
+  <meta property="og:image" content="https://belpire.com/og/big-tent.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Big Tent: the Belpire Usher in his ticket booth">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0E0B10">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fx.css">
+  <link rel="stylesheet" href="/big-tent/gn.css">
+  <script type="module" src="/big-tent/gn.js"></script>
+  <script src="/big-tent/passes.js" defer></script>
+  <script src="/big-tent/oddity-review.js" defer></script>
+  <script src="/big-tent/staff-chat.js" defer></script>
+  <script src="/big-tent/prizes-staff.js" defer></script>
+  <script src="/account.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body data-page="backstage">
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/">Star Citizen</a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
+        <a href="/oddities/">Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm acct-signin" data-account href="/auth/login?return=/me/">Sign in</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap gn bs">
+    <header class="gn-head">
+      <p class="backstage-sign">STAFF ONLY</p>
+      <h1 class="neon" data-text="Backstage">Backstage</h1>
+      <p class="lede">The crew's control room. The Ringleaders run game night polls here, stamp Game Night passes, keep the Hall of Oddities clean and check that the Belpire Usher can do its job.</p>
+    </header>
+
+    <div id="backstage-gate" class="gn-app" aria-live="polite">
+      <p class="gn-note">Checking your pass…</p>
+    </div>
+
+    <div id="backstage" class="backstage bs-room" hidden>
+      <div class="backstage-curtain" aria-hidden="true"></div>
+
+      <section class="bs-brief" aria-labelledby="bs-brief-h">
+        <h2 id="bs-brief-h">Before you pull any levers</h2>
+        <ul class="bs-rules">
+          <li><strong>Who gets in.</strong> Only the RingMaster, RingMistress and Carnival Guards. The site checks your Discord role on the server every time you act, not just when this page loads, so a role change takes effect straight away.</li>
+          <li><strong>Some buttons talk out loud.</strong> Closing a poll and setting its date post to #general and create the event in The Main Stage. Stamping or turning away a pass sends the member a DM from the Belpire Usher.</li>
+          <li><strong>Everything else stays back here.</strong> Members never see this page, the queues or who decided what. The Green Room is mirrored only to the Moderation Tent, which members can't see either.</li>
+          <li><strong>Look before you leap.</strong> Close and Cancel need a second click to confirm. Removing an oddity deletes the file for good.</li>
+        </ul>
+        <nav class="bs-jump" aria-label="Backstage sections">
+          <a href="#bs-polls">Polls</a>
+          <a href="#bs-passes">Passes</a>
+          <a href="#bs-oddities">Oddities review</a>
+          <a href="#bs-prizes">Prize Booth</a>
+          <a href="#bs-chat">Green Room</a>
+          <a href="#bs-discord">Discord check</a>
+        </nav>
+      </section>
+
+      <div id="backstage-flash" class="bs-flash" aria-live="polite"></div>
+
+      <section id="bs-polls" class="bs-section" aria-labelledby="bs-polls-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Act I</span> <span id="bs-polls-count" class="bs-count"></span></p>
+          <h2 id="bs-polls-h">Game night polls</h2>
+          <p class="bs-purpose">Open one poll for each upcoming game night. Up to eight can run at once, each with its own ballots, so you can line up a whole series. When voting closes, the top four are posted to #general; then set the date to create the event in The Main Stage.</p>
+        </header>
+        <div id="gn-backstage-poll" class="backstage-slot"></div>
+      </section>
+
+      <section id="bs-passes" class="bs-section" aria-labelledby="bs-passes-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Act II</span></p>
+          <h2 id="bs-passes-h">Game Night passes</h2>
+          <p class="bs-purpose">The Game Night role is the key to The Main Stage. Requests come from the button on The Big Tent or from a Yes in Discord onboarding. <em>Stamp it</em> gives the role and DMs a welcome; <em>Turn away</em> closes the request, and any reason you type goes to them by DM.</p>
+        </header>
+        <div id="gn-backstage-passes" class="backstage-slot"></div>
+      </section>
+
+      <section id="bs-oddities" class="bs-section" aria-labelledby="bs-oddities-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Act III</span></p>
+          <h2 id="bs-oddities-h">Hall of Oddities review</h2>
+          <p class="bs-purpose">Uploads that need a human eye: pictures the safety scan wasn't sure about, every clip from members, and anything three members reported. <em>Approve</em> hangs it in the hall; <em>Remove</em> deletes it. Game and horror gore is fine; nudity, real-world gore, hate symbols and personal details are not. Ringleaders' own uploads skip this line.</p>
+        </header>
+        <div id="gn-backstage-oddities" class="backstage-slot"></div>
+      </section>
+
+      <section id="bs-prizes" class="bs-section" aria-labelledby="bs-prizes-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Act IV</span></p>
+          <h2 id="bs-prizes-h">The Prize Booth</h2>
+          <p class="bs-purpose">Members earn tickets from the daily punch card, Find the Pea and checking in at shows, and spend them here. The tickets are already taken when an order lands, so your job is to hand over the prize and press <em>Mark done</em> (the Usher DMs them), or <em>Refund</em> to give the tickets back. "Put a game on the ballot" ticks itself off when you open a poll with that game; it's pre-ticked in the poll form above. You can also hand out tickets for great moments.</p>
+        </header>
+        <div id="gn-backstage-prizes" class="backstage-slot"></div>
+      </section>
+
+      <section id="bs-chat" class="bs-section" aria-labelledby="bs-chat-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Act V</span></p>
+          <h2 id="bs-chat-h">The Green Room</h2>
+          <p class="bs-purpose">The crew's thread: hand-offs, heads-ups and "who's running tonight". Every Ringleader sees it here, and the Belpire Usher posts each message to the Moderation Tent in Discord so nobody misses it. Messages are kept for 90 days; you can delete your own, here and in Discord.</p>
+        </header>
+        <div id="gn-backstage-chat" class="backstage-slot"></div>
+      </section>
+
+      <section id="bs-discord" class="bs-section" aria-labelledby="bs-discord-h">
+        <header class="bs-section-head">
+          <p class="bs-kicker"><span>Stagehands</span></p>
+          <h2 id="bs-discord-h">Discord connection</h2>
+          <p class="bs-purpose">If a post to #general, a Discord event or a role change fails, run this check. It lists exactly which permission the Belpire Usher is missing.</p>
+        </header>
+        <div id="gn-backstage-discord" class="backstage-slot"></div>
+      </section>
+
+      <div id="backstage-who" class="bs-who"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© 2026 Belpire Carnival</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

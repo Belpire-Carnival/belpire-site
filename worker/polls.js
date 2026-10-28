@@ -17,6 +17,7 @@
 // GENERAL_CHANNEL_ID. Binding: DB (D1). The visitor's identity comes from the sign-in cookie (auth.js).
 
 import { readSession } from './auth.js';
+import { prizePicks, fulfilPicks } from './tickets.js';
 import { pollStore } from './poll-db.js';
 import { getMember, postMessage, createVoiceEvent, eventUrl, explain, checkSetup } from './discord-bot.js';
 
@@ -250,7 +251,7 @@ async function votersWithNames(env, store, pollId) {
 }
 
 let catalogCache = null;
-async function loadCatalog(env, origin) {
+export async function loadCatalog(env, origin) {
   if (catalogCache && catalogCache.until > Date.now()) return catalogCache.value;
   const get = async (path) => {
     try {
@@ -338,8 +339,10 @@ export async function handlePolls(request, env, ctx) {
         eventPosted: p.event_posted
       }));
       const catalog = me.manager ? await loadCatalog(env, url.origin) : undefined;
+      // Prize Booth "Put a game on the ballot" orders, pre-ticked in the Backstage poll form.
+      const picks = me.manager ? await prizePicks(env).catch(() => []) : undefined;
       // `poll` is the newest active poll, kept for older pages; `polls` is every active one.
-      return json({ me, polls, poll: polls.at(-1) || null, upcoming, catalog });
+      return json({ me, polls, poll: polls.at(-1) || null, upcoming, catalog, prizePicks: picks });
     }
 
     // GET /api/polls/discord-check (Ringleaders only)
@@ -376,7 +379,11 @@ export async function handlePolls(request, env, ctx) {
         created_at: Date.now()
       };
       await store.create(poll);
-      return json({ ok: true, id: poll.id }, 201);
+      const picked = await fulfilPicks(env, poll.title, keys, who.name).catch((err) => {
+        console.warn(`Ballot-pick prizes not updated: ${err.message}`);
+        return 0;
+      });
+      return json({ ok: true, id: poll.id, prizePicks: picked }, 201);
     }
 
     const poll = await store.get(parts[0]);

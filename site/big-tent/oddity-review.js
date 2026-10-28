@@ -1,4 +1,4 @@
-// Backstage: the Hall of Oddities review queue for Ringleaders (pictures the scan wasn't sure about,
+// Backstage (/backstage/): the Hall of Oddities review queue for Ringleaders (pictures the scan wasn't sure about,
 // members' clips, and anything pulled down by reports). The API only sends the queue to Ringleaders.
 (() => {
   const slot = document.getElementById('gn-backstage-oddities');
@@ -85,11 +85,10 @@
       if (li) list.append(li);
     }
     slot.replaceChildren(el('div', { class: 'panel' }, [
-      el('div', { class: 'panel-head' }, [el('h2', { text: `Hall of Oddities review (${d.queue.length})` })]),
+      el('div', { class: 'panel-head' }, [el('h2', { text: `Waiting for review (${d.queue.length})` })]),
       d.queue.length ? list : el('p', { class: 'gn-note', text: 'Nothing waiting. The crowd is behaving.' }),
       el('p', { class: 'gn-note' }, [el('a', { href: '/oddities/', text: 'Open the Hall of Oddities' })])
     ]));
-    if (location.hash === '#oddities-review') slot.scrollIntoView();
   }
   load();
 })();
