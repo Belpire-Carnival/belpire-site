@@ -1,5 +1,6 @@
 // "Live on The Main Stage" banner. Asks /api/live every 30 seconds while the tab is visible and shows a banner
-// when a Ringleader is streaming in The Main Stage. Text is set with textContent; the join link must be discord.com.
+// when a Ringleader is streaming in The Main Stage. Only signed-in members get the link into the channel;
+// everyone else sees who is live and a sign-in button. Text is set with textContent; the join link must be discord.com.
 (() => {
   const main = document.querySelector('main');
   if (!main) return;
@@ -29,16 +30,22 @@
   function show(s) {
     const join = safeJoin(s.joinUrl);
     const names = (Array.isArray(s.streamers) ? s.streamers : []).map(String).slice(0, 4);
-    if (!s.live || !join || !names.length) return hide();
+    if (!s.live || !names.length) return hide();
     const stage = el('div', { class: 'live-text' }, [
       el('p', { class: 'live-kicker' }, [el('span', { class: 'live-dot', 'aria-hidden': 'true' }), document.createTextNode(s.event?.title ? `LIVE NOW · ${s.event.title}` : 'LIVE NOW')]),
       el('p', { class: 'live-who', text: `${listNames(names)} ${names.length === 1 ? 'is' : 'are'} streaming in The Main Stage` }),
       Array.isArray(s.onStage) && s.onStage.length ? el('p', { class: 'live-also', text: `Also on stage: ${listNames(s.onStage.map(String).slice(0, 4))}` }) : null
     ]);
-    const actions = el('div', { class: 'live-actions' }, [
-      el('a', { class: 'btn btn-gold', href: join, target: '_blank', rel: 'noopener', text: 'Hop into The Main Stage' }),
-      el('a', { class: 'live-ticket', href: '/join/', text: 'Not in the server yet? Get your ticket' })
-    ]);
+    let action;
+    if (s.access === 'member' && join) {
+      action = el('a', { class: 'btn btn-gold', href: join, target: '_blank', rel: 'noopener', text: 'Step Right Up to The Main Stage' });
+    } else if (s.access === 'not_member') {
+      action = el('p', { class: 'live-note', text: 'The Main Stage is for Belpire members only.' });
+    } else {
+      const back = encodeURIComponent(location.pathname + location.search);
+      action = el('a', { class: 'btn btn-gold', href: `/auth/login?return=${back}`, text: 'Members: Step Right Up' });
+    }
+    const actions = el('div', { class: 'live-actions' }, [action]);
     const next = el('aside', { class: 'live-banner', role: 'status', 'aria-label': 'Live on The Main Stage' }, [el('div', { class: 'wrap live-inner' }, [stage, actions])]);
     if (banner) banner.replaceWith(next);
     else main.prepend(next);
