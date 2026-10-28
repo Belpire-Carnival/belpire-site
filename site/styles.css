@@ -327,6 +327,5 @@ p { margin: 0; }
 .live-also { font-size: 14px; color: var(--text-soft); }
 .live-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .live-actions .btn { min-height: 44px; }
-.live-ticket { color: var(--text-soft); font-size: 14px; padding: 12px 0; }
-.live-ticket:hover, .live-ticket:focus-visible { color: var(--gold-hover); }
+.live-note { margin: 0; color: var(--text-soft); font-size: 15px; }
 @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }

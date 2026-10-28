@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import worker from '../index.js';
 import { _clearLiveCache, liveIds } from '../live.js';
 import { fakeD1 } from './helpers/d1.mjs';
+import { seal, SESSION_COOKIE } from '../auth.js';
+import { _clearMemberCache } from '../polls.js';
 
 const GUILD = '100000000000000001';
 const STAGE = '100000000000000002';
@@ -20,6 +22,7 @@ function kv() {
 
 beforeEach(() => {
   _clearLiveCache();
+  _clearMemberCache();
   calls = 0;
   voice = {};
   globalThis.fetch = async (url) => {
@@ -28,14 +31,22 @@ beforeEach(() => {
     let m = p.match(/^\/api\/v10\/guilds\/\d+\/voice-states\/(\d+)$/);
     if (m) return voice[m[1]] ? Response.json(voice[m[1]]) : Response.json({ code: 10065 }, { status: 404 });
     m = p.match(/^\/api\/v10\/guilds\/\d+\/members\/(\d+)$/);
+    if (m && m[1] === '900000000000000009') return Response.json({ code: 10007 }, { status: 404 });
     if (m) return Response.json({ nick: { [IDS[0]]: 'Synister', [IDS[1]]: 'Nightartist', [IDS[2]]: 'Drepulic' }[m[1]], user: { id: m[1], username: 'x' } });
     throw new Error('unexpected ' + url);
   };
-  env = { DISCORD_BOT_TOKEN: 't', DISCORD_GUILD_ID: GUILD, MAIN_STAGE_CHANNEL_ID: STAGE, RINGLEADER_IDS: IDS.join(','), SC_DATA: kv(), DB: fakeD1(), ASSETS: { fetch: () => new Response('') } };
+  env = { SESSION_SECRET: 'x'.repeat(48), POLL_MANAGER_ROLE_IDS: '200000000000000001', GENERAL_CHANNEL_ID: '100000000000000003', DISCORD_BOT_TOKEN: 't', DISCORD_GUILD_ID: GUILD, MAIN_STAGE_CHANNEL_ID: STAGE, RINGLEADER_IDS: IDS.join(','), SC_DATA: kv(), DB: fakeD1(), ASSETS: { fetch: () => new Response('') } };
 });
 afterEach(() => { globalThis.fetch = realFetch; });
 
-const live = async () => (await worker.fetch(new Request('https://belpire.com/api/live'), env, { waitUntil: () => {} })).json();
+async function cookie(uid) {
+  const t = Math.floor(Date.now() / 1000);
+  return `${SESSION_COOKIE}=${await seal({ uid, name: 'x', iat: t, exp: t + 3600 }, env.SESSION_SECRET, 'session')}`;
+}
+const live = async (uid) => {
+  const headers = uid ? { Cookie: await cookie(uid) } : {};
+  return (await worker.fetch(new Request('https://belpire.com/api/live', { headers }), env, { waitUntil: () => {} })).json();
+};
 
 test('nobody streaming → not live', async () => {
   voice[IDS[1]] = { channel_id: STAGE, self_stream: false };
@@ -48,10 +59,17 @@ test('a Ringleader on Go Live in The Main Stage → live, with others on stage',
   voice[IDS[0]] = { channel_id: STAGE, self_stream: true, member: { nick: 'Synister', user: { id: IDS[0] } } };
   voice[IDS[1]] = { channel_id: STAGE, self_stream: false };
   voice[IDS[2]] = { channel_id: OTHER, self_stream: true };
-  const r = await live();
+  let r = await live();
   assert.equal(r.live, true);
   assert.deepEqual(r.streamers, ['Synister']);
   assert.deepEqual(r.onStage, ['Nightartist']);
+  assert.equal(r.access, 'signin');
+  assert.equal(r.joinUrl, null, 'signed-out visitors get no link');
+  r = await live('900000000000000009');
+  assert.equal(r.access, 'not_member');
+  assert.equal(r.joinUrl, null, 'non-members get no link');
+  r = await live(IDS[2]);
+  assert.equal(r.access, 'member');
   assert.equal(r.joinUrl, `https://discord.com/channels/${GUILD}/${STAGE}`);
 });
 

@@ -8,6 +8,8 @@ import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js'
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
 import { liveStatus } from './live.js';
+import { readSession } from './auth.js';
+import { memberInfo } from './polls.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -45,7 +47,17 @@ export default {
         console.warn(`Live status failed: ${err.message}`);
         return { live: false, streamers: [], onStage: [], event: null, joinUrl: null };
       });
-      return json(status, 200, { 'Cache-Control': 'public, max-age=15' });
+      // Everyone sees who is live; only signed-in members of the server get the link into The Main Stage.
+      let access = 'signin';
+      if (status.live) {
+        const session = await readSession(request, env);
+        if (session) {
+          const who = await memberInfo(env, session).catch(() => ({ member: false }));
+          access = who.member ? 'member' : 'not_member';
+        }
+      }
+      const body = { ...status, access, joinUrl: access === 'member' ? status.joinUrl : null };
+      return json(body, 200, { 'Cache-Control': 'private, no-store', Vary: 'Cookie' });
     }
     if (pathname === '/api/star-citizen') {
       const snapshot = await handleSnapshot(env, ctx);
