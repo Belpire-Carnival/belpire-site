@@ -61,6 +61,16 @@ export async function getMember(env, userId, opts) {
   }
 }
 
+// → voice state ({ channel_id, self_stream, … }) or null when the user isn't in a voice channel.
+export async function getVoiceState(env, userId, opts) {
+  try {
+    return await call(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}/voice-states/${userId}`, null, opts);
+  } catch (err) {
+    if (err.status === 404) return null;
+    throw err;
+  }
+}
+
 export function getChannel(env, channelId, opts) {
   return call(env, 'GET', `/channels/${channelId}`, null, opts);
 }
