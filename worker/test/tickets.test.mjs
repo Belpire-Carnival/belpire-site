@@ -4,7 +4,7 @@ import worker from '../index.js';
 import { seal, SESSION_COOKIE } from '../auth.js';
 import { _clearMemberCache, _clearCatalogCache } from '../polls.js';
 import { _clearLiveCache } from '../live.js';
-import { punchAmount, payAttendance, etDay, RULES } from '../tickets.js';
+import { punchAmount, payAttendance, etDay, RULES, weeklyHighScores, highScoresMessage } from '../tickets.js';
 import { ticketStore } from '../ticket-db.js';
 import { pollStore } from '../poll-db.js';
 import { COMMANDS, verifyDiscord } from '../interactions.js';
@@ -272,4 +272,44 @@ test('command definitions are valid for Discord', () => {
     }
   }
   assert.ok(COMMANDS.find((c) => c.name === 'redeem').options[0].choices.length === PRIZES.length);
+});
+
+test('the High Scores post every Sunday at noon Eastern, once, without hidden members', async () => {
+  const ANN = '100000000000000077';
+  const store = ticketStore(env.DB);
+  const sunday = Date.parse('2026-11-01T17:05:00Z'); // Sun 12:05 ET
+  assert.equal(await weeklyHighScores(env, sunday), false, 'no channel set: nothing');
+  env.ANNOUNCEMENTS_CHANNEL_ID = ANN;
+  assert.equal(await weeklyHighScores(env, sunday), false, 'nobody has tickets yet: skipped');
+  await env.DB.prepare('DELETE FROM ticket_posts').run();
+  await store.change(U.fan, 'Fan One', 40, 'award');
+  await store.change(U.fan2, 'Fan Two', 90, 'award');
+  await store.change(U.boss, 'Synister', 500, 'award');
+  await store.setHidden(U.boss, 'Synister', true);
+  assert.equal(await weeklyHighScores(env, Date.parse('2026-10-31T17:05:00Z')), false, 'Saturday: no');
+  assert.equal(await weeklyHighScores(env, Date.parse('2026-11-01T15:55:00Z')), false, 'Sunday morning: not yet');
+  const before = discord.posted.length;
+  // Ledger rows are stamped with the real clock, so look back from now for the weekly part.
+  assert.equal(await weeklyHighScores(env, sunday), true);
+  assert.equal(await weeklyHighScores(env, sunday + 600000), false, 'only once a week');
+  const sent = discord.posted.at(-1);
+  assert.equal(discord.posted.length, before + 1);
+  assert.equal(sent.channel, ANN);
+  assert.deepEqual(sent.allowed_mentions, { parse: [] });
+  assert.match(sent.content, /Midway High Scores/);
+  assert.match(sent.content, /All-time leaders\*\*\n🥇 Fan Two · 90 tickets\n🥈 Fan One · 40 tickets/);
+  assert.doesNotMatch(sent.content, /Synister/, 'hidden members stay off');
+
+  assert.equal((await post('/api/tickets/post-scores', 'fan', {})).status, 403);
+  const now = await post('/api/tickets/post-scores', 'boss', {});
+  assert.equal(now.status, 200);
+  assert.match(discord.posted.at(-1).content, /This week's top earners\*\*\n🥇 Fan Two · 90 tickets/);
+  assert.equal((await call('/api/tickets/staff', { as: 'boss' })).body.announcements, true);
+});
+
+test('the High Scores message stays tidy', () => {
+  const msg = highScoresMessage([], [{ name: '@everyone **x**', lifetime: 5 }], Date.parse('2026-11-01T17:05:00Z'));
+  assert.match(msg, /A quiet week/);
+  assert.match(msg, /🥇 everyone x · 5 tickets/);
+  assert.ok(msg.length <= 2000);
 });

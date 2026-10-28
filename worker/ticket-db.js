@@ -32,6 +32,7 @@ const SCHEMA = [
     created_at TEXT NOT NULL,
     PRIMARY KEY (user_id, show)
   )`,
+  'CREATE TABLE IF NOT EXISTS ticket_posts (week TEXT PRIMARY KEY, posted_at TEXT NOT NULL)',
   `CREATE TABLE IF NOT EXISTS prize_orders (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -110,6 +111,22 @@ export function ticketStore(db) {
       await ensure(db);
       const r = await db.prepare('SELECT COUNT(*) AS n FROM ticket_ledger WHERE ref LIKE ?').bind(`${prefix}%`).first();
       return Number(r?.n || 0);
+    },
+    // Tickets won since `sinceIso` (refunds don't count as winning), for the weekly High Scores post.
+    async weekly(sinceIso, limit = 10) {
+      await ensure(db);
+      return (await db.prepare(`SELECT w.name, SUM(l.amount) AS won FROM ticket_ledger l JOIN ticket_wallets w ON w.user_id = l.user_id
+        WHERE l.created_at >= ? AND l.amount > 0 AND l.kind != 'refund' AND w.hidden = 0
+        GROUP BY l.user_id ORDER BY won DESC, MIN(l.created_at) ASC LIMIT ?`).bind(sinceIso, limit).all()).results;
+    },
+    // Claims this week's post so it goes out once; release() lets the next run retry after a failure.
+    async claimPost(week) {
+      await ensure(db);
+      return (await db.prepare('INSERT OR IGNORE INTO ticket_posts (week, posted_at) VALUES (?, ?)').bind(week, nowIso()).run()).meta.changes > 0;
+    },
+    async releasePost(week) {
+      await ensure(db);
+      await db.prepare('DELETE FROM ticket_posts WHERE week = ?').bind(week).run();
     },
     async leaderboard(limit = 10) {
       await ensure(db);
