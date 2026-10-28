@@ -17,6 +17,7 @@
 //   GET  /api/tickets/staff                 Ringleaders: open prize orders
 //   GET  /api/tickets/members?q=            Ringleaders: find someone to hand tickets to
 //   POST /api/tickets/award                 Ringleaders  { userId, amount, note }
+//   POST /api/tickets/post-scores           Ringleaders: post the High Scores to the announcements channel now
 //   POST /api/tickets/orders/:id/done       Ringleaders
 //   POST /api/tickets/orders/:id/refund     Ringleaders  { reason? }
 
@@ -164,6 +165,59 @@ export async function payAttendance(env, now = Date.now()) {
   return paidOut;
 }
 
+// ---------------------------------------------------------------- weekly High Scores post
+
+// Sundays at noon Eastern, to ANNOUNCEMENTS_CHANNEL_ID. Change POST_HOUR_ET to move it.
+export const POST_HOUR_ET = 12;
+const etParts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', hourCycle: 'h23' });
+const shortDate = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' });
+const MEDALS = ['🥇', '🥈', '🥉'];
+const clean = (s) => String(s).replace(/[*_`~|>\\#@:<]/g, '').trim() || 'A member';
+
+export function highScoresMessage(weekly, allTime, now = Date.now()) {
+  const from = shortDate.format(new Date(now - 7 * 86400000));
+  const to = shortDate.format(new Date(now - 86400000));
+  const line = (r, i, n) => `${MEDALS[i] || `**${i + 1}.**`} ${clean(r.name)}${r.badge ? ' ✦' : ''} · ${Number(n).toLocaleString('en-US')} tickets`;
+  const parts = [`## 🏆 Midway High Scores · ${from} – ${to}`];
+  parts.push('**This week\'s top earners**');
+  parts.push(weekly.length ? weekly.map((r, i) => line(r, i, r.won)).join('\n') : '*A quiet week on the Midway. The booth is still open.*');
+  if (allTime.length) parts.push('', '**All-time leaders**', allTime.slice(0, 5).map((r, i) => line(r, i, r.lifetime)).join('\n'));
+  parts.push('', 'Get on the board: `/punch-card` every day, `/find-the-pea`, and `/checkin` at game night. 👉 https://belpire.com/me/');
+  parts.push('-# 🦇 Want off the board? Tick "Keep me off the High Scores" on Your Ticket Booth page.');
+  return parts.join('\n').slice(0, 2000);
+}
+
+const announceChannel = (env) => (SNOWFLAKE.test(String(env.ANNOUNCEMENTS_CHANNEL_ID || '')) ? env.ANNOUNCEMENTS_CHANNEL_ID : null);
+
+export async function postHighScores(env, now = Date.now()) {
+  const channel = announceChannel(env);
+  if (!channel) throw new TicketError(503, 'no_channel', 'No announcements channel is set up yet.');
+  const store = ticketStore(env.DB);
+  const weekly = await store.weekly(new Date(now - 7 * 86400000).toISOString(), 10);
+  const allTime = await highScores(env, null, 5);
+  await postMessage(env, channel, { content: highScoresMessage(weekly, allTime, now) });
+  return { weekly: weekly.length, allTime: allTime.length };
+}
+
+// Cron (every 10 minutes): posts once, on the first run after noon Eastern each Sunday.
+export async function weeklyHighScores(env, now = Date.now()) {
+  if (!env.DB || !env.DISCORD_BOT_TOKEN || !announceChannel(env)) return false;
+  const p = Object.fromEntries(etParts.formatToParts(new Date(now)).map((x) => [x.type, x.value]));
+  if (p.weekday !== 'Sun' || Number(p.hour) < POST_HOUR_ET) return false;
+  const store = ticketStore(env.DB);
+  const week = etDay(now);
+  if (!(await store.claimPost(week))) return false;
+  if (!(await store.leaderboard(1)).length) return false; // nobody has tickets yet: skip quietly
+  try {
+    await postHighScores(env, now);
+    return true;
+  } catch (err) {
+    await store.releasePost(week);
+    console.warn(`Weekly High Scores post failed: ${err.message}`);
+    return false;
+  }
+}
+
 const modChannel = (env) => (SNOWFLAKE.test(String(env.MOD_CHANNEL_ID || '')) ? env.MOD_CHANNEL_ID : null);
 const safeName = (s) => String(s).replace(/[*_`~|>\\]/g, '');
 
@@ -258,7 +312,7 @@ export async function handleTickets(request, env) {
   const parts = url.pathname.replace(/\/+$/, '').split('/').slice(3); // after /api/tickets
   const session = await readSession(request, env);
   if (!session) return fail(401, 'signed_out', 'Sign in with Discord first.');
-  const staffAction = ['staff', 'members', 'award', 'orders'].includes(parts[0]);
+  const staffAction = ['staff', 'members', 'award', 'orders', 'post-scores'].includes(parts[0]);
   const store = ticketStore(env.DB);
 
   try {
@@ -283,7 +337,7 @@ export async function handleTickets(request, env) {
       }
       if (!who.manager) return fail(403, 'not_manager', 'Staff only.');
       if (parts[0] === 'staff') {
-        return json({ orders: (await store.pendingOrders(100)).map((o) => ({ ...publicOrder(o), by: o.name })) });
+        return json({ orders: (await store.pendingOrders(100)).map((o) => ({ ...publicOrder(o), by: o.name })), announcements: Boolean(announceChannel(env)) });
       }
       if (parts[0] === 'members') {
         const q = cleanText(url.searchParams.get('q'), 32);
@@ -316,6 +370,14 @@ export async function handleTickets(request, env) {
     }
 
     if (!who.manager) return fail(403, 'not_manager', 'Only the Ringleaders can do that.');
+    if (parts.length === 1 && parts[0] === 'post-scores') {
+      try {
+        return json({ ok: true, ...(await postHighScores(env)) });
+      } catch (err) {
+        if (err instanceof TicketError) throw err;
+        throw new TicketError(502, 'discord', `Discord didn't take the post. ${explain(err)}`);
+      }
+    }
     if (parts.length === 1 && parts[0] === 'award') {
       const r = await award(env, who.name, body.userId, body.amount, body.note);
       if (r.amount > 0) await sendDm(env, body.userId, `🎟️ The Ringleaders handed you ${ticketsText(r.amount)}${body.note ? `: ${cleanText(body.note, 120)}` : '.'}`).catch(() => {});

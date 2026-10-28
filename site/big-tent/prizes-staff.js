@@ -121,7 +121,41 @@
     ]);
   }
 
+  function scoresPanel(ready) {
+    const status = el('p', { class: 'odd-review-status', role: 'status' });
+    const btn = el('button', { type: 'button', class: 'btn btn-ghost', text: 'Post the High Scores now', disabled: !ready });
+    let armed = false;
+    btn.addEventListener('click', async () => {
+      if (!armed) {
+        armed = true;
+        btn.textContent = 'Click again to post to announcements';
+        setTimeout(() => { armed = false; btn.textContent = 'Post the High Scores now'; }, 4000);
+        return;
+      }
+      armed = false;
+      btn.disabled = true;
+      try {
+        await api('/api/tickets/post-scores', {});
+        status.textContent = 'Posted to the announcements channel.';
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Post the High Scores now';
+      }
+    });
+    return el('div', { class: 'panel' }, [
+      el('div', { class: 'panel-head' }, [el('h2', { text: 'Weekly High Scores' })]),
+      el('p', { class: 'meta', text: ready
+        ? 'The Usher posts the week\'s top earners and the all-time leaders to the announcements channel every Sunday at noon Eastern. Members who hid themselves are left out. Use the button for an extra post (it doesn\'t replace Sunday\'s).'
+        : 'Set the ANNOUNCEMENTS_CHANNEL_ID secret to turn on the Sunday post.' }),
+      el('div', { class: 'btn-row' }, [btn]),
+      status
+    ]);
+  }
+
   let give = null;
+  let scores = null;
   async function load() {
     let d;
     try {
@@ -132,12 +166,14 @@
     }
     const list = el('ul', { class: 'pass-queue' }, d.orders.map(orderItem));
     give = give || giveForm();
+    scores = scores || scoresPanel(Boolean(d.announcements));
     slot.replaceChildren(
       el('div', { class: 'panel pass-panel' }, [
         el('div', { class: 'panel-head' }, [el('h2', { text: `Orders waiting (${d.orders.length})` })]),
         d.orders.length ? list : el('p', { class: 'gn-note', text: 'Nobody at the counter.' })
       ]),
-      give
+      give,
+      scores
     );
   }
   load();
