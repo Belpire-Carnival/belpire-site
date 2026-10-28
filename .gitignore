@@ -7,3 +7,10 @@ site/data/feed.json
 # Crew overlap tool: private crew list and its report
 crew.local.json
 crew-report.md
+
+# SSH keys never belong in the repo
+github
+github.pub
+id_*
+*.pem
+*.key
