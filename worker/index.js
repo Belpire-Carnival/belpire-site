@@ -10,6 +10,7 @@ import { handleOddities, purgeStaleUploads } from './oddities.js';
 import { liveStatus } from './live.js';
 import { readSession } from './auth.js';
 import { memberInfo } from './polls.js';
+import { handlePasses, syncPendingPasses, passStatus } from './passes.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -40,6 +41,7 @@ export default {
     if (!pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (pathname === '/api/polls' || pathname.startsWith('/api/polls/')) return handlePolls(request, env, ctx);
     if (pathname === '/api/oddities' || pathname.startsWith('/api/oddities/')) return handleOddities(request, env, ctx);
+    if (pathname === '/api/passes' || pathname.startsWith('/api/passes/')) return handlePasses(request, env);
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
     if (pathname === '/api/live') {
@@ -53,7 +55,11 @@ export default {
         const session = await readSession(request, env);
         if (session) {
           const who = await memberInfo(env, session).catch(() => ({ member: false }));
-          access = who.member ? 'member' : 'not_member';
+          if (!who.member) access = 'not_member';
+          else {
+            const pass = passStatus(env, who);
+            access = pass === 'has_pass' || pass === 'not_required' ? 'member' : pass === 'pending' ? 'pass_pending' : 'no_pass';
+          }
         }
       }
       const body = { ...status, access, joinUrl: access === 'member' ? status.joinUrl : null };
@@ -73,6 +79,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refresh(env, { notify: true }));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
+    ctx.waitUntil(syncPendingPasses(env).catch((err) => console.warn(`Pass sync failed: ${err.message}`)));
     ctx.waitUntil(purgeStaleUploads(env).catch((err) => console.warn(`Oddity upload cleanup failed: ${err.message}`)));
   }
 };

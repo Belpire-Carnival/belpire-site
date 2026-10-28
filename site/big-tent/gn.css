@@ -194,3 +194,15 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .slot.picked, .cand.picked { border-style: solid; border-color: var(--gold); background: rgba(217, 178, 106, .16); }
 .place-btn { min-height: 44px; white-space: nowrap; }
 .select-hint { color: var(--gold); }
+
+/* Game Night passes */
+.gn-passes { display: grid; gap: 16px; margin-top: 24px; }
+.pass-panel h2 { font-size: clamp(22px, 2.6vw, 28px); }
+.pass-ok { border-color: var(--gold); }
+.pass-msg { margin: 0; color: var(--gold); min-height: 1.2em; }
+.pass-queue { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pass-item { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--ground); }
+.pass-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pass-actions .btn { min-height: 44px; }
+.pass-reason { flex: 1 1 220px; min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--raised); color: var(--text); font: inherit; }
+.pass-reason:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

@@ -71,6 +71,37 @@ export async function getVoiceState(env, userId, opts) {
   }
 }
 
+export function addRole(env, userId, roleId, reason, opts) {
+  return call(env, 'PUT', `/guilds/${env.DISCORD_GUILD_ID}/members/${userId}/roles/${roleId}`, null, opts);
+}
+export function removeRole(env, userId, roleId, opts) {
+  return call(env, 'DELETE', `/guilds/${env.DISCORD_GUILD_ID}/members/${userId}/roles/${roleId}`, null, opts);
+}
+// Every member of the server, 1000 at a time. Needs the Server Members intent switched on for the bot.
+export async function listMembers(env, opts, max = 10000) {
+  const out = [];
+  let after = '0';
+  while (out.length < max) {
+    const page = await call(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}/members?limit=1000&after=${after}`, null, opts);
+    if (!Array.isArray(page) || !page.length) break;
+    out.push(...page);
+    if (page.length < 1000) break;
+    after = page[page.length - 1].user.id;
+  }
+  return out;
+}
+// A direct message from the bot. Returns false when the person has DMs from server members turned off.
+export async function sendDm(env, userId, content, opts) {
+  try {
+    const ch = await call(env, 'POST', '/users/@me/channels', { recipient_id: userId }, opts);
+    await call(env, 'POST', `/channels/${ch.id}/messages`, { content, allowed_mentions: { parse: [] } }, opts);
+    return true;
+  } catch (err) {
+    if (err.code === 50007 || err.status === 403) return false;
+    throw err;
+  }
+}
+
 export function getChannel(env, channelId, opts) {
   return call(env, 'GET', `/channels/${channelId}`, null, opts);
 }
@@ -108,6 +139,7 @@ export const PERMS = {
   SEND_MESSAGES: 1n << 11n,
   EMBED_LINKS: 1n << 14n,
   CONNECT: 1n << 20n,
+  MANAGE_ROLES: 1n << 28n,
   MUTE_MEMBERS: 1n << 22n,
   MOVE_MEMBERS: 1n << 24n,
   MANAGE_EVENTS: 1n << 33n,
@@ -198,6 +230,26 @@ export async function checkSetup(env, opts) {
       add(has(p, PERMS.MANAGE_CHANNELS) && has(p, PERMS.MUTE_MEMBERS) && has(p, PERMS.MOVE_MEMBERS),
         `Bot has Stage permissions in ${stage.name}`,
         `${stage.name} is a Stage channel, so Discord also requires Manage Channels, Mute Members and Move Members for the bot there.`);
+    }
+  }
+  // Game Night passes: the bot hands out the role, so it needs Manage Roles and must sit above both roles.
+  if (env.GAME_NIGHT_ROLE_ID) {
+    const base = channelPermissions({ guildId: env.DISCORD_GUILD_ID, roles, memberRoles: member.roles || [], memberId: me.id, overwrites: [] });
+    add(has(base, PERMS.MANAGE_ROLES), 'Bot can manage roles', 'Give the bot\'s role Manage Roles (Server Settings › Roles).');
+    const pos = new Map(roles.map((r) => [r.id, r.position]));
+    const top = Math.max(0, ...(member.roles || []).map((r) => pos.get(r) ?? 0));
+    for (const [id, label] of [[env.GAME_NIGHT_ROLE_ID, 'Game Night'], [env.GAME_NIGHT_PENDING_ROLE_ID, 'Game Night (Pending)']]) {
+      if (!id) continue;
+      if (!pos.has(id)) add(false, `${label} role found`, `GAME_NIGHT${label.includes('Pending') ? '_PENDING' : ''}_ROLE_ID doesn't match a role in the server.`);
+      else add(top > pos.get(id), `Bot's role is above ${label}`, `Drag the bot's role above ${label} in Server Settings › Roles. Discord only lets a bot hand out roles below its own.`);
+    }
+    if (env.GAME_NIGHT_PENDING_ROLE_ID) {
+      try {
+        await call(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}/members?limit=1`, null, opts);
+        add(true, 'Bot can see the member list (for onboarding answers)');
+      } catch {
+        add(false, 'Bot can see the member list (for onboarding answers)', 'In the Developer Portal › Bot, turn on Server Members Intent so people who answer Yes in onboarding reach the queue.');
+      }
     }
   }
   return checks;
