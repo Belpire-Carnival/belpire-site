@@ -443,3 +443,14 @@ test('members see who has voted and who spun the Wheel of Doom, never their pick
   r = await api('/api/polls/current', { as: 'stranger' });
   assert.equal(r.body.poll.voters, undefined, 'non-members only see the count');
 });
+
+test('ballots saved before names were recorded get their names filled in', async () => {
+  let r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
+  const id = r.body.id;
+  await api(`/api/polls/${id}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-553850'] } });
+  env.DB._raw.exec('UPDATE ballots SET voter_name = NULL');
+  r = await api('/api/polls/current', { as: 'guard' });
+  assert.deepEqual(r.body.poll.voters, [{ name: 'fan', doom: false }]);
+  assert.equal(env.DB._raw.prepare('SELECT voter_name FROM ballots').get().voter_name, 'fan', 'saved for next time');
+  assert.ok(!JSON.stringify(r.body.poll.voters).includes('300000000000000003'), 'no user IDs');
+});

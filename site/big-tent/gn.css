@@ -183,3 +183,14 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .voter-doom { border-color: #B0233A; background: color-mix(in srgb, #B0233A 18%, var(--ground)); }
 .voter-doom .voter-mark { color: #F08A8A; }
 .voters-panel .gn-note.small { font-size: 13px; margin-top: 12px; }
+
+/* Drag and drop / tap-to-place voting */
+.grab { cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: pan-y; }
+.is-dragging, .is-dragging * { cursor: grabbing !important; }
+.dragging { opacity: .4; }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: var(--raised); color: var(--text); font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); max-width: 280px; }
+.slot.drop-target { border-style: solid; border-color: var(--gold); background: rgba(217, 178, 106, .14); box-shadow: 0 0 0 2px rgba(217, 178, 106, .35); }
+.slot.awaiting { border-color: var(--gold); }
+.slot.picked, .cand.picked { border-style: solid; border-color: var(--gold); background: rgba(217, 178, 106, .16); }
+.place-btn { min-height: 44px; white-space: nowrap; }
+.select-hint { color: var(--gold); }

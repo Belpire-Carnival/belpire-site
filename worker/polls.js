@@ -223,6 +223,28 @@ export function memberInfo(env, session, opts) {
   return whoIs(env, pollConfig(env), session, opts);
 }
 
+// Ballots cast before names were recorded get their name looked up once (server nickname or display name)
+// and saved, so the list fills in by itself. Never returns user IDs.
+async function votersWithNames(env, store, pollId) {
+  const rows = await store.voters(pollId);
+  let lookups = 0;
+  for (const v of rows) {
+    if (v.name || lookups >= 10) continue;
+    lookups++;
+    try {
+      const m = await getMember(env, v.userId);
+      const name = m ? String(m.nick || m.user?.global_name || m.user?.username || '').slice(0, 64) : '';
+      if (name) {
+        v.name = name;
+        await store.setVoterName(pollId, v.userId, name);
+      }
+    } catch (err) {
+      console.warn(`Voter name lookup failed: ${err.message}`);
+    }
+  }
+  return rows.map((v) => ({ name: v.name || 'A member', doom: v.doom }));
+}
+
 let catalogCache = null;
 async function loadCatalog(env, origin) {
   if (catalogCache && catalogCache.until > Date.now()) return catalogCache.value;
@@ -296,7 +318,7 @@ export async function handlePolls(request, env, ctx) {
       if (poll) {
         extra.voteCount = await store.voteCount(poll.id);
         if (me.member) {
-          extra.voters = await store.voters(poll.id); // names for members only; picks stay secret
+          extra.voters = await votersWithNames(env, store, poll.id); // names for members only; picks stay secret
           const mine = await store.ballot(poll.id, session.uid);
           extra.myBallot = mine?.ranking || null;
           extra.myBallotLocked = Boolean(mine?.locked);
