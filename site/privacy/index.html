@@ -63,7 +63,7 @@
     <ul>
       <li>We store the <strong>file</strong> (in Cloudflare R2), your <strong>caption</strong>, your <strong>Discord user ID and display name</strong> and the time, in our database (Cloudflare D1). Your display name is shown publicly with the upload; your user ID is not.</li>
       <li>Before storing a picture we remove its hidden metadata, such as camera details and <strong>GPS location</strong>. Clips are stored as uploaded, so check yours doesn't show anything private.</li>
-      <li>Pictures are checked by an automated safety scan (Cloudflare Workers AI) that looks only at the picture. Clips, and anything the scan isn't sure about, are reviewed by a RingMaster, RingMistress or Carnival Guard before they're shown.</li>
+      <li>Pictures are checked by an automated safety scan (Cloudflare Workers AI) that looks only at the picture. Clips, and anything the scan isn't sure about, are reviewed by a Ringleader (RingMaster, RingMistress, Carnival Guard or Fortune Teller) before they're shown.</li>
       <li>"Take a screenshot" uses your browser's screen-sharing prompt. Nothing is captured until you pick a screen, window or tab, only one still frame is taken, and it stays on your device unless you upload it.</li>
       <li>When you react (Like, Laugh, Scream and so on), we store your <strong>Discord user ID and the reaction</strong> so you can take it back. Only the totals are shown publicly.</li>
       <li>Uploads stay up until you or a Ringleader removes them. Removing one deletes the file and its reactions. If another member reports an upload, we record that they reported it so the same person can't report it twice.</li>
