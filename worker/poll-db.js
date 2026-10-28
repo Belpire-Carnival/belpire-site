@@ -61,6 +61,13 @@ export function pollStore(db) {
       return parse(await db.prepare("SELECT * FROM polls WHERE status IN ('open','closed') ORDER BY created_at DESC LIMIT 1").first());
     },
     // Scheduled nights that haven't started yet, soonest first.
+    // A scheduled night that is under way: started up to `hours` ago (or starting within 15 minutes).
+    async tonight(nowMs, hours = 6) {
+      await ensure(db);
+      const lo = new Date(nowMs - hours * 3600e3).toISOString();
+      const hi = new Date(nowMs + 15 * 60e3).toISOString();
+      return parse(await db.prepare("SELECT * FROM polls WHERE status = 'scheduled' AND event_start >= ? AND event_start <= ? ORDER BY event_start DESC LIMIT 1").bind(lo, hi).first());
+    },
     async upcoming(nowIso, limit = 6) {
       await ensure(db);
       const { results } = await db.prepare("SELECT * FROM polls WHERE status = 'scheduled' AND event_start > ? ORDER BY event_start ASC LIMIT ?").bind(nowIso, limit).all();

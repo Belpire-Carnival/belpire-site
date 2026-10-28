@@ -7,6 +7,7 @@ import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
+import { liveStatus } from './live.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -39,6 +40,13 @@ export default {
     if (pathname === '/api/oddities' || pathname.startsWith('/api/oddities/')) return handleOddities(request, env, ctx);
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
+    if (pathname === '/api/live') {
+      const status = await liveStatus(env).catch((err) => {
+        console.warn(`Live status failed: ${err.message}`);
+        return { live: false, streamers: [], onStage: [], event: null, joinUrl: null };
+      });
+      return json(status, 200, { 'Cache-Control': 'public, max-age=15' });
+    }
     if (pathname === '/api/star-citizen') {
       const snapshot = await handleSnapshot(env, ctx);
       return json(snapshot, 200, { 'Cache-Control': 'public, max-age=60' });
