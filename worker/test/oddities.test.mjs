@@ -394,3 +394,25 @@ test('members toggle reactions; counts are public, who reacted is not', async ()
   assert.deepEqual(mine.myReactions.sort(), ['laugh', 'scream']);
   assert.ok(!JSON.stringify(pub).includes(USERS.fan3));
 });
+
+test('Ringleaders\' own pictures and clips go straight up, skipping the scan and the queue', async () => {
+  aiMode = 'review';
+  const pic = await uploadImage('boss', png(), 'Opening night');
+  assert.equal(pic.status, 200);
+  assert.equal(pic.body.status, 'live');
+  assert.equal(env.AI.calls, 0, 'no scan for Ringleaders');
+  assert.equal((await uploadImage('boss', cat([0x42, 0x4d], new Uint8Array(64)))).status, 415, 'file checks still apply');
+
+  const size = CLIP_PART_BYTES + 100;
+  const start = await call('/api/oddities/clip', { as: 'boss', method: 'POST', body: { size, mime: 'video/mp4', caption: 'Big top' } });
+  const id = start.body.id;
+  const p1 = await call(`/api/oddities/clip/${id}/part/1`, { as: 'boss', method: 'PUT', body: mp4(1024) });
+  const p2 = await call(`/api/oddities/clip/${id}/part/2`, { as: 'boss', method: 'PUT', body: new Uint8Array(100) });
+  const done = await call(`/api/oddities/clip/${id}/complete`, { as: 'boss', method: 'POST', body: { parts: [p1.body, p2.body] } });
+  assert.equal(done.body.status, 'live');
+
+  assert.equal((await call('/api/oddities?kind=image')).body.items.length, 1);
+  assert.equal((await call('/api/oddities?kind=clip')).body.items.length, 1);
+  assert.equal((await call('/api/oddities', { as: 'boss' })).body.queue.length, 0);
+  assert.equal((await call(`/api/oddities/${id}/media`)).status, 200);
+});

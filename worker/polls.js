@@ -1,6 +1,6 @@
 // Game-night polls for The Big Tent (belpire.com/big-tent/).
 //
-//   GET  /api/polls/current          the open/closed poll, upcoming scheduled nights, and what this visitor may do
+//   GET  /api/polls/current          every active poll (several can run at once, one per game night)          the open/closed poll, upcoming scheduled nights, and what this visitor may do
 //   POST /api/polls                  managers: open a poll from the game catalog
 //   POST /api/polls/:id/ballot       members: rank up to 4 games (ranked choice, 4-3-2-1 points)
 //   POST /api/polls/:id/doom         members: the Wheel of Doom picks 4 horror/party/Jackbox games; ballot locks
@@ -24,6 +24,7 @@ export const MAX_RANK = 4;
 const POINTS = [4, 3, 2, 1];
 const MIN_CANDIDATES = 2;
 const MAX_CANDIDATES = 24;
+export const MAX_ACTIVE_POLLS = 8;
 const SNOWFLAKE = /^\d{17,20}$/;
 const GOLD = 0xd9b26a;
 
@@ -311,21 +312,22 @@ export async function handlePolls(request, env, ctx) {
   try {
     // GET /api/polls/current
     if (request.method === 'GET' && parts.length === 1 && parts[0] === 'current') {
-      const poll = await store.current();
+      const active = await store.active();
       let me = { signedIn: false, member: false, manager: false };
       if (session) {
         const who = await whoIs(env, cfg, session);
         me = { signedIn: true, name: who.name, member: who.member, manager: who.manager };
       }
-      const extra = {};
-      if (poll) {
-        extra.voteCount = await store.voteCount(poll.id);
+      const polls = [];
+      for (const poll of active) {
+        const extra = { voteCount: await store.voteCount(poll.id) };
         if (me.member) {
           extra.voters = await votersWithNames(env, store, poll.id); // names for members only; picks stay secret
           const mine = await store.ballot(poll.id, session.uid);
           extra.myBallot = mine?.ranking || null;
           extra.myBallotLocked = Boolean(mine?.locked);
         }
+        polls.push(publicPoll(poll, extra));
       }
       const upcoming = (await store.upcoming(new Date().toISOString())).map((p) => ({
         id: p.id,
@@ -336,7 +338,8 @@ export async function handlePolls(request, env, ctx) {
         eventPosted: p.event_posted
       }));
       const catalog = me.manager ? await loadCatalog(env, url.origin) : undefined;
-      return json({ me, poll: publicPoll(poll, extra), upcoming, catalog });
+      // `poll` is the newest active poll, kept for older pages; `polls` is every active one.
+      return json({ me, polls, poll: polls.at(-1) || null, upcoming, catalog });
     }
 
     // GET /api/polls/discord-check (Ringleaders only)
@@ -357,8 +360,7 @@ export async function handlePolls(request, env, ctx) {
     if (parts.length === 0) {
       const who = await whoIs(env, cfg, session, { fresh: true });
       if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress and Carnival Guards can start a poll.');
-      const active = await store.current();
-      if (active && (active.status === 'open' || active.status === 'closed')) return fail(409, 'active', 'Finish or cancel the current poll first.');
+      if ((await store.active(MAX_ACTIVE_POLLS + 1)).length >= MAX_ACTIVE_POLLS) return fail(409, 'active', `${MAX_ACTIVE_POLLS} polls are already running. Close or cancel one first.`);
       const catalog = await loadCatalog(env, url.origin);
       const byKey = new Map(catalog.map((c) => [c.key, c]));
       const keys = Array.isArray(body.candidates) ? [...new Set(body.candidates)] : [];

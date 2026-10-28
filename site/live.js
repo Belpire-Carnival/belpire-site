@@ -63,7 +63,12 @@
   async function check() {
     try {
       const res = await fetch('/api/live', { headers: { Accept: 'application/json' } });
-      if (res.ok) show(await res.json());
+      if (res.ok) {
+        const status = await res.json();
+        show(status);
+        // Let other parts of the page (The Big Tent's ticker) react to who is live.
+        document.dispatchEvent(new CustomEvent('belpire:live', { detail: { live: Boolean(status.live), streamers: Array.isArray(status.streamers) ? status.streamers.map(String).slice(0, 4) : [] } }));
+      }
     } catch {
       // leave whatever is showing; try again next round
     }

@@ -4,7 +4,8 @@ import { easternToIso, formatEastern, formatLocal } from './time.js';
 const MAX_RANK = 4;
 const POINTS = [4, 3, 2, 1];
 const app = document.getElementById('gn-app');
-let state = null; // { me, poll, catalog }
+let state = null; // { me, polls, poll (the one on screen), upcoming, catalog }
+let pollId = new URLSearchParams(location.search).get('poll'); // which of several polls is on screen
 let ranking = []; // candidate keys, best first
 let selected = null; // a game picked up by tapping, waiting for a slot
 let flash = null; // { kind, text }
@@ -544,8 +545,8 @@ function managerOpenControls(poll) {
 }
 
 function scheduleForm(poll) {
-  const day = el('input', { type: 'date', id: 'gn-day', required: true });
-  const time = el('input', { type: 'time', id: 'gn-time', required: true, value: '20:00', step: '900' });
+  const day = el('input', { type: 'date', id: `gn-day-${poll.id}`, required: true });
+  const time = el('input', { type: 'time', id: `gn-time-${poll.id}`, required: true, value: '20:00', step: '900' });
   const go = button('Create the Discord event', async () => {
     const start = easternToIso(day.value, time.value);
     if (!start) {
@@ -559,8 +560,8 @@ function scheduleForm(poll) {
     el('h2', { text: 'Set the date' }),
     el('p', { class: 'meta', text: 'Times are Eastern. This creates the event in The Main Stage and posts it to #general.' }),
     el('div', { class: 'when' }, [
-      el('div', { class: 'field' }, [el('label', { for: 'gn-day', text: 'Date' }), day]),
-      el('div', { class: 'field' }, [el('label', { for: 'gn-time', text: 'Start time (ET)' }), time]),
+      el('div', { class: 'field' }, [el('label', { for: day.id, text: 'Date' }), day]),
+      el('div', { class: 'field' }, [el('label', { for: time.id, text: 'Start time (ET)' }), time]),
       go
     ])
   ];
@@ -616,30 +617,68 @@ const dayFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', 
 const timeFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
 
 // Scheduled nights, soonest first, in the same row style the home page used.
+// The carnival ticker across the top: the open poll and every booked night, scrolling like a marquee.
+// The moving copy is decorative (aria-hidden); a plain list carries the same text for screen readers,
+// and with reduced motion the items simply sit still and wrap.
+let liveNow = { live: false, streamers: [] };
+document.addEventListener('belpire:live', (e) => {
+  const next = e.detail || { live: false, streamers: [] };
+  if (next.live === liveNow.live && next.streamers.join() === liveNow.streamers.join()) return;
+  liveNow = next;
+  if (state) renderUpcoming();
+});
+
 function renderUpcoming() {
-  const section = document.getElementById('gn-upcoming');
-  const list = document.getElementById('gn-nights');
-  const nights = state.upcoming || [];
-  section.hidden = nights.length === 0;
-  list.replaceChildren();
-  for (const n of nights) {
+  const box = document.getElementById('gn-ticker');
+  const track = document.getElementById('gn-ticker-track');
+  const sr = document.getElementById('gn-ticker-sr');
+  const tools = document.getElementById('gn-ticker-tools');
+  if (!box || !track) return;
+  const items = [];
+  const tag = document.getElementById('gn-ticker-tag');
+  // "NOW SHOWING" only while a Ringleader is live in The Main Stage; otherwise it's just the bill.
+  box.classList.toggle('is-live', liveNow.live);
+  if (tag) tag.textContent = liveNow.live ? 'NOW SHOWING' : 'ON THE BILL';
+  if (liveNow.live) {
+    const who = liveNow.streamers.length < 3 ? liveNow.streamers.join(' and ') : `${liveNow.streamers.slice(0, -1).join(', ')} and ${liveNow.streamers.at(-1)}`;
+    items.push({ icon: '🔴', kicker: 'LIVE IN THE MAIN STAGE', text: `${who || 'A Ringleader'} ${liveNow.streamers.length > 1 ? 'are' : 'is'} on stage right now` });
+  }
+  for (const poll of state.polls || []) {
+    if (poll.status === 'open') items.push({ icon: '🗳️', kicker: 'VOTING OPEN', text: `${poll.title} · ${poll.voteCount} ${poll.voteCount === 1 ? 'ballot' : 'ballots'} cast · rank your four below` });
+    else items.push({ icon: '📜', kicker: 'THE VOTES ARE IN', text: `${poll.title} · the RingMaster is setting the date` });
+  }
+  for (const n of state.upcoming || []) {
     const d = new Date(n.eventStart);
     const local = formatLocal(n.eventStart);
     const et = formatEastern(n.eventStart);
-    list.append(el('div', { class: 'night' }, [
-      el('div', { class: 'night-day', text: dayFmt.format(d) }),
-      el('div', { class: 'night-time', text: `${timeFmt.format(d)} ET` }),
-      el('div', { class: 'night-game' }, [
-        el('strong', { text: n.title }),
-        el('span', { class: 'lineup', text: n.lineup.join(' · ') }),
-        local && local !== et ? el('span', { class: 'meta', text: `Your time: ${local}` }) : null
-      ]),
-      n.eventUrl
-        ? el('a', { class: 'btn btn-ghost btn-sm', href: n.eventUrl, target: '_blank', rel: 'noopener', text: 'Open in Discord' })
-        : el('span', { class: 'meta', text: 'The Main Stage' }),
-      state.me.manager && !n.eventPosted ? button('Post to Discord again', () => act(`/api/polls/${n.id}/announce`, {}, 'Posted to #general.'), 'btn btn-ghost btn-sm') : null
-    ]));
+    items.push({
+      icon: '🎪',
+      kicker: `${dayFmt.format(d).toUpperCase()} · ${timeFmt.format(d)} ET`,
+      text: `${n.title}${n.lineup.length ? ` · ${n.lineup.join(' ✦ ')}` : ''}${local && local !== et ? ` (your time ${local})` : ''}`,
+      href: n.eventUrl
+    });
   }
+  if (!items.length) items.push({ icon: '🎟️', kicker: 'INTERMISSION', text: 'No show on the bill yet. Watch Discord for the next poll' });
+  const piece = (it) => [
+    el('span', { class: 'tick-item' }, [
+      el('span', { class: 'tick-icon', text: it.icon }),
+      el('span', { class: 'tick-kicker', text: it.kicker }),
+      el('span', { class: 'tick-text', text: it.text })
+    ]),
+    el('span', { class: 'tick-sep', text: '✦' })
+  ];
+  const run = () => el('span', { class: 'ticker-run' }, items.flatMap(piece));
+  track.replaceChildren(run(), run());
+  sr.replaceChildren(el('li', { text: liveNow.live ? 'Now showing:' : 'On the bill:' }), ...items.map((it) => el('li', { text: `${it.kicker}: ${it.text}` })));
+  track.style.setProperty('--ticker-duration', `${Math.max(18, items.reduce((n, it) => n + it.text.length + it.kicker.length, 0) * 0.28)}s`);
+  box.hidden = false;
+  // Links and Ringleader tools can't live in a moving strip, so they sit just below it.
+  const links = (state.upcoming || []).flatMap((n) => [
+    n.eventUrl ? el('a', { class: 'btn btn-ghost btn-sm', href: n.eventUrl, target: '_blank', rel: 'noopener', text: `Open "${n.title}" in Discord` }) : null,
+    state.me.manager && !n.eventPosted ? button(`Post "${n.title}" to Discord again`, () => act(`/api/polls/${n.id}/announce`, {}, 'Posted to #general.'), 'btn btn-ghost btn-sm') : null
+  ]).filter(Boolean);
+  tools.replaceChildren(...links);
+  tools.hidden = links.length === 0;
 }
 
 // ---------------------------------------------------------------- Discord setup check (Ringleaders)
@@ -670,6 +709,34 @@ function discordCheck() {
   ]);
 }
 
+// ---------------------------------------------------------------- backstage (Ringleaders only, after sign-in)
+// The server checks the role on every action; this only decides what the page shows.
+function renderBackstage() {
+  const stage = document.getElementById('backstage');
+  if (!stage) return;
+  const { me } = state;
+  if (!me.manager) {
+    stage.hidden = true;
+    return;
+  }
+  stage.hidden = false;
+  const pollSlot = document.getElementById('gn-backstage-poll');
+  const tools = [];
+  for (const p of state.polls || []) {
+    tools.push(el('section', { class: 'backstage-poll' }, [
+      el('p', { class: 'backstage-poll-name' }, [el('span', { class: `pill ${p.status}`, text: p.status === 'open' ? 'Voting open' : 'Votes in' }), document.createTextNode(` ${p.title} · ${p.voteCount} ${p.voteCount === 1 ? 'ballot' : 'ballots'}`)]),
+      p.status === 'open' ? managerOpenControls(p) : scheduleForm(p)
+    ]));
+  }
+  const form = createForm();
+  tools.push((state.polls || []).length ? el('details', { class: 'backstage-new' }, [el('summary', { text: '＋ Open another poll' }), form]) : form);
+  pollSlot.replaceChildren(...tools);
+  // The Discord check keeps its results between re-renders, so it is only built once.
+  const disc = document.getElementById('gn-backstage-discord');
+  if (!disc.firstChild) disc.append(discordCheck());
+  document.dispatchEvent(new CustomEvent('belpire:backstage'));
+}
+
 // ---------------------------------------------------------------- render
 
 function render() {
@@ -677,11 +744,12 @@ function render() {
   const out = [];
   const f = flashNode();
   if (f) out.push(f);
+  const tabs = pollTabs();
+  if (tabs) out.push(tabs);
 
   if (!poll) {
     out.push(el('div', { class: 'panel' }, [el('h2', { text: 'No poll is open right now' }), el('p', { text: (state.upcoming || []).length ? 'The next night is booked. Watch Discord for the next poll.' : 'When a Ringleader opens a poll, it shows up here and in Discord.' })]));
     if (!me.signedIn) out.push(signInBlock('Members: verify with Discord to vote and get event links.'));
-    if (me.manager) out.push(createForm());
   } else {
     const head = el('div', { class: 'panel' }, [pollHeader(poll)]);
     out.push(head);
@@ -695,15 +763,13 @@ function render() {
         if (doom) out.push(doom);
       }
       if (voters) out.push(voters);
-      if (me.manager) out.push(managerOpenControls(poll));
     } else {
       head.append(el('p', { text: 'Voting is closed. The RingMaster is picking the date and time.' }));
       if (poll.results) head.append(resultsList(poll.results));
       if (voters) out.push(voters);
-      if (me.manager) out.push(scheduleForm(poll));
     }
   }
-  if (me.manager) out.push(discordCheck());
+  renderBackstage();
   const who = whoBar();
   if (who) out.push(who);
   app.replaceChildren(...out);
@@ -717,9 +783,55 @@ async function load(resetBallot = true) {
     return;
   }
   state = r.data;
+  const polls = Array.isArray(state.polls) ? state.polls : state.poll ? [state.poll] : [];
+  state.polls = polls;
+  const keep = polls.find((p) => p.id === pollId);
+  const shown = keep || polls.find((p) => p.status === 'open') || polls[0] || null;
+  if (shown?.id !== pollId) resetBallot = true;
+  pollId = shown?.id || null;
+  state.poll = shown;
   if (resetBallot || state.poll?.status !== 'open') ranking = Array.isArray(state.poll?.myBallot) ? [...state.poll.myBallot] : [];
   selected = null;
   render();
+}
+
+function showPoll(id) {
+  const p = state.polls.find((x) => x.id === id);
+  if (!p || p.id === pollId) return;
+  pollId = p.id;
+  state.poll = p;
+  ranking = Array.isArray(p.myBallot) ? [...p.myBallot] : [];
+  selected = null;
+  flash = null;
+  const u = new URL(location.href);
+  u.searchParams.set('poll', p.id);
+  history.replaceState(null, '', u);
+  render();
+  document.getElementById(`tab-${p.id}`)?.focus();
+}
+
+// One tab per poll when several are running, so each night's vote stays separate.
+function pollTabs() {
+  const polls = state.polls || [];
+  if (polls.length < 2) return null;
+  const tabs = el('div', { class: 'poll-tabs', role: 'tablist', 'aria-label': 'Game night polls' });
+  polls.forEach((p, i) => {
+    const on = p.id === pollId;
+    const t = el('button', {
+      type: 'button', role: 'tab', id: `tab-${p.id}`, class: `poll-tab${on ? ' on' : ''}`,
+      'aria-selected': String(on), 'aria-controls': 'gn-app', tabindex: on ? '0' : '-1',
+      onclick: () => showPoll(p.id)
+    }, [
+      el('span', { class: 'poll-tab-title', text: p.title }),
+      el('span', { class: `poll-tab-state ${p.status}`, text: p.status === 'open' ? (p.myBallot?.length ? '✓ voted' : 'vote now') : 'votes in' })
+    ]);
+    t.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) showPoll(polls[(i + d + polls.length) % polls.length].id);
+    });
+    tabs.append(t);
+  });
+  return tabs;
 }
 
 load();

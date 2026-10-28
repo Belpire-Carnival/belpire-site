@@ -178,8 +178,6 @@ test('the whole night: open, vote, close to #general, schedule an event, announc
   r = await api('/api/polls', { as: 'guard', method: 'POST', body: { title: 'Friday Fright', candidates: ['steam-1966720', 'steam-553850', 'steam-3527290', 'jb-1211630-quiplash-3', 'jb-3048060-trivia-murder-party-3'] } });
   assert.equal(r.status, 201);
   const id = r.body.id;
-  r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
-  assert.equal(r.status, 409, 'only one active poll');
 
   // Votes: members only, results hidden while open, a revote replaces the old ballot.
   r = await api(`/api/polls/${id}/ballot`, { as: 'stranger', method: 'POST', body: { ranking: ['steam-1966720'] } });
@@ -453,4 +451,39 @@ test('ballots saved before names were recorded get their names filled in', async
   assert.deepEqual(r.body.poll.voters, [{ name: 'fan', doom: false }]);
   assert.equal(env.DB._raw.prepare('SELECT voter_name FROM ballots').get().voter_name, 'fan', 'saved for next time');
   assert.ok(!JSON.stringify(r.body.poll.voters).includes('300000000000000003'), 'no user IDs');
+});
+
+test('several polls run side by side, each with its own ballots, voters and outcome', async () => {
+  let r = await api('/api/polls', { as: 'boss', method: 'POST', body: { title: 'Friday Fright', candidates: ['steam-1966720', 'steam-553850'] } });
+  const fri = r.body.id;
+  r = await api('/api/polls', { as: 'guard', method: 'POST', body: { title: 'Saturday Laughs', candidates: ['steam-3527290', 'jb-1211630-quiplash-3'] } });
+  assert.equal(r.status, 201);
+  const sat = r.body.id;
+  await api(`/api/polls/${fri}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-1966720'] } });
+  await api(`/api/polls/${sat}/doom`, { as: 'fan', method: 'POST', body: {} });
+  await api(`/api/polls/${sat}/ballot`, { as: 'fan2', method: 'POST', body: { ranking: ['steam-3527290'] } });
+  r = await api(`/api/polls/${fri}/ballot`, { as: 'fan2', method: 'POST', body: { ranking: ['steam-3527290'] } });
+  assert.equal(r.status, 400, "a game from another poll can't be voted here");
+  r = await api('/api/polls/current', { as: 'fan' });
+  assert.deepEqual(r.body.polls.map((p) => p.title), ['Friday Fright', 'Saturday Laughs']);
+  const [f, s2] = r.body.polls;
+  assert.deepEqual(f.myBallot, ['steam-1966720']);
+  assert.equal(f.myBallotLocked, false);
+  assert.equal(s2.myBallotLocked, true, 'the wheel locks only that poll');
+  assert.equal(f.voteCount, 1);
+  assert.equal(s2.voteCount, 2);
+  assert.equal(r.body.poll.id, sat, 'older pages still get the newest poll');
+  await api(`/api/polls/${fri}/close`, { as: 'boss', method: 'POST', body: {} });
+  r = await api('/api/polls/current', { as: 'fan' });
+  assert.deepEqual(r.body.polls.map((p) => [p.title, p.status]), [['Friday Fright', 'closed'], ['Saturday Laughs', 'open']]);
+  assert.ok(r.body.polls[0].results && !r.body.polls[1].results);
+});
+
+test('there is a cap on how many polls can run at once', async () => {
+  for (let i = 0; i < 8; i++) {
+    const r = await api('/api/polls', { as: 'boss', method: 'POST', body: { title: `Night ${i}`, candidates: ['steam-1966720', 'steam-553850'] } });
+    assert.equal(r.status, 201);
+  }
+  const r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
+  assert.equal(r.status, 409);
 });
