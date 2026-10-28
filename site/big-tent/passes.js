@@ -80,7 +80,7 @@
       list.append(li);
     }
     return el('div', { class: 'panel pass-panel' }, [
-      el('div', { class: 'panel-head' }, [el('h2', { text: `Pass requests (${queue.length})` }), el('span', { class: 'meta', text: 'Ringleaders only' })]),
+      el('div', { class: 'panel-head' }, [el('h2', { text: `Game Night pass requests (${queue.length})` })]),
       queue.length ? list : el('p', { class: 'gn-note', text: 'No one waiting at the gate.' })
     ]);
   }
@@ -96,10 +96,12 @@
     }
     const parts = [];
     if (['none', 'pending', 'has_pass'].includes(d.status)) parts.push(memberPart(d));
-    if (Array.isArray(d.queue)) parts.push(queuePart(d.queue));
     box.replaceChildren(...parts);
     box.hidden = parts.length === 0;
-    if (!box.hidden && location.hash === '#passes') box.scrollIntoView();
+    // Ringleaders review requests Backstage.
+    const slot = document.getElementById('gn-backstage-passes');
+    if (slot) slot.replaceChildren(Array.isArray(d.queue) ? queuePart(d.queue) : '');
+    if (location.hash === '#passes') (Array.isArray(d.queue) ? document.getElementById('backstage') : box)?.scrollIntoView();
   }
   load();
 })();

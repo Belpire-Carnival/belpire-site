@@ -55,7 +55,13 @@ const parse = (row) =>
 
 export function pollStore(db) {
   return {
-    // The poll being voted on or waiting for a date (at most one at a time).
+    // Every poll being voted on or waiting for a date, oldest first (several can run side by side).
+    async active(limit = 12) {
+      await ensure(db);
+      const { results } = await db.prepare("SELECT * FROM polls WHERE status IN ('open','closed') ORDER BY created_at ASC LIMIT ?").bind(limit).all();
+      return results.map(parse);
+    },
+    // The newest active poll.
     async current() {
       await ensure(db);
       return parse(await db.prepare("SELECT * FROM polls WHERE status IN ('open','closed') ORDER BY created_at DESC LIMIT 1").first());
