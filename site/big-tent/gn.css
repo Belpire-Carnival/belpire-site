@@ -206,3 +206,80 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .pass-actions .btn { min-height: 44px; }
 .pass-reason { flex: 1 1 220px; min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--raised); color: var(--text); font: inherit; }
 .pass-reason:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+<<<<<<< ours
+=======
+
+/* Carnival ticker */
+.ticker { position: relative; background: #12090D; border-top: 3px solid var(--gold); border-bottom: 3px solid var(--gold);
+  background-image: repeating-linear-gradient(135deg, rgba(122, 22, 37, .55) 0 22px, rgba(18, 9, 13, .9) 22px 44px); }
+.ticker-bulbs { height: 12px; background: radial-gradient(circle, #FFF1D0 0 3px, rgba(243, 210, 126, .45) 4px, transparent 6px) 0 50% / 26px 12px repeat-x; animation: bulbs 1.2s steps(2) infinite; }
+@keyframes bulbs { to { background-position: 13px 50%; } }
+.ticker-window { display: flex; align-items: center; overflow: hidden; background: rgba(10, 6, 8, .82); }
+.ticker-tag { flex: 0 0 auto; z-index: 1; padding: 10px 16px; background: #2A1E24; color: #FFF1D0; font-family: var(--display); font-weight: 900; font-size: 15px; letter-spacing: .08em; box-shadow: 8px 0 14px rgba(0, 0, 0, .6); }
+.ticker-track { display: flex; flex: 1 1 auto; min-width: 0; white-space: nowrap; }
+.ticker-run { display: inline-flex; align-items: center; flex: 0 0 auto; padding-right: 0; animation: ticker var(--ticker-duration, 30s) linear infinite; }
+.ticker:hover .ticker-run { animation-play-state: paused; }
+@keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+.tick-item { display: inline-flex; align-items: center; gap: 10px; padding: 10px 6px 10px 22px; font-size: 17px; }
+.tick-icon { font-size: 18px; }
+.tick-kicker { font-family: var(--serif); font-weight: 700; letter-spacing: .14em; color: var(--gold); font-size: 14px; }
+.tick-text { color: #F4ECE0; font-weight: 600; }
+.tick-sep { color: var(--gold); padding: 0 6px 0 16px; text-shadow: 0 0 8px rgba(243, 210, 126, .8); }
+.ticker-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+.ticker-tools .btn { min-height: 44px; }
+.gn-passes { margin-top: 0; margin-bottom: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .ticker-bulbs { animation: none; }
+  .ticker-run { animation: none; }
+  .ticker-run + .ticker-run { display: none; }
+  .ticker-track { white-space: normal; }
+  .ticker-run { flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .ticker-tag { font-size: 12px; padding: 10px 10px; }
+  .tick-item { font-size: 15px; }
+}
+.ticker.is-live .ticker-tag { background: var(--crimson); animation: tag-glow 1.6s ease-in-out infinite; }
+@keyframes tag-glow { 50% { box-shadow: 8px 0 14px rgba(0, 0, 0, .6), 0 0 18px rgba(229, 56, 59, .7); } }
+@media (prefers-reduced-motion: reduce) { .ticker.is-live .ticker-tag { animation: none; } }
+
+/* Backstage (Ringleaders only) */
+.backstage { position: relative; margin-top: 36px; padding: 0 0 22px; border: 1px solid #5A1622; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(90, 14, 26, .35), rgba(16, 10, 13, .95) 140px), #100A0D; }
+.backstage-curtain { height: 26px; background:
+  radial-gradient(ellipse 22px 26px at 22px 0, #7A1625 0 70%, transparent 72%) 0 0 / 44px 26px repeat-x,
+  linear-gradient(#5A0E1A, #5A0E1A) 0 0 / 100% 8px no-repeat; border-bottom: 2px solid var(--gold); }
+.backstage-head { text-align: center; padding: 18px 20px 8px; }
+.backstage-head h2 { margin: 6px 0 4px; font-family: var(--display); font-weight: 900; font-size: clamp(28px, 4vw, 40px); color: #F4ECE0; }
+.backstage-head h2::after { display: none; }
+.backstage-sign { display: inline-block; margin: 0; padding: 4px 12px; border: 2px solid var(--gold); border-radius: 4px; font-family: var(--serif); font-weight: 700; letter-spacing: .3em; font-size: 12px; color: var(--gold); transform: rotate(-2deg); }
+.backstage-grid { display: grid; gap: 16px; padding: 8px clamp(12px, 3vw, 24px) 0; }
+.backstage-slot:empty { display: none; }
+.backstage .panel { background: rgba(26, 18, 22, .9); }
+
+/* Several polls at once */
+.poll-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.poll-tab { display: grid; gap: 2px; text-align: left; min-height: 52px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 8px 8px 0 0; border-bottom-width: 3px; background: var(--raised); color: var(--text); font: inherit; cursor: pointer; }
+.poll-tab:hover { border-color: var(--gold); }
+.poll-tab.on { border-color: var(--gold); background: rgba(217, 178, 106, .14); }
+.poll-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.poll-tab-title { font-weight: 700; }
+.poll-tab-state { font-size: 12.5px; color: var(--muted); letter-spacing: .04em; }
+.poll-tab-state.open { color: #9ED9A8; }
+.backstage-poll { display: grid; gap: 8px; }
+.backstage-poll-name { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; }
+.backstage-new > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--gold); font-family: var(--serif); font-weight: 700; letter-spacing: .06em; }
+.backstage-new[open] > summary { margin-bottom: 8px; }
+
+/* Backstage: Hall of Oddities review */
+.odd-review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.odd-review-item { display: grid; grid-template-columns: minmax(0, 220px) 1fr; gap: 14px; align-items: start; padding: 12px; border: 1px solid rgba(201, 162, 39, .25); border-radius: 8px; }
+.odd-review-link { display: block; }
+.odd-review-media { display: block; width: 100%; max-height: 180px; object-fit: contain; background: #000; border-radius: 6px; }
+.odd-review-body { display: grid; gap: 6px; min-width: 0; }
+.odd-review-body strong { overflow-wrap: anywhere; }
+.odd-review-why { font-size: 14px; color: var(--gold); }
+.odd-review-status:empty { display: none; }
+.odd-review-status { margin: 0; font-size: 14px; }
+@media (max-width: 560px) { .odd-review-item { grid-template-columns: 1fr; } }
+>>>>>>> theirs

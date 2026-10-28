@@ -96,7 +96,11 @@ async function noteMods(env, cfg, uid, name, source) {
   const how = source === 'onboarding' ? 'answered Yes during onboarding' : 'asked on belpire.com';
   try {
     await postMessage(env, cfg.modChannel, {
+<<<<<<< ours
       content: `🎟️ **${name.replace(/[*_`~|>\\]/g, '')}** (<@${uid}>) wants a Game Night pass. They ${how}.\nReview it on The Big Tent: https://belpire.com/big-tent/#passes`
+=======
+      content: `🎟️ **${name.replace(/[*_`~|>\\]/g, '')}** (<@${uid}>) wants a Game Night pass. They ${how}.\nReview it Backstage: https://belpire.com/big-tent/#passes`
+>>>>>>> theirs
     });
   } catch (err) {
     console.warn(`Pass note to mods failed: ${explain(err)}`);
