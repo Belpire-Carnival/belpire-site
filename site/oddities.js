@@ -192,6 +192,7 @@
     }
     queueBox.hidden = false;
     queueBox.append(el('h3', { text: `Waiting for review (${queue.length})` }));
+    queueBox.append(el('p', { class: 'muted small' }, ['This queue is also ', el('a', { href: '/big-tent/#oddities-review', text: 'Backstage on The Big Tent' }), '. Your own uploads go straight up.']));
     if (!queue.length) {
       queueBox.append(el('p', { class: 'muted', text: 'Nothing waiting. The crowd is behaving.' }));
       return;

@@ -108,7 +108,8 @@ async function upload(env, store, who, session, { request, caption }) {
     return fail(415, 'type', 'That picture looks damaged. Try saving it again.');
   }
 
-  const scan = await moderateImage(env, clean, type.mime);
+  // Ringleaders' own uploads go straight up; everyone else's pictures are scanned.
+  const scan = who.manager ? { verdict: 'allow', reason: 'Ringleader upload' } : await moderateImage(env, clean, type.mime);
   if (scan.verdict === 'block') {
     console.log(`Oddity refused by scan for ${session.uid}: ${scan.reason}`);
     return fail(422, 'unsafe', 'The safety check flagged this picture, so it wasn\'t posted. Nudity, real-world gore, hate symbols and personal details aren\'t allowed. Game and horror gore is fine.');
@@ -165,7 +166,7 @@ async function clipPart(env, store, session, o, n, request) {
   return json({ ok: true, partNumber: part.partNumber, etag: part.etag });
 }
 
-async function completeClip(env, store, o, body) {
+async function completeClip(env, store, who, o, body) {
   const parts = Array.isArray(body?.parts) ? body.parts : [];
   const expected = Math.ceil(o.size / CLIP_PART_BYTES);
   if (parts.length !== expected || parts.some((p, i) => p?.partNumber !== i + 1 || typeof p?.etag !== 'string')) {
@@ -180,6 +181,11 @@ async function completeClip(env, store, o, body) {
     return fail(413, 'too_big', `Clips can be up to ${CLIP_MAX_BYTES / MIB} MB.`);
   }
   await store.setSize(o.id, head.size);
+  if (who.manager) {
+    // Ringleaders' clips skip the queue.
+    await store.setStatus(o.id, 'live', { from: 'uploading', by: who.name, at: nowIso() });
+    return json({ ok: true, status: 'live', message: 'It\'s up in the Hall of Oddities.' });
+  }
   await store.setStatus(o.id, 'pending', { from: 'uploading' });
   return json({ ok: true, status: 'pending', message: 'Clip received. A Ringleader will watch it before it goes up.' });
 }
@@ -284,7 +290,7 @@ export async function handleOddities(request, env, ctx) {
       }
       if (method === 'POST' && parts.length === 3 && parts[2] === 'complete') {
         if (!sameSite(request, 'application/json')) return fail(403, 'forbidden', 'Upload from belpire.com.');
-        return completeClip(env, store, o, await request.json().catch(() => null));
+        return completeClip(env, store, who, o, await request.json().catch(() => null));
       }
       if (method === 'DELETE' && parts.length === 2) {
         if (request.headers.get('Origin') !== url.origin) return fail(403, 'forbidden', 'Upload from belpire.com.');

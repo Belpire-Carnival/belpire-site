@@ -26,6 +26,7 @@
   <link rel="stylesheet" href="/big-tent/gn.css">
   <script type="module" src="/big-tent/gn.js"></script>
   <script src="/big-tent/passes.js" defer></script>
+  <script src="/big-tent/oddity-review.js" defer></script>
   <script src="/live.js" defer></script>
   <script src="/fx.js" defer></script>
 </head>
@@ -46,6 +47,17 @@
     </nav>
   </header>
 
+  <section class="ticker" id="gn-ticker" aria-label="On the bill at The Big Tent" hidden>
+    <div class="ticker-bulbs" aria-hidden="true"></div>
+    <div class="ticker-window">
+      <span class="ticker-tag" id="gn-ticker-tag" aria-hidden="true">ON THE BILL</span>
+      <div class="ticker-track" id="gn-ticker-track" aria-hidden="true"></div>
+      <ul class="visually-hidden" id="gn-ticker-sr"></ul>
+    </div>
+    <div class="ticker-bulbs" aria-hidden="true"></div>
+  </section>
+  <div class="wrap ticker-tools" id="gn-ticker-tools" hidden></div>
+
   <main class="wrap gn">
     <header class="gn-head">
       <p class="eyebrow">GAME NIGHTS UNDER THE BIG TOP</p>
@@ -53,16 +65,26 @@
       <p class="lede">Members rank their top four. The four games with the most points become the lineup, and the night goes up in Discord under Events.</p>
     </header>
 
-    <section class="gn-upcoming" id="gn-upcoming" aria-labelledby="upcoming-h" hidden>
-      <h2 id="upcoming-h">Coming up</h2>
-      <div class="nights" id="gn-nights"></div>
-    </section>
+    <section id="passes" class="gn-passes" aria-labelledby="passes-h" hidden></section>
 
     <div id="gn-app" class="gn-app" aria-live="polite">
       <p class="gn-note">Opening the ballot box…</p>
     </div>
 
-    <section id="passes" class="gn-passes" aria-labelledby="passes-h" hidden></section>
+    <section id="backstage" class="backstage" aria-labelledby="backstage-h" hidden>
+      <div class="backstage-curtain" aria-hidden="true"></div>
+      <header class="backstage-head">
+        <p class="backstage-sign">STAFF ONLY</p>
+        <h2 id="backstage-h">Backstage</h2>
+        <p class="meta">Only the RingMaster, RingMistress and Carnival Guards can see this.</p>
+      </header>
+      <div class="backstage-grid">
+        <div id="gn-backstage-poll" class="backstage-slot"></div>
+        <div id="gn-backstage-passes" class="backstage-slot"></div>
+        <div id="gn-backstage-oddities" class="backstage-slot"></div>
+        <div id="gn-backstage-discord" class="backstage-slot"></div>
+      </div>
+    </section>
 
     <details class="gn-how">
       <summary>How the votes are counted</summary>
