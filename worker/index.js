@@ -11,6 +11,10 @@ import { liveStatus } from './live.js';
 import { readSession } from './auth.js';
 import { memberInfo } from './polls.js';
 import { handlePasses, syncPendingPasses, passStatus } from './passes.js';
+import { handleStaffChat, purgeStaffMessages } from './staff-chat.js';
+import { handleTickets, payAttendance } from './tickets.js';
+import { handleInteraction } from './interactions.js';
+import { handleMe } from './me.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -42,6 +46,10 @@ export default {
     if (pathname === '/api/polls' || pathname.startsWith('/api/polls/')) return handlePolls(request, env, ctx);
     if (pathname === '/api/oddities' || pathname.startsWith('/api/oddities/')) return handleOddities(request, env, ctx);
     if (pathname === '/api/passes' || pathname.startsWith('/api/passes/')) return handlePasses(request, env);
+    if (pathname === '/api/backstage/messages' || pathname.startsWith('/api/backstage/messages/')) return handleStaffChat(request, env);
+    if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
+    if (pathname === '/api/discord/interactions') return handleInteraction(request, env);
+    if (pathname === '/api/me') return isGet ? handleMe(request, env) : methodNotAllowed('GET, HEAD');
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
     if (pathname === '/api/live') {
@@ -80,6 +88,8 @@ export default {
     ctx.waitUntil(refresh(env, { notify: true }));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
     ctx.waitUntil(syncPendingPasses(env).catch((err) => console.warn(`Pass sync failed: ${err.message}`)));
+    ctx.waitUntil(payAttendance(env).catch((err) => console.warn(`Attendance pay failed: ${err.message}`)));
+    ctx.waitUntil(purgeStaffMessages(env).catch((err) => console.warn(`Staff message purge failed: ${err.message}`)));
     ctx.waitUntil(purgeStaleUploads(env).catch((err) => console.warn(`Oddity upload cleanup failed: ${err.message}`)));
   }
 };

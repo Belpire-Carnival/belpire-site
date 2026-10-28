@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Ticket Booth — Belpire Carnival</title>
+  <meta name="description" content="Your Belpire tickets, daily punch card, carnival games, Prize Booth and everything waiting for you.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Belpire Carnival">
+  <meta property="og:title" content="Your Ticket Booth — Belpire Carnival">
+  <meta property="og:description" content="Punch your card, find the pea, cash in at the Prize Booth.">
+  <meta property="og:url" content="https://belpire.com/me/">
+  <meta property="og:image" content="https://belpire.com/og/join.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Belpire box office">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0E0B10">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/fx.css">
+  <link rel="stylesheet" href="/big-tent/gn.css">
+  <link rel="stylesheet" href="/me/me.css">
+  <script src="/me/me.js" defer></script>
+  <script src="/account.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a href="/star-citizen/">Star Citizen</a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
+        <a href="/oddities/">Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm acct-signin" data-account href="/auth/login?return=/me/">Sign in</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap gn tb">
+    <header class="gn-head">
+      <p class="eyebrow">ADMIT ONE</p>
+      <h1 class="neon" data-text="Your Ticket Booth">Your Ticket Booth</h1>
+      <p class="lede" id="tb-greeting">Everything waiting for you at the carnival, and the tickets you've won along the way.</p>
+    </header>
+
+    <div id="tb-gate" class="gn-app" aria-live="polite"><p class="gn-note">Finding your seat…</p></div>
+
+    <div id="tb-app" hidden>
+      <div id="tb-flash" class="tb-flash" aria-live="polite"></div>
+      <section class="tb-todo" aria-labelledby="tb-todo-h">
+        <h2 id="tb-todo-h" class="visually-hidden">Waiting for you</h2>
+        <ul id="tb-todo" class="tb-cards"></ul>
+      </section>
+
+      <div class="tb-grid">
+        <section id="tickets" class="panel tb-wallet" aria-labelledby="tb-wallet-h">
+          <h2 id="tb-wallet-h">Your tickets</h2>
+          <div id="tb-wallet"></div>
+        </section>
+        <section id="punch" class="panel tb-punch" aria-labelledby="tb-punch-h">
+          <h2 id="tb-punch-h">Daily punch card</h2>
+          <div id="tb-punch"></div>
+        </section>
+      </div>
+
+      <section id="show" class="panel tb-show" aria-labelledby="tb-show-h" hidden>
+        <h2 id="tb-show-h">Tonight's show</h2>
+        <div id="tb-show"></div>
+      </section>
+
+      <section id="games" class="panel tb-games" aria-labelledby="tb-games-h">
+        <div class="panel-head"><h2 id="tb-games-h">Find the Pea</h2><span class="meta" id="tb-pea-left"></span></div>
+        <p class="meta">The barker hides a pea under one of three shells. Pick the right one and win tickets. The shells are shuffled on our side, fair and square.</p>
+        <div id="tb-pea"></div>
+      </section>
+
+      <section id="prizes" class="panel tb-prizes" aria-labelledby="tb-prizes-h">
+        <div class="panel-head"><h2 id="tb-prizes-h">The Prize Booth</h2><span class="meta">A Ringleader hands out each prize and the Belpire Usher DMs you when it's ready.</span></div>
+        <ul id="tb-prize-list" class="tb-prize-list"></ul>
+        <div id="tb-orders"></div>
+      </section>
+
+      <div class="tb-grid">
+        <section id="scores" class="panel" aria-labelledby="tb-scores-h">
+          <h2 id="tb-scores-h">Midway High Scores</h2>
+          <p class="meta">Most tickets won, all time. Spending never costs you a place.</p>
+          <ol id="tb-scores" class="tb-scores"></ol>
+          <label class="tb-check"><input type="checkbox" id="tb-hide"> Keep me off the High Scores</label>
+        </section>
+        <section id="history" class="panel" aria-labelledby="tb-history-h">
+          <h2 id="tb-history-h">Ticket stubs</h2>
+          <ul id="tb-history" class="tb-history"></ul>
+        </section>
+      </div>
+
+      <section class="panel tb-discord" aria-labelledby="tb-discord-h">
+        <h2 id="tb-discord-h">Same tickets in Discord</h2>
+        <p>The Belpire Usher keeps the same booth open in the server. Your balance is shared, so play wherever you are.</p>
+        <ul class="tb-commands">
+          <li><code>/tickets</code> your balance and rank</li>
+          <li><code>/punch-card</code> the daily punch</li>
+          <li><code>/find-the-pea</code> the shell game</li>
+          <li><code>/checkin</code> earn tickets at a show from The Main Stage</li>
+          <li><code>/prizes</code> and <code>/redeem</code> the Prize Booth</li>
+          <li><code>/high-scores</code> the board, posted for all to see</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© 2026 Belpire Carnival</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

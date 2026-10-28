@@ -90,6 +90,13 @@ export async function listMembers(env, opts, max = 10000) {
   }
   return out;
 }
+// Members whose username or nickname starts with the query (for Ringleaders handing out tickets).
+export async function searchMembers(env, query, limit = 10, opts) {
+  const q = encodeURIComponent(String(query).slice(0, 32));
+  const r = await call(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}/members/search?query=${q}&limit=${limit}`, null, opts);
+  return Array.isArray(r) ? r : [];
+}
+
 // A direct message from the bot. Returns false when the person has DMs from server members turned off.
 export async function sendDm(env, userId, content, opts) {
   try {
@@ -108,6 +115,15 @@ export function getChannel(env, channelId, opts) {
 
 export function postMessage(env, channelId, payload, opts) {
   return call(env, 'POST', `/channels/${channelId}/messages`, { allowed_mentions: { parse: [] }, ...payload }, opts);
+}
+
+// The bot can always delete its own messages; 404 means it's already gone.
+export async function deleteMessage(env, channelId, messageId, opts) {
+  try {
+    await call(env, 'DELETE', `/channels/${channelId}/messages/${messageId}`, null, opts);
+  } catch (err) {
+    if (err.status !== 404) throw err;
+  }
 }
 
 export const CHANNEL_VOICE = 2;

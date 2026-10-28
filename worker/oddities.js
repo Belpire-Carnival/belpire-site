@@ -268,7 +268,9 @@ export async function handleOddities(request, env, ctx) {
 
     // Everything below changes something: same-site requests from signed-in members only.
     if (!session) return fail(401, 'signed_out', 'Verify with Discord first.');
-    const who = await memberInfo(env, session);
+    // Anything that leans on the Ringleader role (approve, remove, auto-approved uploads) re-reads it from Discord.
+    const usesRole = ['approve', 'remove', 'complete'].includes(parts.at(-1)) || (parts.length === 1 && parts[0] === 'image');
+    const who = await memberInfo(env, session, { fresh: usesRole });
     if (!who.member) return fail(403, 'not_member', 'Only members of the Belpire Discord can do that.');
 
     if (method === 'POST' && parts.length === 1 && parts[0] === 'image') {

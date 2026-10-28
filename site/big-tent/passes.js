@@ -1,8 +1,9 @@
-// Game Night passes on The Big Tent: members ask for one; Ringleaders stamp (approve) or turn away requests.
+// Game Night passes: members ask on The Big Tent; Ringleaders stamp (approve) or turn away requests Backstage.
 // The Game Night role is what lets someone into The Main Stage voice channel.
 (() => {
-  const box = document.getElementById('passes');
-  if (!box) return;
+  const box = document.getElementById('passes'); // The Big Tent: the member's own pass
+  const slot = document.getElementById('gn-backstage-passes'); // Backstage: the Ringleaders' queue
+  if (!box && !slot) return;
 
   function el(tag, attrs = {}, kids = []) {
     const n = document.createElement(tag);
@@ -96,12 +97,12 @@
     }
     const parts = [];
     if (['none', 'pending', 'has_pass'].includes(d.status)) parts.push(memberPart(d));
-    box.replaceChildren(...parts);
-    box.hidden = parts.length === 0;
-    // Ringleaders review requests Backstage.
-    const slot = document.getElementById('gn-backstage-passes');
-    if (slot) slot.replaceChildren(Array.isArray(d.queue) ? queuePart(d.queue) : '');
-    if (location.hash === '#passes') (Array.isArray(d.queue) ? document.getElementById('backstage') : box)?.scrollIntoView();
+    if (box) {
+      box.replaceChildren(...parts);
+      box.hidden = parts.length === 0;
+      if (location.hash === '#passes' && parts.length) box.scrollIntoView();
+    }
+    if (slot) slot.replaceChildren(...(Array.isArray(d.queue) ? [queuePart(d.queue)] : []));
   }
   load();
 })();

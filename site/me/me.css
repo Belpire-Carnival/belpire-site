@@ -1,0 +1,90 @@
+/* Your Ticket Booth (/me/) */
+.tb #tb-app { display: grid; gap: 22px; margin-top: 28px; }
+.tb-flash { position: sticky; top: 8px; z-index: 20; }
+.tb-flash:empty { display: none; }
+.tb-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+
+/* what's waiting */
+.tb-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.tb-card { display: flex; gap: 12px; align-items: center; min-height: 72px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--band); color: var(--text); text-decoration: none; }
+.tb-card:hover, .tb-card:focus-visible { border-color: var(--gold); }
+.tb-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tb-card.hot { border-color: rgba(217, 178, 106, .6); background: linear-gradient(135deg, rgba(122, 22, 37, .35), var(--band) 60%); }
+.tb-card.done { color: #9FE0B4; border-style: dashed; }
+.tb-card-icon { font-size: 26px; flex: none; }
+.tb-card-body { display: grid; gap: 2px; }
+.tb-card-body span { color: var(--muted); font-size: 14px; }
+
+/* the big ticket */
+.tb-ticket { position: relative; display: grid; justify-items: center; gap: 2px; padding: 22px 28px; border-radius: 8px; background: linear-gradient(160deg, #E7C784, var(--gold) 55%, #B98E45); color: var(--ink);
+  -webkit-mask: radial-gradient(circle 14px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 14px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle 14px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 14px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat; }
+.tb-ticket::after { content: ''; position: absolute; inset: 8px 22px; border: 2px dashed rgba(20, 14, 18, .35); border-radius: 4px; pointer-events: none; }
+.tb-ticket-kicker { font: 700 12px var(--serif); letter-spacing: .3em; }
+.tb-ticket-num { font: 900 clamp(44px, 8vw, 64px)/1 var(--display); }
+.tb-ticket-label { font: 600 14px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+
+/* punch card */
+.tb-holes { list-style: none; margin: 0; padding: 14px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: repeating-linear-gradient(0deg, #1D161B 0 22px, #201820 22px 23px); }
+.tb-holes li { display: grid; place-items: center; aspect-ratio: 1; border-radius: 50%; border: 2px dashed var(--line-strong); color: var(--muted); font: 700 13px var(--serif); }
+.tb-holes li.punched { border: 2px solid var(--gold); background: radial-gradient(circle, var(--ground) 0 45%, transparent 47%); color: transparent; box-shadow: inset 0 0 0 3px rgba(217, 178, 106, .25); }
+.tb-holes.ka-chunk li.punched:last-of-type { animation: tb-punch .45s ease-out; }
+@keyframes tb-punch { 0% { transform: scale(1.4); } 60% { transform: scale(.9); } 100% { transform: scale(1); } }
+
+/* show meter */
+.tb-meter { height: 14px; border-radius: 999px; background: var(--raised); overflow: hidden; border: 1px solid var(--line-strong); }
+.tb-meter-fill { display: block; height: 100%; width: var(--fill, 0%); background: repeating-linear-gradient(45deg, var(--gold) 0 10px, #E7C784 10px 20px); }
+
+/* Find the Pea */
+.tb-shells { display: flex; justify-content: center; gap: clamp(14px, 5vw, 44px); padding: 26px 8px 8px; border-radius: 10px; background: radial-gradient(ellipse at center 80%, rgba(122, 22, 37, .55), transparent 70%); }
+.tb-shell { position: relative; width: clamp(78px, 20vw, 110px); height: clamp(84px, 20vw, 110px); padding: 0; border: 0; background: none; cursor: pointer; }
+.tb-shell:disabled { cursor: default; }
+.tb-shell:focus-visible { outline: 2px solid var(--gold); outline-offset: 6px; border-radius: 8px; }
+.tb-shell-cup { position: absolute; inset: 0 6px 14px; border-radius: 50% 50% 14px 14px / 70% 70% 14px 14px; background: radial-gradient(circle at 35% 25%, #B23A4E, var(--crimson) 55%, #3E0A13); border: 2px solid var(--gold); box-shadow: 0 8px 0 -2px #2A0810, 0 12px 18px rgba(0, 0, 0, .55); transition: transform .35s ease; z-index: 1; }
+.tb-shell-cup::after { content: ''; position: absolute; left: 18%; right: 18%; top: 22%; height: 4px; border-radius: 2px; background: rgba(240, 212, 154, .55); }
+.tb-shell:not(:disabled):hover .tb-shell-cup { transform: translateY(-4px); }
+.tb-shell-pea { position: absolute; left: 50%; bottom: 4px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #CFF5C9, #4F9E6A); opacity: 0; }
+.tb-shell.has-pea .tb-shell-pea { opacity: 1; }
+.tb-shell.lifted .tb-shell-cup { transform: translateY(-46%) rotate(-8deg); }
+.tb-shell.picked .tb-shell-cup { border-color: #F0D49A; box-shadow: 0 0 0 3px rgba(240, 212, 154, .4), 0 12px 18px rgba(0, 0, 0, .55); }
+.tb-shells.shuffling .tb-shell:nth-child(1) .tb-shell-cup { animation: tb-shuffle-a .3s ease-in-out 3; }
+.tb-shells.shuffling .tb-shell:nth-child(2) .tb-shell-cup { animation: tb-shuffle-b .3s ease-in-out 3; }
+.tb-shells.shuffling .tb-shell:nth-child(3) .tb-shell-cup { animation: tb-shuffle-a .3s ease-in-out 3 reverse; }
+@keyframes tb-shuffle-a { 50% { transform: translateX(28px) translateY(-6px); } }
+@keyframes tb-shuffle-b { 50% { transform: translateX(-28px) translateY(4px); } }
+.tb-pea-msg { text-align: center; font-weight: 600; min-height: 1.5em; }
+
+/* Prize Booth */
+.tb-prize-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.tb-prize { display: grid; gap: 8px; align-content: start; padding: 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: linear-gradient(180deg, rgba(217, 178, 106, .06), transparent 60%); }
+.tb-prize-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.tb-cost { flex: none; padding: 2px 10px; border-radius: 4px; background: var(--gold); color: var(--ink); font-weight: 700; font-size: 14px; }
+.tb-redeem { display: grid; gap: 10px; }
+.tb-redeem input, .tb-redeem select { min-height: 44px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--ground); color: var(--text); font: inherit; }
+.tb-orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tb-orders li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+
+/* High Scores and stubs */
+.tb-scores { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tb-scores li { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 6px; }
+.tb-scores li:nth-child(-n+3) .tb-rank { color: var(--gold); }
+.tb-scores li.me { background: rgba(217, 178, 106, .1); box-shadow: inset 3px 0 0 var(--gold); }
+.tb-rank { width: 3ch; font: 700 15px var(--serif); color: var(--muted); }
+.tb-score-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tb-badge { color: var(--gold-hover); }
+.tb-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tb-check { display: flex; gap: 10px; align-items: center; min-height: 44px; color: var(--text-soft); cursor: pointer; }
+.tb-check input { width: 20px; height: 20px; accent-color: var(--gold); }
+.tb-history { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 420px; overflow-y: auto; }
+.tb-history li { display: grid; grid-template-columns: 5ch 1fr auto; gap: 10px; align-items: baseline; padding: 6px 4px; border-bottom: 1px dashed var(--line); }
+.tb-amt { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.tb-amt.plus { color: #9FE0B4; }
+.tb-amt.minus { color: #F28B9C; }
+.tb-stub-note { overflow-wrap: anywhere; }
+.tb-commands { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.tb-commands code { color: var(--gold-hover); font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-shells.shuffling .tb-shell-cup, .tb-holes.ka-chunk li { animation: none !important; }
+  .tb-shell-cup { transition: none; }
+}
