@@ -99,8 +99,13 @@ export function pollStore(db) {
     // Who has voted (names only, never their picks), first voters first. doom = chose the Wheel of Doom.
     async voters(pollId) {
       await ensure(db);
-      const { results } = await db.prepare('SELECT voter_name, locked FROM ballots WHERE poll_id = ? ORDER BY rowid ASC').bind(pollId).all();
-      return results.map((r) => ({ name: r.voter_name || 'A member', doom: Boolean(r.locked) }));
+      const { results } = await db.prepare('SELECT user_id, voter_name, locked FROM ballots WHERE poll_id = ? ORDER BY rowid ASC').bind(pollId).all();
+      return results.map((r) => ({ userId: r.user_id, name: r.voter_name || null, doom: Boolean(r.locked) }));
+    },
+    // Fill in a name for a ballot saved before names were recorded.
+    async setVoterName(pollId, userId, name) {
+      await ensure(db);
+      await db.prepare('UPDATE ballots SET voter_name = ? WHERE poll_id = ? AND user_id = ? AND voter_name IS NULL').bind(name, pollId, userId).run();
     },
     async voteCount(pollId) {
       await ensure(db);

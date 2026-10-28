@@ -6,6 +6,7 @@ const POINTS = [4, 3, 2, 1];
 const app = document.getElementById('gn-app');
 let state = null; // { me, poll, catalog }
 let ranking = []; // candidate keys, best first
+let selected = null; // a game picked up by tapping, waiting for a slot
 let flash = null; // { kind, text }
 
 // ---------------------------------------------------------------- helpers
@@ -135,23 +136,130 @@ function votersPanel(poll) {
   ]);
 }
 
+// Put a game into slot i (0-based). Slots fill top-down, so a drop below the filled ones goes to the next open slot.
+// A ranked game dropped on another slot swaps places with it. A new game dropped on a filled slot slides in there
+// and pushes the rest down; if all four were full, the fourth goes back to the board.
+function place(key, i) {
+  const from = ranking.indexOf(key);
+  if (from >= 0) {
+    if (i >= ranking.length) {
+      ranking.splice(from, 1);
+      ranking.push(key);
+    } else {
+      [ranking[from], ranking[i]] = [ranking[i], ranking[from]];
+    }
+    return;
+  }
+  ranking.splice(Math.min(i, ranking.length), 0, key);
+  ranking.length = Math.min(ranking.length, MAX_RANK);
+}
+
+// Drag with a mouse (move to start) or a finger (press and hold, then move). Works alongside tap-to-select.
+let drag = null;
+function draggable(node, key) {
+  let start = null;
+  let holdTimer = null;
+  const begin = (e) => {
+    const ghost = el('div', { class: 'drag-ghost', 'aria-hidden': 'true' }, [thumb(candOf(key), 'thumb thumb-sm'), el('span', { text: nameOf(key) })]);
+    document.body.append(ghost);
+    drag = { key, ghost, over: null, y: e.clientY, x: e.clientX };
+    // Scroll the page when the dragged game nears the top or bottom edge (phones put the slots above the list).
+    const edge = () => {
+      if (!drag) return;
+      const zone = 70;
+      const dy = drag.y < zone ? -(zone - drag.y) / 4 : drag.y > innerHeight - zone ? (drag.y - (innerHeight - zone)) / 4 : 0;
+      if (dy) {
+        scrollBy(0, dy);
+        move({ clientX: drag.x, clientY: drag.y });
+      }
+      requestAnimationFrame(edge);
+    };
+    requestAnimationFrame(edge);
+    node.classList.add('dragging');
+    document.body.classList.add('is-dragging');
+    move(e);
+  };
+  const move = (e) => {
+    if (!drag) return;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    drag.ghost.style.setProperty('transform', `translate(${e.clientX + 12}px, ${e.clientY + 12}px)`);
+    const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('.slot[data-slot]');
+    if (drag.over && drag.over !== hit) drag.over.classList.remove('drop-target');
+    if (hit) hit.classList.add('drop-target');
+    drag.over = hit || null;
+  };
+  const end = (drop) => {
+    clearTimeout(holdTimer);
+    start = null;
+    if (!drag) return;
+    const { over } = drag;
+    drag.ghost.remove();
+    node.classList.remove('dragging');
+    document.body.classList.remove('is-dragging');
+    if (over) over.classList.remove('drop-target');
+    const wasKey = drag.key;
+    drag = null;
+    node.dataset.justDragged = '1';
+    setTimeout(() => delete node.dataset.justDragged, 0);
+    if (drop && over) {
+      place(wasKey, Number(over.dataset.slot));
+      selected = null;
+      render();
+    }
+  };
+  node.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    start = { x: e.clientX, y: e.clientY, touch: e.pointerType !== 'mouse' };
+    if (start.touch) holdTimer = setTimeout(() => { if (start) { node.setPointerCapture?.(e.pointerId); begin(e); } }, 280);
+  });
+  node.addEventListener('pointermove', (e) => {
+    if (drag) return move(e);
+    if (!start) return;
+    const far = Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8;
+    if (!far) return;
+    if (start.touch) { clearTimeout(holdTimer); start = null; return; } // it was a scroll
+    node.setPointerCapture?.(e.pointerId);
+    begin(e);
+  });
+  node.addEventListener('pointerup', () => end(true));
+  node.addEventListener('pointercancel', () => end(false));
+  node.addEventListener('touchmove', (e) => { if (drag) e.preventDefault(); }, { passive: false });
+  node.addEventListener('contextmenu', (e) => { if (drag || start?.touch) e.preventDefault(); });
+  node.addEventListener('click', (e) => { if (node.dataset.justDragged) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+}
+
 function slotsList(locked) {
   const slots = el('ol', { class: 'slots', 'aria-label': 'Your ranking' });
+  const placeBtn = (i) => selected && !locked
+    ? button(i < ranking.length ? 'Put here' : 'Place here', () => { place(selected, i); selected = null; render(); }, 'btn btn-gold btn-sm place-btn', { 'aria-label': `Put ${nameOf(selected)} in slot ${Math.min(i, ranking.length) + 1}` })
+    : null;
   for (let i = 0; i < MAX_RANK; i++) {
     const key = ranking[i];
     if (!key) {
-      slots.append(el('li', { class: 'slot empty' }, [el('span', { class: 'rank', text: String(i + 1) }), el('span', { class: 'thumb thumb-none', 'aria-hidden': 'true' }), el('span', { text: i === 0 ? 'Pick your favorite' : 'Optional' })]));
+      slots.append(el('li', { class: `slot empty${selected ? ' awaiting' : ''}`, 'data-slot': locked ? null : String(i) }, [
+        el('span', { class: 'rank', text: String(i + 1) }),
+        el('span', { class: 'thumb thumb-none', 'aria-hidden': 'true' }),
+        el('span', { text: selected ? '' : i === 0 ? 'Drag a game here, or tap one' : 'Optional' }),
+        placeBtn(i)
+      ]));
       continue;
     }
-    slots.append(el('li', { class: `slot${locked ? ' doomed' : ''}` }, [
+    const li = el('li', { class: `slot${locked ? ' doomed' : ''}${selected === key ? ' picked' : ''}${selected && selected !== key ? ' awaiting' : ''}`, 'data-slot': locked ? null : String(i) }, [
       el('span', { class: 'rank', text: String(i + 1) }),
       thumb(candOf(key)),
       el('span', { class: 'name' }, [document.createTextNode(nameOf(key)), el('span', { class: 'pts', text: `${POINTS[i]} ${POINTS[i] === 1 ? 'point' : 'points'}` })]),
-      locked ? null : el('span', { class: 'slot-tools' }, [
+      locked ? null : (selected && selected !== key) ? placeBtn(i) : el('span', { class: 'slot-tools' }, [
         button('↑', () => { [ranking[i - 1], ranking[i]] = [ranking[i], ranking[i - 1]]; render(); }, 'icon-btn', { 'aria-label': `Move ${nameOf(key)} up`, disabled: i === 0 }),
-        button('×', () => { ranking.splice(i, 1); render(); }, 'icon-btn', { 'aria-label': `Remove ${nameOf(key)}` })
+        button('↓', () => { [ranking[i + 1], ranking[i]] = [ranking[i], ranking[i + 1]]; render(); }, 'icon-btn', { 'aria-label': `Move ${nameOf(key)} down`, disabled: i === ranking.length - 1 }),
+        button('×', () => { ranking.splice(i, 1); if (selected === key) selected = null; render(); }, 'icon-btn', { 'aria-label': `Remove ${nameOf(key)}` })
       ])
-    ]));
+    ]);
+    if (!locked) {
+      li.classList.add('grab');
+      draggable(li, key);
+    }
+    slots.append(li);
   }
   return slots;
 }
@@ -173,15 +281,17 @@ function ballotView(poll) {
     for (const c of poll.candidates) {
       if (q && !c.name.toLowerCase().includes(q)) continue;
       const pos = ranking.indexOf(c.key);
-      list.append(el('li', {}, [el('button', {
-        type: 'button', class: 'cand', 'aria-pressed': String(pos >= 0),
+      const btn = el('button', {
+        type: 'button', class: `cand grab${selected === c.key ? ' picked' : ''}`, 'aria-pressed': String(selected === c.key),
+        'aria-label': `${c.name}${pos >= 0 ? `, ranked ${pos + 1}` : ''}. ${selected === c.key ? 'Selected: choose a slot.' : 'Select, then choose a slot.'}`,
         onclick: () => {
-          if (pos >= 0) ranking.splice(pos, 1);
-          else if (ranking.length < MAX_RANK) ranking.push(c.key);
-          else ranking[MAX_RANK - 1] = c.key;
+          selected = selected === c.key ? null : c.key;
           render();
+          if (selected) (document.querySelector('.slot.empty .place-btn') || [...document.querySelectorAll('.place-btn')].pop())?.focus();
         }
-      }, [thumb(c), el('span', { class: 'cand-name', text: c.name }), el('span', { class: 'tag', text: pos >= 0 ? `#${pos + 1}` : '' })])]));
+      }, [thumb(c), el('span', { class: 'cand-name', text: c.name }), el('span', { class: 'tag', text: pos >= 0 ? `#${pos + 1}` : selected === c.key ? 'Pick a slot' : '' })]);
+      draggable(btn, c.key);
+      list.append(el('li', {}, [btn]));
     }
   };
   filter.addEventListener('input', draw);
@@ -191,7 +301,8 @@ function ballotView(poll) {
   const submit = button(had ? 'Update my vote' : 'Cast my vote', () => act(`/api/polls/${poll.id}/ballot`, { ranking: [...ranking] }, had ? 'Vote updated.' : 'Vote counted. You can change it until voting closes.'), 'btn btn-gold', { disabled: ranking.length === 0 });
 
   return el('div', { class: 'panel' }, [
-    el('p', { text: 'Tap games to rank them. First tap is your #1. Tap again to remove.' }),
+    el('p', { text: 'Drag a game onto a slot, or tap a game and then tap the slot you want. Drag ranked games up and down to reorder.' }),
+    selected ? el('p', { class: 'select-hint', role: 'status' }, [document.createTextNode(`${nameOf(selected)} picked up. Choose a slot, or `), button('cancel', () => { selected = null; render(); }, 'linklike')]) : null,
     el('div', { class: 'ballot' }, [slotsList(false), el('div', { class: 'board' }, [filter, list])]),
     el('div', { class: 'btn-row' }, [submit, had ? el('span', { class: 'meta', text: 'Your vote is in.' }) : null])
   ]);
@@ -607,6 +718,7 @@ async function load(resetBallot = true) {
   }
   state = r.data;
   if (resetBallot || state.poll?.status !== 'open') ranking = Array.isArray(state.poll?.myBallot) ? [...state.poll.myBallot] : [];
+  selected = null;
   render();
 }
 
