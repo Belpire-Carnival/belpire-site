@@ -116,6 +116,25 @@ function pollHeader(poll) {
   ]);
 }
 
+// Who has voted so far (members only see this). Picks stay secret; the wheel marks Wheel of Doom ballots.
+function votersPanel(poll) {
+  if (!Array.isArray(poll.voters)) return null;
+  const doomed = poll.voters.filter((v) => v.doom).length;
+  const list = el('ul', { class: 'voters' }, poll.voters.map((v) => el('li', { class: `voter${v.doom ? ' voter-doom' : ''}` }, [
+    v.doom ? el('span', { class: 'voter-mark', 'aria-hidden': 'true', text: '☠' }) : el('span', { class: 'voter-mark', 'aria-hidden': 'true', text: '✓' }),
+    document.createTextNode(String(v.name)),
+    v.doom ? el('span', { class: 'visually-hidden', text: ' (Wheel of Doom)' }) : null
+  ])));
+  return el('section', { class: 'panel voters-panel', 'aria-labelledby': 'voters-h' }, [
+    el('div', { class: 'panel-head' }, [
+      el('h3', { id: 'voters-h', text: poll.voters.length ? `Ballots cast (${poll.voters.length})` : 'No ballots yet' }),
+      doomed ? el('span', { class: 'meta', text: `${doomed} braved the Wheel of Doom ☠` }) : null
+    ]),
+    poll.voters.length ? list : el('p', { class: 'gn-note', text: 'Be the first to cast your ballot.' }),
+    el('p', { class: 'gn-note small', text: 'Only names are shown here. Nobody sees what anyone picked until voting closes, and even then only the totals.' })
+  ]);
+}
+
 function slotsList(locked) {
   const slots = el('ol', { class: 'slots', 'aria-label': 'Your ranking' });
   for (let i = 0; i < MAX_RANK; i++) {
@@ -555,6 +574,7 @@ function render() {
   } else {
     const head = el('div', { class: 'panel' }, [pollHeader(poll)]);
     out.push(head);
+    const voters = votersPanel(poll);
     if (poll.status === 'open') {
       if (!me.signedIn) out.push(signInBlock('Voting is open to everyone in the Belpire Discord. Verify with Discord to cast your ballot.'));
       else if (!me.member) out.push(el('div', { class: 'panel' }, [el('p', { text: 'Only members of the Belpire Discord can vote. Join the server, then come back to this page.' }), el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/join/', text: 'Get your ticket' })])]));
@@ -563,10 +583,12 @@ function render() {
         const doom = doomOffer(poll);
         if (doom) out.push(doom);
       }
+      if (voters) out.push(voters);
       if (me.manager) out.push(managerOpenControls(poll));
     } else {
       head.append(el('p', { text: 'Voting is closed. The RingMaster is picking the date and time.' }));
       if (poll.results) head.append(resultsList(poll.results));
+      if (voters) out.push(voters);
       if (me.manager) out.push(scheduleForm(poll));
     }
   }

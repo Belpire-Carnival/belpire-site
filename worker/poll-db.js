@@ -27,6 +27,7 @@ const SCHEMA = [
     ranking TEXT NOT NULL,
     updated_at INTEGER NOT NULL,
     locked INTEGER NOT NULL DEFAULT 0,
+    voter_name TEXT,
     PRIMARY KEY (poll_id, user_id)
   )`,
   'CREATE INDEX IF NOT EXISTS polls_created ON polls (created_at)',
@@ -35,7 +36,11 @@ const SCHEMA = [
 
 const ready = new WeakMap();
 async function ensure(db) {
-  if (!ready.has(db)) ready.set(db, db.batch(SCHEMA.map((s) => db.prepare(s))));
+  if (!ready.has(db)) {
+    ready.set(db, db.batch(SCHEMA.map((s) => db.prepare(s)))
+      // Databases created before voter names were shown need the column added once; afterwards this fails harmlessly.
+      .then(() => db.prepare('ALTER TABLE ballots ADD COLUMN voter_name TEXT').run().catch(() => {})));
+  }
   await ready.get(db);
 }
 
@@ -73,11 +78,11 @@ export function pollStore(db) {
         .run();
     },
     // Returns false when the voter's ballot is locked by the Wheel of Doom.
-    async saveBallot(pollId, userId, ranking, now, { locked = false } = {}) {
+    async saveBallot(pollId, userId, ranking, now, { locked = false, name = null } = {}) {
       await ensure(db);
       const r = await db
-        .prepare('INSERT INTO ballots (poll_id, user_id, ranking, updated_at, locked) VALUES (?, ?, ?, ?, ?) ON CONFLICT (poll_id, user_id) DO UPDATE SET ranking = excluded.ranking, updated_at = excluded.updated_at, locked = excluded.locked WHERE ballots.locked = 0')
-        .bind(pollId, userId, JSON.stringify(ranking), now, locked ? 1 : 0)
+        .prepare('INSERT INTO ballots (poll_id, user_id, ranking, updated_at, locked, voter_name) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (poll_id, user_id) DO UPDATE SET ranking = excluded.ranking, updated_at = excluded.updated_at, locked = excluded.locked, voter_name = excluded.voter_name WHERE ballots.locked = 0')
+        .bind(pollId, userId, JSON.stringify(ranking), now, locked ? 1 : 0, name)
         .run();
       return r.meta.changes === 1;
     },
@@ -90,6 +95,12 @@ export function pollStore(db) {
       await ensure(db);
       const { results } = await db.prepare('SELECT ranking FROM ballots WHERE poll_id = ?').bind(pollId).all();
       return results.map((r) => JSON.parse(r.ranking));
+    },
+    // Who has voted (names only, never their picks), first voters first. doom = chose the Wheel of Doom.
+    async voters(pollId) {
+      await ensure(db);
+      const { results } = await db.prepare('SELECT voter_name, locked FROM ballots WHERE poll_id = ? ORDER BY rowid ASC').bind(pollId).all();
+      return results.map((r) => ({ name: r.voter_name || 'A member', doom: Boolean(r.locked) }));
     },
     async voteCount(pollId) {
       await ensure(db);

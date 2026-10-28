@@ -296,6 +296,7 @@ export async function handlePolls(request, env, ctx) {
       if (poll) {
         extra.voteCount = await store.voteCount(poll.id);
         if (me.member) {
+          extra.voters = await store.voters(poll.id); // names for members only; picks stay secret
           const mine = await store.ballot(poll.id, session.uid);
           extra.myBallot = mine?.ranking || null;
           extra.myBallotLocked = Boolean(mine?.locked);
@@ -360,7 +361,7 @@ export async function handlePolls(request, env, ctx) {
       if (!who.member) return fail(403, 'not_member', 'Join the Belpire Discord to vote.');
       if (poll.status !== 'open') return fail(409, 'closed', 'Voting has closed.');
       if (!validRanking(body.ranking, poll.candidates.map((c) => c.key))) return fail(400, 'ranking', `Rank between 1 and ${MAX_RANK} different games from this poll.`);
-      const saved = await store.saveBallot(poll.id, session.uid, body.ranking, Date.now());
+      const saved = await store.saveBallot(poll.id, session.uid, body.ranking, Date.now(), { name: who.name });
       if (!saved) return fail(409, 'locked', 'The Wheel of Doom already chose for you. No take-backs.');
       return json({ ok: true });
     }
@@ -371,7 +372,7 @@ export async function handlePolls(request, env, ctx) {
       if (poll.status !== 'open') return fail(409, 'closed', 'Voting has closed.');
       const ranking = doomPicks(poll.candidates);
       if (!ranking.length) return fail(400, 'no_doom', 'No horror, party or Jackbox games on this ballot, so the wheel has nothing to spin.');
-      const saved = await store.saveBallot(poll.id, session.uid, ranking, Date.now(), { locked: true });
+      const saved = await store.saveBallot(poll.id, session.uid, ranking, Date.now(), { locked: true, name: who.name });
       if (!saved) return fail(409, 'locked', 'The Wheel of Doom already chose for you. No take-backs.');
       return json({ ok: true, ranking, locked: true });
     }
