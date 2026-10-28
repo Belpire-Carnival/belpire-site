@@ -175,3 +175,11 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .check.bad .mark { color: #FF7A8C; }
 .check .fix { display: block; margin-top: 2px; font-size: 14px; color: var(--text-soft); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Who has voted */
+.voters { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.voter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--ground); color: var(--text); font-size: 15px; }
+.voter-mark { color: var(--gold); font-size: 14px; }
+.voter-doom { border-color: #B0233A; background: color-mix(in srgb, #B0233A 18%, var(--ground)); }
+.voter-doom .voter-mark { color: #F08A8A; }
+.voters-panel .gn-note.small { font-size: 13px; margin-top: 12px; }

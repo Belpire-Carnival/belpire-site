@@ -426,3 +426,20 @@ test('Check Discord setup lists what the bot can and cannot do', async () => {
   r = await api('/api/polls/discord-check', { as: 'guard' });
   assert.deepEqual(r.body.checks.filter((c) => !c.ok).map((c) => c.label), ['Bot has Stage permissions in The Main Stage']);
 });
+
+test('members see who has voted and who spun the Wheel of Doom, never their picks', async () => {
+  let r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850', 'steam-3527290', 'jb-1211630-quiplash-3'] } });
+  const id = r.body.id;
+  await api(`/api/polls/${id}/ballot`, { as: 'fan2', method: 'POST', body: { ranking: ['steam-553850'] } });
+  await api(`/api/polls/${id}/doom`, { as: 'fan', method: 'POST', body: {} });
+  await api(`/api/polls/${id}/ballot`, { as: 'fan2', method: 'POST', body: { ranking: ['steam-1966720'] } }); // changing a vote keeps your place
+  r = await api('/api/polls/current', { as: 'guard' });
+  assert.deepEqual(r.body.poll.voters, [{ name: 'fan2', doom: false }, { name: 'fan', doom: true }]);
+  assert.ok(!JSON.stringify(r.body.poll.voters).includes('steam-'), 'no picks in the voter list');
+  assert.equal(r.body.poll.results, null, 'standings still hidden while open');
+  r = await api('/api/polls/current');
+  assert.equal(r.body.poll.voters, undefined, 'signed-out visitors only see the count');
+  assert.equal(r.body.poll.voteCount, 2);
+  r = await api('/api/polls/current', { as: 'stranger' });
+  assert.equal(r.body.poll.voters, undefined, 'non-members only see the count');
+});
