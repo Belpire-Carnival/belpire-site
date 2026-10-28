@@ -208,6 +208,111 @@
     $('tb-pea').replaceChildren(table, msg);
   }
 
+  // ---------------------------------------------------------------- Ring Toss
+
+  let ringsBusy = false;
+  let ringsLast = '';
+  function rings() {
+    const left = t.games.rings.left;
+    $('tb-rings-left').textContent = `${left} ${left === 1 ? 'ring' : 'rings'} left today`;
+    const rows = t.rules.ringRows;
+    const crate = el('div', { class: 'tb-crate', 'aria-hidden': 'true' });
+    const bottles = {};
+    for (const row of ['back', 'middle', 'front']) {
+      const line = el('div', { class: `tb-bottles ${row}` });
+      bottles[row] = [0, 1, 2, 3].map(() => el('span', { class: 'tb-bottle' }, el('span', { class: 'tb-neck' })));
+      line.append(...bottles[row]);
+      crate.append(line);
+    }
+    const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [ringsLast, left ? (ringsLast ? 'Another ring?' : 'Choose a row to throw at.') : 'Out of rings for today. Back at midnight Eastern.'].filter(Boolean).join(' ') });
+    const buttons = ['front', 'middle', 'back'].map((row) => {
+      const b = el('button', { type: 'button', class: 'btn btn-ghost btn-sm tb-row-btn', disabled: !left }, [
+        el('strong', { text: `${row[0].toUpperCase()}${row.slice(1)} row` }),
+        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} tickets` })
+      ]);
+      b.addEventListener('click', () => toss(row));
+      return b;
+    });
+    async function toss(row) {
+      if (ringsBusy) return;
+      ringsBusy = true;
+      buttons.forEach((b) => { b.disabled = true; });
+      crate.querySelectorAll('.tb-ring').forEach((r) => r.remove());
+      msg.textContent = 'The ring sails through the air…';
+      let r;
+      try {
+        [r] = await Promise.all([api('/api/tickets/games/rings', { row }), sleep(500)]);
+      } catch (err) {
+        msg.textContent = err.message;
+        ringsBusy = false;
+        buttons.forEach((b) => { b.disabled = false; });
+        return;
+      }
+      const target = bottles[r.row][r.bottle];
+      target.append(el('span', { class: `tb-ring ${r.win ? 'on' : 'off'}` }));
+      ringsLast = r.win ? `Clink! A ringer on the ${r.row} row: +${tickets(r.amount)}.` : 'It bounced off the bottle necks.';
+      msg.textContent = ringsLast;
+      t.wallet.balance = r.balance;
+      t.games.rings.left = r.playsLeft;
+      wallet();
+      announce();
+      await new Promise((res) => setTimeout(res, 1600));
+      ringsBusy = false;
+      load();
+    }
+    $('tb-rings').replaceChildren(crate, el('div', { class: 'tb-row-btns' }, buttons), msg);
+  }
+
+  // ---------------------------------------------------------------- High Striker
+
+  let strikerBusy = false;
+  let strikerLast = '';
+  function striker() {
+    const left = t.games.striker.left;
+    $('tb-striker-left').textContent = `${left} ${left === 1 ? 'swing' : 'swings'} left today`;
+    const puck = el('span', { class: 'tb-puck' });
+    const bell = el('span', { class: 'tb-bell', text: '🔔' });
+    const scale = el('ol', { class: 'tb-scale', reversed: true });
+    for (let i = 10; i >= 1; i--) scale.append(el('li', { text: String(i) }));
+    const tower = el('div', { class: 'tb-tower', 'aria-hidden': 'true' }, [bell, el('div', { class: 'tb-track' }, puck), scale]);
+    const tiers = el('ul', { class: 'tb-tiers' }, t.rules.strikerTiers.slice().reverse().map((x) => el('li', {}, [
+      el('strong', { text: x.label }),
+      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} tickets` : 'no prize'}` })
+    ])));
+    const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [strikerLast, left ? (strikerLast ? 'Swing again?' : 'Step up and swing.') : 'Your arms need a rest. Back at midnight Eastern.'].filter(Boolean).join(' ') });
+    const btn = el('button', { type: 'button', class: 'btn btn-gold', text: '🔨 Swing the mallet', disabled: !left });
+    btn.addEventListener('click', async () => {
+      if (strikerBusy) return;
+      strikerBusy = true;
+      btn.disabled = true;
+      tower.classList.remove('rung');
+      puck.style.setProperty('--h', '0');
+      msg.textContent = 'WHAM!';
+      let r;
+      try {
+        [r] = await Promise.all([api('/api/tickets/games/striker', {}), sleep(250)]);
+      } catch (err) {
+        msg.textContent = err.message;
+        strikerBusy = false;
+        btn.disabled = false;
+        return;
+      }
+      puck.style.setProperty('--h', String(r.height));
+      await sleep(900);
+      if (r.bell) tower.classList.add('rung');
+      strikerLast = r.bell ? `DING DING DING! You rang the bell: +${tickets(r.amount)}.` : `${r.label}! The puck reached ${r.height}.${r.amount ? ` +${tickets(r.amount)}.` : ''}`;
+      msg.textContent = strikerLast;
+      t.wallet.balance = r.balance;
+      t.games.striker.left = r.playsLeft;
+      wallet();
+      announce();
+      await new Promise((res) => setTimeout(res, 1800));
+      strikerBusy = false;
+      load();
+    });
+    $('tb-striker').replaceChildren(el('div', { class: 'tb-striker' }, [tower, el('div', { class: 'tb-striker-side' }, [tiers, btn])]), msg);
+  }
+
   // ---------------------------------------------------------------- Prize Booth
 
   function prizes() {
@@ -334,6 +439,8 @@
     punchCard();
     show();
     if (!peaBusy) pea();
+    if (!ringsBusy) rings();
+    if (!strikerBusy) striker();
     prizes();
     scores();
     history();

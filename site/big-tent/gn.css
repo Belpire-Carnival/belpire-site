@@ -294,7 +294,7 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .bs-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .bs-jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid rgba(201, 162, 39, .45); border-radius: 999px; color: var(--gold); text-decoration: none; font-weight: 600; }
 .bs-jump a:hover, .bs-jump a:focus-visible { background: rgba(201, 162, 39, .12); }
-.bs-flash { position: sticky; top: 0; z-index: 5; padding: 0 clamp(12px, 3vw, 24px); }
+.bs-flash { position: sticky; top: 84px; z-index: 5; padding: 0 clamp(12px, 3vw, 24px); }
 .bs-flash:empty { display: none; }
 .bs-section { margin: 26px clamp(12px, 3vw, 24px) 0; scroll-margin-top: 16px; }
 .bs-section-head { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(201, 162, 39, .25); }

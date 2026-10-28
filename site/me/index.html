@@ -22,6 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header.css">
   <link rel="stylesheet" href="/fx.css">
   <link rel="stylesheet" href="/big-tent/gn.css">
   <link rel="stylesheet" href="/me/me.css">
@@ -30,6 +31,7 @@
   <script src="/fx.js" defer></script>
 </head>
 <body>
+  <div class="scene" data-scene="booth" aria-hidden="true"></div>
   <div class="stripe" aria-hidden="true"></div>
   <header class="site-header">
     <nav class="wrap nav" aria-label="Main">
@@ -84,6 +86,19 @@
         <div id="tb-pea"></div>
       </section>
 
+      <div class="tb-grid">
+        <section id="rings" class="panel tb-rings" aria-labelledby="tb-rings-h">
+          <div class="panel-head"><h2 id="tb-rings-h">Ring Toss</h2><span class="meta" id="tb-rings-left"></span></div>
+          <p class="meta">Land a ring on a bottle neck. The front row is easy and pays a little; the back row is a long shot that pays big. Pick your row.</p>
+          <div id="tb-rings"></div>
+        </section>
+        <section id="striker" class="panel tb-striker-panel" aria-labelledby="tb-striker-h">
+          <div class="panel-head"><h2 id="tb-striker-h">High Striker</h2><span class="meta" id="tb-striker-left"></span></div>
+          <p class="meta">Swing the mallet and send the puck flying. Ring the bell at the top for the jackpot.</p>
+          <div id="tb-striker"></div>
+        </section>
+      </div>
+
       <section id="prizes" class="panel tb-prizes" aria-labelledby="tb-prizes-h">
         <div class="panel-head"><h2 id="tb-prizes-h">The Prize Booth</h2><span class="meta">A Ringleader hands out each prize and the Belpire Usher DMs you when it's ready.</span></div>
         <ul id="tb-prize-list" class="tb-prize-list"></ul>
@@ -110,6 +125,8 @@
           <li><code>/tickets</code> your balance and rank</li>
           <li><code>/punch-card</code> the daily punch</li>
           <li><code>/find-the-pea</code> the shell game</li>
+          <li><code>/ring-toss</code> pick a row and throw</li>
+          <li><code>/high-striker</code> swing for the bell</li>
           <li><code>/checkin</code> earn tickets at a show from The Main Stage</li>
           <li><code>/prizes</code> and <code>/redeem</code> the Prize Booth</li>
           <li><code>/high-scores</code> the board, posted for all to see</li>

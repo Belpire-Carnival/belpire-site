@@ -1,3 +1,5 @@
+// The header on every page: on narrow screens the links fold into a Menu button, and the sign-in button
+// in the top right becomes your account menu.
 // The sign-in button in the top right of every page. Signed out it's a plain link to "Verify with Discord".
 // Signed in it becomes a menu that shows what matters to you: your tickets, your punch card, polls you
 // haven't voted in, your Game Night pass, and (for Ringleaders) what's waiting Backstage.
@@ -22,7 +24,42 @@
   const seenChat = () => {
     try { return localStorage.getItem(SEEN_KEY) || ''; } catch { return ''; }
   };
-  const initials = (name) => (String(name).match(/[\p{L}\p{N}]/gu) || ['?']).slice(0, 2).join('').toUpperCase();
+  // Plain letters first, so decorated names like "𓄿 Synister 𓄿" show "SY".
+  const initials = (name) => (String(name).match(/[A-Za-z0-9]/g) || String(name).match(/[\p{L}\p{N}]/gu) || ['?']).slice(0, 2).join('').toUpperCase();
+
+  // Only one header menu open at a time.
+  const closeOthers = (which) => document.dispatchEvent(new CustomEvent('belpire:menu', { detail: which }));
+
+  // ------------------------------------------------------------ mobile Menu button
+  const nav = link.closest('.nav');
+  const links = link.closest('.nav-links');
+  if (nav && links) {
+    if (!links.id) links.id = 'nav-links';
+    const toggle = el('button', { type: 'button', class: 'nav-toggle', 'aria-expanded': 'false', 'aria-controls': links.id }, [
+      el('span', { class: 'nav-toggle-icon', 'aria-hidden': 'true' }),
+      el('span', { class: 'nav-toggle-text', text: 'Menu' })
+    ]);
+    const end = el('div', { class: 'nav-end' });
+    links.after(end);
+    end.append(link, toggle);
+    nav.classList.add('js-nav');
+    const setOpen = (on) => {
+      nav.classList.toggle('open', on);
+      toggle.setAttribute('aria-expanded', String(on));
+      if (on) closeOthers('nav');
+    };
+    toggle.addEventListener('click', () => setOpen(!nav.classList.contains('open')));
+    links.addEventListener('click', (e) => { if (e.target.closest('a')) setOpen(false); });
+    nav.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    document.addEventListener('click', (e) => { if (!nav.contains(e.target)) setOpen(false); });
+    document.addEventListener('belpire:menu', (e) => { if (e.detail !== 'nav') setOpen(false); });
+    window.matchMedia('(min-width: 961px)').addEventListener('change', (e) => { if (e.matches) setOpen(false); });
+  }
 
   // Come back to this page after signing in, unless it's a page with nothing to show signed-out visitors.
   link.href = `/auth/login?return=${encodeURIComponent(here === '/' || here === '/join/' ? '/me/' : here)}`;
@@ -87,8 +124,12 @@
     const open = (on) => {
       menu.hidden = !on;
       toggle.setAttribute('aria-expanded', String(on));
-      if (on) menu.querySelector('a, button')?.focus();
+      if (on) {
+        closeOthers('account');
+        menu.querySelector('a, button')?.focus();
+      }
     };
+    document.addEventListener('belpire:menu', (e) => { if (e.detail !== 'account') open(false); });
     toggle.addEventListener('click', () => open(menu.hidden));
     wrap.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !menu.hidden) {

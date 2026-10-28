@@ -1,0 +1,65 @@
+/* Shared header for every page with the main nav (loaded after the page's own stylesheet).
+   The header stays pinned to the top while you scroll; on narrow screens site/account.js folds the
+   links into a Menu button (only when JS runs, so the plain wrapped links still work without it). */
+.site-header { position: sticky; top: 0; z-index: 40; background: rgba(14, 11, 16, .92); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+html { scroll-padding-top: 96px; }
+.nav-end { display: flex; align-items: center; gap: 8px; }
+.nav-toggle { display: none; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; color: var(--text); font: 600 15px var(--sans); cursor: pointer; }
+.nav-toggle:hover, .nav-toggle[aria-expanded="true"] { border-color: var(--gold); }
+.nav-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.nav-toggle-icon, .nav-toggle-icon::before, .nav-toggle-icon::after { display: block; width: 18px; height: 2px; border-radius: 1px; background: currentColor; transition: transform .2s ease; }
+.nav-toggle-icon { position: relative; }
+.nav-toggle-icon::before, .nav-toggle-icon::after { content: ''; position: absolute; left: 0; }
+.nav-toggle-icon::before { top: -6px; }
+.nav-toggle-icon::after { top: 6px; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-icon { background: transparent; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-icon::before { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] .nav-toggle-icon::after { transform: translateY(-6px) rotate(-45deg); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 960px) {
+  .nav.js-nav { flex-wrap: nowrap; gap: 10px; padding-block: 10px; }
+  .nav.js-nav .wordmark { font-size: 22px; margin-right: auto; }
+  .nav.js-nav .nav-toggle { display: inline-flex; }
+  .nav.js-nav .nav-links { display: none; position: absolute; left: 0; right: 0; top: 100%; flex-direction: column; align-items: stretch; gap: 0; max-height: calc(100vh - 80px); overflow-y: auto; padding: 6px 20px 18px; background: var(--band); border-bottom: 1px solid var(--line-strong); box-shadow: 0 18px 30px rgba(0, 0, 0, .5); font-size: 17px; }
+  .nav.js-nav.open .nav-links { display: flex; }
+  .nav.js-nav .nav-links a:not(.btn) { padding: 14px 4px; min-height: 48px; border-bottom: 1px solid var(--line); }
+  .nav.js-nav .nav-links a:not(.btn):last-of-type { border-bottom: 0; }
+}
+@media (max-width: 380px) { .nav-toggle-text { display: none; } .nav.js-nav .wordmark { font-size: 19px; } }
+@media (prefers-reduced-motion: reduce) { .nav-toggle-icon, .nav-toggle-icon::before, .nav-toggle-icon::after { transition: none; } }
+
+/* Account menu (site/account.js) */
+.acct { position: relative; }
+.acct-toggle { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 14px 6px 6px; border: 1px solid var(--gold); border-radius: 999px; background: rgba(217, 178, 106, .08); color: var(--text); font: 600 15px var(--sans); cursor: pointer; position: relative; }
+.acct-toggle:hover, .acct-toggle[aria-expanded="true"] { background: rgba(217, 178, 106, .16); }
+.acct-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.acct-badge { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #9C2338, var(--crimson)); color: #F4ECE0; font: 700 13px var(--serif); letter-spacing: .04em; border: 1px solid var(--gold); }
+.acct-name { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-tix { padding: 2px 8px; border-radius: 4px; background: var(--gold); color: var(--ink); font-size: 13px; font-weight: 700; }
+.acct-dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%; background: #E0457B; box-shadow: 0 0 0 2px var(--ground); }
+.acct-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(340px, calc(100vw - 32px)); padding: 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--band); box-shadow: 0 18px 40px rgba(0, 0, 0, .55); font-family: var(--sans); letter-spacing: normal; }
+.acct-menu::before { content: ''; position: absolute; top: -7px; right: 28px; width: 12px; height: 12px; background: var(--band); border-left: 1px solid var(--line-strong); border-top: 1px solid var(--line-strong); transform: rotate(45deg); }
+.acct-who { margin: 2px 6px 10px; font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.acct-who strong { color: var(--text); }
+.acct-role { padding: 1px 8px; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); font-size: 12px; }
+.acct-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.acct-item { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 44px; padding: 8px 10px; border-radius: 6px; color: var(--text) !important; text-decoration: none; font-size: 15px; }
+.acct-item:hover, .acct-item:focus-visible { background: var(--raised); outline: none; }
+.acct-item:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); }
+.acct-item[aria-current="page"] { background: rgba(217, 178, 106, .1); }
+.acct-icon { width: 22px; text-align: center; flex: none; }
+.acct-text { flex: 1 1 12ch; min-width: 0; overflow-wrap: anywhere; }
+.acct-note { flex: 1 1 auto; color: var(--muted); font-size: 13px; text-align: right; }
+.acct-item.hot .acct-note, .acct-item.hot .acct-text { color: var(--gold-hover); }
+.acct-sep { height: 1px; margin: 6px 4px; background: var(--line); }
+.acct-signout { margin: 8px 6px 2px; padding-top: 8px; border-top: 1px solid var(--line); }
+.acct-signout button { background: none; border: 0; padding: 10px 4px; min-height: 44px; font: inherit; color: var(--gold); text-decoration: underline; cursor: pointer; }
+@media (max-width: 640px) {
+  .acct-name { display: none; }
+  .acct-toggle { padding-right: 10px; }
+  /* On phones the account menu drops down full width under the header instead of hanging off the button. */
+  .acct { position: static; }
+  .acct-menu { left: 12px; right: 12px; width: auto; top: calc(100% + 4px); max-height: calc(100vh - 90px); overflow-y: auto; }
+  .acct-menu::before { display: none; }
+}

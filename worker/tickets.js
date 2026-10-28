@@ -3,7 +3,8 @@
 //
 // Earning                                     Spending
 //   daily punch card (streak bonus)             the Prize Booth (worker/prizes.js); orders wait Backstage
-//   Find the Pea, a shell game decided here     and a Ringleader marks them done or refunds them
+//   Find the Pea, Ring Toss and the High        and a Ringleader marks them done or refunds them
+//     Striker, all decided here
 //   game-night attendance (check in, then paid
 //     every 10 minutes while in The Main Stage)
 //   Ringleaders handing tickets out
@@ -11,6 +12,8 @@
 //   GET  /api/tickets                       members: wallet, history, games, show, prizes, orders, high scores
 //   POST /api/tickets/punch                 members
 //   POST /api/tickets/games/shell           members  { pick: 0|1|2 }
+//   POST /api/tickets/games/rings           members  { row: 'front'|'middle'|'back' }
+//   POST /api/tickets/games/striker         members
 //   POST /api/tickets/checkin               members, while a show is on
 //   POST /api/tickets/redeem                members  { prize, detail?, game? }
 //   POST /api/tickets/privacy               members  { hidden }
@@ -35,6 +38,17 @@ export const RULES = {
   punchStreakMax: 5, // bonus days counted, so a 6-day streak and beyond earns 10 + 2×5 = 20
   shellPlays: 5,
   shellWin: 12,
+  ringPlays: 5,
+  // chance in 1000 and prize for each row: nearer bottles are easier, farther ones pay more
+  ringRows: { front: { odds: 600, prize: 6 }, middle: { odds: 300, prize: 15 }, back: { odds: 100, prize: 50 } },
+  strikerPlays: 3,
+  // where the puck can land (1–10) with its chance in 1000 and prize; 10 rings the bell
+  strikerTiers: [
+    { upTo: 350, heights: [1, 2, 3], prize: 0, label: 'Wimp' },
+    { upTo: 700, heights: [4, 5, 6], prize: 5, label: 'Not bad' },
+    { upTo: 950, heights: [7, 8, 9], prize: 12, label: 'Strongman' },
+    { upTo: 1000, heights: [10], prize: 40, label: 'DING!' }
+  ],
   attendPerCheck: 3,
   attendCap: 60,
   awardMax: 500
@@ -122,6 +136,37 @@ export async function playShell(env, uid, name, pick, now = Date.now()) {
   const balance = await store.change(uid, name, amount, 'game', { note: win ? 'Find the Pea: found it' : 'Find the Pea', ref: `${prefix}${played + 1}` });
   if (balance === null) throw new TicketError(409, 'busy', 'One game at a time. Try again.');
   return { pea, win, amount, balance, playsLeft: RULES.shellPlays - played - 1 };
+}
+
+// Shared bookkeeping for a daily-limited game: counts today's plays, records the result (0 for a loss).
+async function playDaily(env, uid, name, game, limit, outOf, decide, now) {
+  const store = ticketStore(env.DB);
+  const prefix = `${game}:${uid}:${etDay(now)}:`;
+  const played = await store.countRefs(prefix);
+  if (played >= limit) throw new TicketError(429, 'no_plays', outOf);
+  const r = decide();
+  const balance = await store.change(uid, name, r.amount, 'game', { note: r.note, ref: `${prefix}${played + 1}` });
+  if (balance === null) throw new TicketError(409, 'busy', 'One game at a time. Try again.');
+  return { ...r, balance, playsLeft: limit - played - 1 };
+}
+
+export function playRings(env, uid, name, row, now = Date.now()) {
+  const rule = RULES.ringRows[row];
+  if (!rule || !Object.hasOwn(RULES.ringRows, row)) throw new TicketError(400, 'row', 'Pick the front, middle or back row.');
+  return playDaily(env, uid, name, 'rings', RULES.ringPlays, `That's all ${RULES.ringPlays} rings for today. The booth reopens at midnight Eastern.`, () => {
+    const win = randomInt(1000) < rule.odds;
+    // which bottle in the row (0–3), for the animation
+    return { row, win, bottle: randomInt(4), amount: win ? rule.prize : 0, note: win ? `Ring Toss: ringer on the ${row} row` : 'Ring Toss' };
+  }, now);
+}
+
+export function swingStriker(env, uid, name, now = Date.now()) {
+  return playDaily(env, uid, name, 'striker', RULES.strikerPlays, `Your arms need a rest: that's all ${RULES.strikerPlays} swings for today. Back at midnight Eastern.`, () => {
+    const roll = randomInt(1000);
+    const tier = RULES.strikerTiers.find((t) => roll < t.upTo);
+    const height = tier.heights[randomInt(tier.heights.length)];
+    return { height, bell: height === 10, label: tier.label, amount: tier.prize, note: tier.prize ? `High Striker: ${tier.label}` : 'High Striker' };
+  }, now);
 }
 
 export async function checkIn(env, uid, name, now = Date.now()) {
@@ -326,7 +371,11 @@ export async function handleTickets(request, env) {
           me: { name: who.name, manager: who.manager },
           wallet: await summary(env, session.uid),
           rules: RULES,
-          games: { shell: { left: Math.max(0, RULES.shellPlays - (await store.countRefs(`shell:${session.uid}:${day}:`))) } },
+          games: {
+            shell: { left: Math.max(0, RULES.shellPlays - (await store.countRefs(`shell:${session.uid}:${day}:`))) },
+            rings: { left: Math.max(0, RULES.ringPlays - (await store.countRefs(`rings:${session.uid}:${day}:`))) },
+            striker: { left: Math.max(0, RULES.strikerPlays - (await store.countRefs(`striker:${session.uid}:${day}:`))) }
+          },
           show: show ? await store.getCheckin(session.uid, show.key).then((c) => ({ title: show.title, checkedIn: Boolean(c), paid: Number(c?.paid || 0), cap: RULES.attendCap })) : null,
           history: (await store.history(session.uid, 25)).map((h) => ({ amount: h.amount, kind: h.kind, note: h.note, at: h.created_at })),
           prizes: PRIZES,
@@ -358,6 +407,8 @@ export async function handleTickets(request, env) {
 
     if (parts.length === 1 && parts[0] === 'punch') return json({ ok: true, ...(await punch(env, session.uid, who.name)) });
     if (parts.length === 2 && parts[0] === 'games' && parts[1] === 'shell') return json({ ok: true, ...(await playShell(env, session.uid, who.name, Number(body.pick))) });
+    if (parts.length === 2 && parts[0] === 'games' && parts[1] === 'rings') return json({ ok: true, ...(await playRings(env, session.uid, who.name, String(body.row || ''))) });
+    if (parts.length === 2 && parts[0] === 'games' && parts[1] === 'striker') return json({ ok: true, ...(await swingStriker(env, session.uid, who.name)) });
     if (parts.length === 1 && parts[0] === 'checkin') return json({ ok: true, ...(await checkIn(env, session.uid, who.name)) });
     if (parts.length === 1 && parts[0] === 'privacy') {
       await store.setHidden(session.uid, who.name, Boolean(body.hidden));

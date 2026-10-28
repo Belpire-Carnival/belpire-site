@@ -170,10 +170,6 @@ body.jx h2::after { background-image: radial-gradient(circle, var(--sun) 0 2px, 
 
 body.jx .closing::before { background: radial-gradient(ellipse, rgba(255, 79, 154, .22), transparent 70%); }
 
-@media (max-width: 640px) {
-  body.jx .site-header { position: static; }
-}
-
 @media (max-width: 860px) {
   .jx-hero { grid-template-columns: 1fr; padding-block: 44px 40px; }
   .roomcode { order: -1; }
