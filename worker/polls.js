@@ -12,7 +12,7 @@
 //   GET  /api/polls/discord-check    managers: what the bot can and can't do in #general and The Main Stage
 //
 // Who's who comes from the Discord server itself, read with the bot: anyone in the server votes;
-// people holding a role in POLL_MANAGER_ROLE_IDS (RingMaster, RingMistress, Carnival Guard) manage.
+// people holding a role in POLL_MANAGER_ROLE_IDS (RingMaster, RingMistress, Carnival Guard, Fortune Teller) manage.
 // Runtime secrets: DISCORD_BOT_TOKEN, DISCORD_GUILD_ID, POLL_MANAGER_ROLE_IDS, MAIN_STAGE_CHANNEL_ID,
 // GENERAL_CHANNEL_ID. Binding: DB (D1). The visitor's identity comes from the sign-in cookie (auth.js).
 
@@ -349,7 +349,7 @@ export async function handlePolls(request, env, ctx) {
     if (request.method === 'GET' && parts.length === 1 && parts[0] === 'discord-check') {
       if (!session) return fail(401, 'signin', 'Sign in with Discord first.');
       const who = await whoIs(env, cfg, session, { fresh: true });
-      if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress and Carnival Guards can run this check.');
+      if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress, Carnival Guards and the Fortune Teller can run this check.');
       return json({ checks: await checkSetup(env) });
     }
 
@@ -362,7 +362,7 @@ export async function handlePolls(request, env, ctx) {
     // POST /api/polls  (open a poll)
     if (parts.length === 0) {
       const who = await whoIs(env, cfg, session, { fresh: true });
-      if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress and Carnival Guards can start a poll.');
+      if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress, Carnival Guards and the Fortune Teller can start a poll.');
       if ((await store.active(MAX_ACTIVE_POLLS + 1)).length >= MAX_ACTIVE_POLLS) return fail(409, 'active', `${MAX_ACTIVE_POLLS} polls are already running. Close or cancel one first.`);
       const catalog = await loadCatalog(env, url.origin);
       const byKey = new Map(catalog.map((c) => [c.key, c]));
@@ -411,7 +411,7 @@ export async function handlePolls(request, env, ctx) {
       return json({ ok: true, ranking, locked: true });
     }
 
-    if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress and Carnival Guards can do that.');
+    if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress, Carnival Guards and the Fortune Teller can do that.');
 
     if (action === 'close') {
       const ballots = await store.ballots(poll.id);

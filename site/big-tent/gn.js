@@ -755,7 +755,7 @@ function renderStaffPage() {
     stage.hidden = true;
     gate.hidden = false;
     const block = !me.signedIn
-      ? signInBlock('Backstage is for the RingMaster, RingMistress and Carnival Guards. Verify with Discord to come through.')
+      ? signInBlock('Backstage is for the RingMaster, RingMistress, Carnival Guards and the Fortune Teller. Verify with Discord to come through.')
       : el('div', { class: 'panel' }, [
         el('h2', { text: 'Staff only' }),
         el('p', { text: 'This door is for the Ringleaders. If you think you should be back here, ask the RingMaster in Discord.' }),
