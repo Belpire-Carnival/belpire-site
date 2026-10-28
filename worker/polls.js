@@ -206,14 +206,17 @@ const memberCache = new Map();
 export function _clearMemberCache() {
   memberCache.clear();
 }
+export function _forgetMember(uid) {
+  memberCache.delete(uid);
+}
 
 async function whoIs(env, cfg, session, { fresh = false } = {}) {
   const hit = memberCache.get(session.uid);
   if (!fresh && hit && hit.until > Date.now()) return hit.value;
   const m = await getMember(env, session.uid);
   const value = m
-    ? { member: true, manager: (m.roles || []).some((r) => cfg.managerRoles.includes(r)), name: String(m.nick || m.user?.global_name || m.user?.username || session.name).slice(0, 64) }
-    : { member: false, manager: false, name: session.name };
+    ? { member: true, manager: (m.roles || []).some((r) => cfg.managerRoles.includes(r)), roles: m.roles || [], name: String(m.nick || m.user?.global_name || m.user?.username || session.name).slice(0, 64) }
+    : { member: false, manager: false, roles: [], name: session.name };
   memberCache.set(session.uid, { value, until: Date.now() + 2 * 60 * 1000 });
   return value;
 }

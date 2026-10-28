@@ -39,6 +39,10 @@
     let action;
     if (s.access === 'member' && join) {
       action = el('a', { class: 'btn btn-gold', href: join, target: '_blank', rel: 'noopener', text: 'Step Right Up to The Main Stage' });
+    } else if (s.access === 'no_pass') {
+      action = el('a', { class: 'btn btn-gold', href: '/big-tent/#passes', text: 'Get Your Game Night Pass' });
+    } else if (s.access === 'pass_pending') {
+      action = el('p', { class: 'live-note', text: 'Your Game Night pass is with the Ringleaders for stamping.' });
     } else if (s.access === 'not_member') {
       action = el('p', { class: 'live-note', text: 'The Main Stage is for Belpire members only.' });
     } else {
