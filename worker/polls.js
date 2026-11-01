@@ -1,9 +1,10 @@
 // Game-night polls for The Big Tent (belpire.com/big-tent/).
 //
 //   GET  /api/polls/current          every active poll (several can run at once, one per game night)          the open/closed poll, upcoming scheduled nights, and what this visitor may do
-//   POST /api/polls                  managers: open a poll from the game catalog
+//   POST /api/polls                  managers: open a poll from the game catalog; the Usher posts it to #general
 //   POST /api/polls/:id/ballot       members: rank up to 4 games (ranked choice, 4-3-2-1 points)
 //   POST /api/polls/:id/doom         members: the Wheel of Doom picks 4 horror/party/Jackbox games; ballot locks
+//   POST /api/polls/:id/post         managers: send (or resend) the "voting is open" post to #general
 //   POST /api/polls/:id/close        managers: close voting, post the top 4 to #general
 //   POST /api/polls/:id/schedule     managers: set date/time, create the Discord event in The Main Stage,
 //                                    post a second message to #general
@@ -150,6 +151,47 @@ export function resultsMessage(poll, standings, voters) {
   };
 }
 
+export const OPEN_POST_COOLDOWN_MS = 10 * 60 * 1000;
+const SITE = 'https://belpire.com';
+
+// "Voting is open" for #general. A resend says how many have voted so far.
+export function openMessage(poll, { voters = 0, reminder = false, origin = SITE } = {}) {
+  const names = poll.candidates.map((c) => `• ${c.name}`).join('\n');
+  const so = voters ? `\n\n${voters} ${voters === 1 ? 'member has' : 'members have'} voted so far.` : '';
+  return {
+    content: reminder ? `Still time to vote for **${poll.title}**.` : `The ballot box is open for **${poll.title}**.`,
+    embeds: [{
+      title: `🗳️ ${poll.title}: voting is open`,
+      url: `${origin}/big-tent/`,
+      color: GOLD,
+      description: `${names}\n\nRank your top ${MAX_RANK} at The Big Tent on belpire.com, or let the Wheel of Doom choose for you.${so}`.slice(0, 4000),
+      footer: { text: 'Belpire Carnival · Game Night poll' }
+    }]
+  };
+}
+
+// Sends the "voting is open" post for one poll (from the website or the Usher's /poll).
+// Returns { posted: true } or { posted: false, reason, waitMinutes }.
+export async function sendOpenPost(env, poll, { reminder = false, origin = SITE, now = Date.now() } = {}) {
+  const store = pollStore(env.DB);
+  if (poll.status !== 'open') return { posted: false, reason: 'Voting has closed on that poll.' };
+  const claim = await store.claimOpenPost(poll.id, now, OPEN_POST_COOLDOWN_MS);
+  if (!claim) {
+    const fresh = await store.get(poll.id);
+    const wait = fresh?.open_posted_at ? Math.max(1, Math.ceil((fresh.open_posted_at + OPEN_POST_COOLDOWN_MS - now) / 60000)) : 1;
+    return { posted: false, waitMinutes: wait, reason: `It was posted a moment ago. You can send it again in ${wait} ${wait === 1 ? 'minute' : 'minutes'}.` };
+  }
+  try {
+    const voters = reminder ? await store.voteCount(poll.id) : 0;
+    await postMessage(env, env.GENERAL_CHANNEL_ID, openMessage(poll, { voters, reminder, origin }));
+    return { posted: true };
+  } catch (err) {
+    console.warn(`Poll post failed: ${err.message}`);
+    await store.releaseOpenPost(poll.id, claim.prev);
+    return { posted: false, reason: explain(err) };
+  }
+}
+
 export function eventPayload(poll) {
   const top = winners(poll.results || []);
   const names = top.map((r) => r.name).join(' · ');
@@ -285,6 +327,7 @@ function publicPoll(poll, extra = {}) {
     resultsPosted: poll.results_posted,
     eventStart: poll.event_start || null,
     eventPosted: poll.event_posted,
+    openPostedAt: poll.open_posted_at ? new Date(poll.open_posted_at).toISOString() : null,
     ...extra
   };
 }
@@ -379,11 +422,12 @@ export async function handlePolls(request, env, ctx) {
         created_at: Date.now()
       };
       await store.create(poll);
+      const sent = await sendOpenPost(env, { ...poll, status: 'open' }, { origin: url.origin });
       const picked = await fulfilPicks(env, poll.title, keys, who.name).catch((err) => {
         console.warn(`Ballot-pick prizes not updated: ${err.message}`);
         return 0;
       });
-      return json({ ok: true, id: poll.id, prizePicks: picked }, 201);
+      return json({ ok: true, id: poll.id, prizePicks: picked, posted: sent.posted, reason: sent.reason || null }, 201);
     }
 
     const poll = await store.get(parts[0]);
@@ -412,6 +456,13 @@ export async function handlePolls(request, env, ctx) {
     }
 
     if (!who.manager) return fail(403, 'not_manager', 'Only the RingMaster, RingMistress, Carnival Guards and the Fortune Teller can do that.');
+
+    if (action === 'post') {
+      if (poll.status !== 'open') return fail(409, 'closed', 'Voting has closed on this poll.');
+      const sent = await sendOpenPost(env, poll, { reminder: Boolean(poll.open_posted_at), origin: url.origin });
+      if (sent.posted) return json({ ok: true, posted: true });
+      return sent.waitMinutes ? fail(429, 'too_soon', sent.reason) : fail(502, 'discord', `Discord did not take the post. ${sent.reason}`);
+    }
 
     if (action === 'close') {
       const ballots = await store.ballots(poll.id);
@@ -459,6 +510,10 @@ export async function handlePolls(request, env, ctx) {
     }
 
     if (action === 'announce') {
+      if (poll.status === 'open' && !poll.open_posted_at) {
+        const sent = await sendOpenPost(env, poll, { origin: url.origin });
+        return sent.posted ? json({ ok: true, posted: 'open' }) : fail(502, 'discord', `Discord did not take the post. ${sent.reason}`);
+      }
       try {
         if (poll.status === 'closed' && !poll.results_posted) {
           const voters = (await store.ballots(poll.id)).length;

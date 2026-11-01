@@ -537,11 +537,23 @@ function resultsList(results) {
   return ol;
 }
 
+function postedText(poll) {
+  if (!poll.openPostedAt) return 'Not posted to Discord yet.';
+  const t = new Date(poll.openPostedAt).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return `Last posted to #general ${t} ET.`;
+}
+
 function managerOpenControls(poll) {
+  const send = button(poll.openPostedAt ? 'Resend the poll to Discord' : 'Send the poll to Discord', () => {
+    send.disabled = true;
+    act(`/api/polls/${poll.id}/post`, {}, 'The Usher posted the poll to #general.');
+  }, 'btn btn-ghost');
   return el('div', { class: 'panel' }, [
     el('h2', { text: 'Run the poll' }),
+    el('p', { class: 'meta', text: `The Usher posts the poll to #general when it opens. Resend it as a reminder (with the vote count) once every 10 minutes at most, here or with /poll in Discord. ${postedText(poll)}` }),
     el('p', { class: 'meta', text: 'Closing voting posts the top four to #general. You set the date and time next.' }),
     el('div', { class: 'btn-row' }, [
+      send,
       confirmButton('Close voting', 'Click again to close and post results', () => act(`/api/polls/${poll.id}/close`, {}, (d) => (d.posted ? 'Voting closed. Results posted to #general.' : `Voting closed, but the #general post failed. ${d.reason || ''} Fix it, then use "Post to Discord again".`))),
       confirmButton('Cancel poll', 'Click again to cancel', () => act(`/api/polls/${poll.id}/cancel`, {}, 'Poll cancelled.'), 'btn btn-danger')
     ])
@@ -607,7 +619,7 @@ function createForm() {
       flash = { kind: 'error', text: 'Pick at least two games.' };
       return render();
     }
-    act('/api/polls', { title: title.value, candidates }, (d) => `Voting is open. Share the link in Discord!${d.prizePicks ? ` ${d.prizePicks} Prize Booth pick${d.prizePicks === 1 ? '' : 's'} delivered.` : ''}`);
+    act('/api/polls', { title: title.value, candidates }, (d) => `${d.posted ? 'Voting is open, and the Usher posted it to #general.' : `Voting is open, but the #general post failed. ${d.reason || ''} Fix it, then use "Send the poll to Discord".`}${d.prizePicks ? ` ${d.prizePicks} Prize Booth pick${d.prizePicks === 1 ? '' : 's'} delivered.` : ''}`);
   });
   return el('div', { class: 'panel' }, [
     el('h2', { text: 'Start a poll' }),

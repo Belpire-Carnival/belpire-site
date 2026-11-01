@@ -39,7 +39,9 @@ async function ensure(db) {
   if (!ready.has(db)) {
     ready.set(db, db.batch(SCHEMA.map((s) => db.prepare(s)))
       // Databases created before voter names were shown need the column added once; afterwards this fails harmlessly.
-      .then(() => db.prepare('ALTER TABLE ballots ADD COLUMN voter_name TEXT').run().catch(() => {})));
+      .then(() => db.prepare('ALTER TABLE ballots ADD COLUMN voter_name TEXT').run().catch(() => {}))
+      // Same for when the "voting is open" post was last sent to Discord.
+      .then(() => db.prepare('ALTER TABLE polls ADD COLUMN open_posted_at INTEGER').run().catch(() => {})));
   }
   await ready.get(db);
 }
@@ -50,7 +52,8 @@ const parse = (row) =>
     candidates: JSON.parse(row.candidates || '[]'),
     results: row.results ? JSON.parse(row.results) : null,
     results_posted: Boolean(row.results_posted),
-    event_posted: Boolean(row.event_posted)
+    event_posted: Boolean(row.event_posted),
+    open_posted_at: row.open_posted_at ? Number(row.open_posted_at) : null
   };
 
 export function pollStore(db) {
@@ -145,6 +148,24 @@ export function pollStore(db) {
         .bind(eventId, start, scheduledByName, id)
         .run();
       return r.meta.changes === 1;
+    },
+    // Claims the "voting is open" post for an open poll, at most once per cooldown, so two clicks
+    // (or a click and /poll) can't post twice. Returns the previous time, or false if it's too soon.
+    async claimOpenPost(id, now, cooldownMs) {
+      await ensure(db);
+      const row = await db.prepare("SELECT open_posted_at FROM polls WHERE id = ? AND status = 'open'").bind(id).first();
+      if (!row) return false;
+      const prev = row.open_posted_at ? Number(row.open_posted_at) : null;
+      const r = await db
+        .prepare("UPDATE polls SET open_posted_at = ? WHERE id = ? AND status = 'open' AND (open_posted_at IS NULL OR open_posted_at <= ?)")
+        .bind(now, id, now - cooldownMs)
+        .run();
+      return r.meta.changes === 1 ? { prev } : false;
+    },
+    // Puts the time back when the post didn't go through, so it can be retried straight away.
+    async releaseOpenPost(id, prev) {
+      await ensure(db);
+      await db.prepare('UPDATE polls SET open_posted_at = ? WHERE id = ?').bind(prev, id).run();
     },
     async markEventPosted(id) {
       await ensure(db);

@@ -178,6 +178,10 @@ test('the whole night: open, vote, close to #general, schedule an event, announc
   r = await api('/api/polls', { as: 'guard', method: 'POST', body: { title: 'Friday Fright', candidates: ['steam-1966720', 'steam-553850', 'steam-3527290', 'jb-1211630-quiplash-3', 'jb-3048060-trivia-murder-party-3'] } });
   assert.equal(r.status, 201);
   const id = r.body.id;
+  assert.equal(r.body.posted, true);
+  assert.equal(discord.messages[0].channel, GENERAL);
+  assert.match(discord.messages[0].body.embeds[0].title, /Friday Fright: voting is open/);
+  assert.equal(discord.messages[0].body.embeds[0].url, `${ORIGIN}/big-tent/`);
 
   // Votes: members only, results hidden while open, a revote replaces the old ballot.
   r = await api(`/api/polls/${id}/ballot`, { as: 'stranger', method: 'POST', body: { ranking: ['steam-1966720'] } });
@@ -205,10 +209,10 @@ test('the whole night: open, vote, close to #general, schedule an event, announc
   // Close: tally, post results to #general, no more votes.
   r = await api(`/api/polls/${id}/close`, { as: 'guard', method: 'POST', body: {} });
   assert.deepEqual(r.body, { ok: true, posted: true, reason: null });
-  assert.equal(discord.messages.length, 1);
-  assert.equal(discord.messages[0].channel, GENERAL);
-  assert.deepEqual(discord.messages[0].body.allowed_mentions, { parse: [] });
-  const desc = discord.messages[0].body.embeds[0].description;
+  assert.equal(discord.messages.length, 2);
+  assert.equal(discord.messages[1].channel, GENERAL);
+  assert.deepEqual(discord.messages[1].body.allowed_mentions, { parse: [] });
+  const desc = discord.messages[1].body.embeds[0].description;
   assert.match(desc, /\*\*1\. Lethal Company\*\*  ·  11 pts/); // 4 + 3 + 4
   assert.match(desc, /\*\*2\. Quiplash 3 \(Pack 7\)\*\*  ·  7 pts/); // 3 + 4
   assert.match(desc, /3 members voted/);
@@ -231,9 +235,9 @@ test('the whole night: open, vote, close to #general, schedule an event, announc
   assert.equal(discord.events[0].channel_id, STAGE);
   assert.equal(discord.events[0].entity_type, 2);
   assert.match(discord.events[0].name, /^Friday Fright: Lethal Company · Quiplash 3 \(Pack 7\)/);
-  assert.equal(discord.messages.length, 2);
-  assert.match(discord.messages[1].body.content, /^Game night is set for <t:\d+:F>/);
-  assert.equal(discord.messages[1].body.embeds[0].url, r.body.eventUrl);
+  assert.equal(discord.messages.length, 3);
+  assert.match(discord.messages[2].body.content, /^Game night is set for <t:\d+:F>/);
+  assert.equal(discord.messages[2].body.embeds[0].url, r.body.eventUrl);
   r = await api('/api/polls/current', { as: 'fan' });
   assert.equal(r.body.poll, null, 'a scheduled night leaves the ballot box free');
   assert.equal(r.body.upcoming.length, 1);
@@ -260,7 +264,7 @@ test('failed Discord posts can be retried; a failed event leaves the poll ready 
   discord.failPosts = false;
   r = await api(`/api/polls/${id}/announce`, { as: 'boss', method: 'POST', body: {} });
   assert.equal(r.body.posted, 'results');
-  assert.equal(discord.messages.length, 1);
+  assert.equal(discord.messages.length, 2);
 
   discord.failEvents = true;
   const start = new Date(Date.now() + 86400 * 1000).toISOString();
@@ -485,5 +489,40 @@ test('there is a cap on how many polls can run at once', async () => {
     assert.equal(r.status, 201);
   }
   const r = await api('/api/polls', { as: 'boss', method: 'POST', body: { candidates: ['steam-1966720', 'steam-553850'] } });
+  assert.equal(r.status, 409);
+});
+
+test('Ringleaders resend the open poll to #general, at most once per 10 minutes; members cannot', async () => {
+  discord.failPosts = true;
+  let r = await api('/api/polls', { as: 'guard', method: 'POST', body: { title: 'Saturday Scares', candidates: ['steam-1966720', 'steam-553850'] } });
+  assert.equal(r.status, 201);
+  assert.equal(r.body.posted, false);
+  const id = r.body.id;
+  r = await api('/api/polls/current', { as: 'boss' });
+  assert.equal(r.body.poll.openPostedAt, null); // a failed post doesn't start the cooldown
+
+  discord.failPosts = false;
+  r = await api(`/api/polls/${id}/post`, { as: 'fan', method: 'POST', body: {} });
+  assert.equal(r.status, 403);
+  r = await api(`/api/polls/${id}/post`, { as: 'boss', method: 'POST', body: {} });
+  assert.equal(r.status, 200);
+  assert.equal(discord.messages.length, 1);
+  assert.match(discord.messages[0].body.content, /ballot box is open/);
+  r = await api(`/api/polls/${id}/post`, { as: 'guard', method: 'POST', body: {} });
+  assert.equal(r.status, 429);
+  assert.match(r.body.message, /send it again in \d+ minutes?/);
+  assert.equal(discord.messages.length, 1);
+
+  // After the cooldown a resend is a reminder with the vote count.
+  await api(`/api/polls/${id}/ballot`, { as: 'fan', method: 'POST', body: { ranking: ['steam-553850'] } });
+  await env.DB.prepare('UPDATE polls SET open_posted_at = ? WHERE id = ?').bind(Date.now() - 11 * 60 * 1000, id).run();
+  r = await api(`/api/polls/${id}/post`, { as: 'guard', method: 'POST', body: {} });
+  assert.equal(r.status, 200);
+  assert.match(discord.messages[1].body.content, /^Still time to vote/);
+  assert.match(discord.messages[1].body.embeds[0].description, /1 member has voted so far/);
+
+  // Closed polls can't be resent.
+  await api(`/api/polls/${id}/close`, { as: 'boss', method: 'POST', body: {} });
+  r = await api(`/api/polls/${id}/post`, { as: 'boss', method: 'POST', body: {} });
   assert.equal(r.status, 409);
 });

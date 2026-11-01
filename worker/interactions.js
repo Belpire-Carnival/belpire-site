@@ -5,7 +5,8 @@
 // Commands are registered once with `npm run commands` (scripts/register-commands.mjs).
 // Runtime secret: DISCORD_PUBLIC_KEY (the app's public key, used to verify each request).
 
-import { pollConfig } from './polls.js';
+import { pollConfig, sendOpenPost } from './polls.js';
+import { pollStore } from './poll-db.js';
 import { PRIZES, prizeById } from './prizes.js';
 import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, summary, highScores, ticketsText, RULES, TicketError } from './tickets.js';
 
@@ -39,6 +40,7 @@ export const COMMANDS = [
       { type: 3, name: 'note', description: 'What you want (which oddity, which colour…)', required: false, max_length: 200 }
     ]
   },
+  { name: 'poll', description: 'Ringleaders: post the open game-night poll to #general again', type: 1 },
   {
     name: 'give-tickets', description: 'Ringleaders: hand out (or take back) tickets', type: 1,
     options: [
@@ -136,6 +138,17 @@ async function run(env, interaction) {
       if (prize?.needs === 'game') return reply(`🗳️ Picking a game needs the list, so redeem **${prize.name}** at ${site}`);
       const r = await redeem(env, uid, name, { prize: prize?.id, detail: opt(data, 'note') });
       return reply(`🎁 **${r.order.name}** ordered for ${ticketsText(r.order.cost)}. A Ringleader will sort it out and the Usher will DM you. Balance: ${ticketsText(r.balance)}.`);
+    }
+    case 'poll': {
+      if (!manager) return reply('🎪 Only the Ringleaders can send out the poll. You can vote at https://belpire.com/big-tent/');
+      const open = (await pollStore(env.DB).active()).filter((p) => p.status === 'open');
+      if (!open.length) return reply('🗳️ No poll is open right now. Start one in Backstage at https://belpire.com/backstage/');
+      const lines = [];
+      for (const p of open) {
+        const r = await sendOpenPost(env, p, { reminder: Boolean(p.open_posted_at) });
+        lines.push(r.posted ? `✅ **${p.title}** posted to #general.` : `⏳ **${p.title}**: ${r.reason}`);
+      }
+      return reply(`🗳️ ${lines.join('\n')}`);
     }
     case 'give-tickets': {
       if (!manager) return reply('🎪 Only the Ringleaders can hand out tickets.');
