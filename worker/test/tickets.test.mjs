@@ -256,6 +256,8 @@ test('slash commands: signature checked, same bank as the website', async () => 
   assert.match((await signedInteraction(keys, slash('redeem', U.fan, [{ name: 'prize', value: 'fan-favorite' }]))).body.data.content, /Fan Favorite badge\*\* ordered/);
   assert.match((await signedInteraction(keys, slash('give-tickets', U.fan, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 5 }]))).body.data.content, /Only the Ringleaders/);
   assert.match((await signedInteraction(keys, slash('give-tickets', U.boss, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 25 }], [MANAGER]))).body.data.content, /Gave \*\*Fan Two\*\* 25 tickets/);
+  assert.match((await signedInteraction(keys, slash('poll', U.fan))).body.data.content, /Only the Ringleaders can send out the poll/);
+  assert.match((await signedInteraction(keys, slash('poll', U.boss, [], [MANAGER]))).body.data.content, /No poll is open right now/);
   const hs = await signedInteraction(keys, slash('high-scores', U.fan2));
   assert.equal(hs.body.data.flags, 0, 'High Scores are posted for everyone');
   assert.match(hs.body.data.content, /1\. Fan One: 2\d\d/);
