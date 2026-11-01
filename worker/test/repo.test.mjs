@@ -1,7 +1,7 @@
 // Repository guards: catch broken merges and unfinished config before Cloudflare tries to deploy them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, access } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -81,4 +81,19 @@ test('every public page has a link-preview image that exists', async () => {
 test('home page images point at files that exist', async () => {
   const html = await readFile(join(ROOT, 'site', 'index.html'), 'utf8');
   for (const [, src] of html.matchAll(/<img [^>]*src="\/([^"]+)"/g)) await readFile(join(ROOT, 'site', src));
+});
+
+test('fonts are self-hosted: no Google Fonts anywhere, and every font file fonts.css names exists', async () => {
+  const offenders = [];
+  for await (const file of files(join(ROOT, 'site'))) {
+    if (!/\.(html|css|js)$/.test(file)) continue;
+    if (/fonts\.(googleapis|gstatic)\.com/.test(await readFile(file, 'utf8'))) offenders.push(file);
+  }
+  assert.deepEqual(offenders, []);
+  const css = await readFile(join(ROOT, 'site', 'fonts.css'), 'utf8');
+  const urls = [...css.matchAll(/url\('\/(fonts\/[^']+\.woff2)'\)/g)].map((m) => m[1]);
+  assert.ok(urls.length >= 10);
+  for (const u of urls) await access(join(ROOT, 'site', u));
+  const headers = await readFile(join(ROOT, 'site', '_headers'), 'utf8');
+  assert.match(headers, /font-src 'self'/);
 });

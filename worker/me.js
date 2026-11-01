@@ -32,29 +32,39 @@ export async function handleMe(request, env) {
   if (!who.member) return json(body);
 
   body.pass = passStatus(env, who);
-  const live = await quiet(liveStatus(env), { live: false });
-  body.live = { live: Boolean(live.live), canJoin: Boolean(live.live) && (body.pass === 'has_pass' || body.pass === 'not_required') };
-  if (!env.DB) return json(body);
-
-  body.tickets = await quiet(summary(env, session.uid), null);
-  const polls = pollStore(env.DB);
-  const unvoted = [];
-  let open = 0;
-  for (const p of await quiet(polls.active(), [])) {
-    if (p.status !== 'open') continue;
-    open++;
-    if (!(await polls.ballot(p.id, session.uid))) unvoted.push({ id: p.id, title: p.title });
+  const canJoin = body.pass === 'has_pass' || body.pass === 'not_required';
+  if (!env.DB) {
+    const live = await quiet(liveStatus(env), { live: false });
+    body.live = { live: Boolean(live.live), canJoin: Boolean(live.live) && canJoin };
+    return json(body);
   }
-  body.polls = { open, unvoted };
 
-  if (who.manager) {
+  // The menu's parts don't depend on each other, so fetch them side by side.
+  const polls = pollStore(env.DB);
+  const openPolls = async () => {
+    const open = (await quiet(polls.active(), [])).filter((p) => p.status === 'open');
+    const voted = await Promise.all(open.map((p) => quiet(polls.ballot(p.id, session.uid), null)));
+    return { open: open.length, unvoted: open.filter((p, i) => !voted[i]).map((p) => ({ id: p.id, title: p.title })) };
+  };
+  const staff = async () => {
+    if (!who.manager) return undefined;
     const [passes, oddities, orders, chat] = await Promise.all([
       passConfig(env).ok ? quiet(passStore(env.DB).pending(), []) : [],
       quiet(oddityStore(env.DB).list('pending', 50), []),
       quiet(ticketStore(env.DB).pendingOrders(100), []),
       quiet(staffStore(env.DB).latest(1), [])
     ]);
-    body.staff = { passes: passes.length, oddities: oddities.length, prizes: orders.length, chatLatest: chat[0]?.created_at || null };
-  }
+    return { passes: passes.length, oddities: oddities.length, prizes: orders.length, chatLatest: chat[0]?.created_at || null };
+  };
+  const [live, tickets, pollInfo, staffInfo] = await Promise.all([
+    quiet(liveStatus(env), { live: false }),
+    quiet(summary(env, session.uid), null),
+    openPolls(),
+    staff()
+  ]);
+  body.live = { live: Boolean(live.live), canJoin: Boolean(live.live) && canJoin };
+  body.tickets = tickets;
+  body.polls = pollInfo;
+  if (staffInfo) body.staff = staffInfo;
   return json(body);
 }

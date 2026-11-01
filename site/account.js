@@ -147,8 +147,10 @@
     });
   }
 
-  fetch('/api/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' })
+  // One /api/me per page load, shared with the Ticket Booth page (whichever script asks first makes the call).
+  (window.belpireMe ||= fetch('/api/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' })
     .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null))
     .then((me) => { if (me?.signedIn) build(me); })
     .catch(() => {});
 })();

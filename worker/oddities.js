@@ -7,6 +7,7 @@
 //   POST /api/oddities/clip/:id/complete        { parts: [{ partNumber, etag }] }
 //   GET  /api/oddities/:id/media                the file (live: anyone; pending: Ringleaders)
 //   POST /api/oddities/:id/approve | remove | report
+//   POST /api/oddities/:id/title                { title } the uploader or a Ringleader renames it
 //   POST /api/oddities/:id/react                { reaction: 'like' | 'love' | 'laugh' | 'scream' | 'dead' | 'angry' } (toggle)
 //
 // Safety: the file's bytes decide its type (PNG/JPEG/WebP, MP4/WebM only; BMP, SVG, GIF and everything
@@ -269,7 +270,7 @@ export async function handleOddities(request, env, ctx) {
     // Everything below changes something: same-site requests from signed-in members only.
     if (!session) return fail(401, 'signed_out', 'Verify with Discord first.');
     // Anything that leans on the Ringleader role (approve, remove, auto-approved uploads) re-reads it from Discord.
-    const usesRole = ['approve', 'remove', 'complete'].includes(parts.at(-1)) || (parts.length === 1 && parts[0] === 'image');
+    const usesRole = ['approve', 'remove', 'complete', 'title'].includes(parts.at(-1)) || (parts.length === 1 && parts[0] === 'image');
     const who = await memberInfo(env, session, { fresh: usesRole });
     if (!who.member) return fail(403, 'not_member', 'Only members of the Belpire Discord can do that.');
 
@@ -310,6 +311,19 @@ export async function handleOddities(request, env, ctx) {
       const on = await store.toggleReaction(o.id, session.uid, reaction, nowIso());
       const r = (await store.reactions([o.id], session.uid))[o.id];
       return json({ ok: true, on, reactions: r.counts, myReactions: r.mine });
+    }
+
+    // Rename: the uploader or a Ringleader. Same rules as a title at upload time.
+    if (method === 'POST' && parts.length === 2 && ID.test(parts[0]) && parts[1] === 'title') {
+      if (!sameSite(request, 'application/json')) return fail(403, 'forbidden', 'Use the buttons on belpire.com.');
+      const o = await store.get(parts[0]);
+      if (!o || o.status === 'removed' || o.status === 'uploading') return fail(404, 'not_found', 'That oddity is gone.');
+      if (!who.manager && o.user_id !== session.uid) return fail(403, 'forbidden', 'Only the person who posted it or a Ringleader can rename it.');
+      const caption = cleanCaption((await request.json().catch(() => null))?.title);
+      if (!caption) return fail(400, 'title', 'Give it a short title.');
+      if (caption === o.caption) return json({ ok: true, caption });
+      if (!(await store.setCaption(o.id, caption))) return fail(404, 'not_found', 'That oddity is gone.');
+      return json({ ok: true, caption });
     }
 
     if (method === 'POST' && parts.length === 2 && ID.test(parts[0]) && ['approve', 'remove', 'report'].includes(parts[1])) {

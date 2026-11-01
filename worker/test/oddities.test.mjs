@@ -416,3 +416,22 @@ test('Ringleaders\' own pictures and clips go straight up, skipping the scan and
   assert.equal((await call('/api/oddities', { as: 'boss' })).body.queue.length, 0);
   assert.equal((await call(`/api/oddities/${id}/media`)).status, 200);
 });
+
+test('the uploader or a Ringleader can rename an oddity; nobody else can', async () => {
+  const up = await uploadImage('fan', png(), 'Boo');
+  const id = up.body.oddity.id;
+  const rename = (as, title, origin) => call(`/api/oddities/${id}/title`, { as, method: 'POST', body: { title }, origin });
+  assert.equal((await rename(undefined, 'x')).status, 401);
+  assert.equal((await rename('fan2', 'Not yours')).status, 403, 'another member cannot');
+  assert.equal((await rename('fan', 'x', 'https://evil.example')).status, 403, 'same-site only');
+  assert.equal((await rename('fan', '   ')).status, 400);
+  const r = await rename('fan', '  The   lantern‮ room\u0007  ');
+  assert.equal(r.status, 200);
+  assert.equal(r.body.caption, 'The lantern room', 'cleaned like an upload title');
+  assert.equal((await rename('fan', 'y'.repeat(200))).body.caption.length, 60);
+  assert.equal((await rename('boss', 'Lantern Room (fixed by staff)')).status, 200, 'Ringleaders can rename');
+  const items = (await call('/api/oddities')).body.items;
+  assert.equal(items.find((o) => o.id === id).caption, 'Lantern Room (fixed by staff)');
+  await call(`/api/oddities/${id}/remove`, { as: 'fan', method: 'POST', body: {} });
+  assert.equal((await rename('fan', 'Too late')).status, 404, 'removed oddities stay removed');
+});

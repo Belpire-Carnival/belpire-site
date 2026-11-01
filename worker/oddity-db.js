@@ -73,6 +73,10 @@ export function oddityStore(db) {
       const r = await (await q('SELECT COUNT(*) AS n FROM oddities WHERE user_id = ? AND kind = ? AND created_at >= ?', userId, kind, sinceIso)).first();
       return Number(r?.n || 0);
     },
+    async setCaption(id, caption) {
+      const r = await (await q("UPDATE oddities SET caption = ? WHERE id = ? AND status IN ('live', 'pending')", caption, id)).run();
+      return r.meta.changes > 0;
+    },
     async setSize(id, size) {
       await (await q('UPDATE oddities SET size = ? WHERE id = ?', size, id)).run();
     },

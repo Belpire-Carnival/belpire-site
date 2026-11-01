@@ -144,6 +144,44 @@
     ]);
   }
 
+  // Inline rename for the uploader or a Ringleader: the title turns into a field with Save and Cancel.
+  function renameButton(o) {
+    return actionButton('Rename', 'odd-rename', (e) => {
+      const fig = e.target.closest('figure');
+      const title = fig?.querySelector('.odd-caption');
+      if (!title || fig.querySelector('.odd-rename-form')) return;
+      const input = el('input', { type: 'text', class: 'odd-rename-input', maxlength: '60', value: o.caption || '', 'aria-label': 'New title', autocomplete: 'off' });
+      const note = el('p', { class: 'odd-rename-note', role: 'status' });
+      const save = el('button', { type: 'submit', class: 'btn btn-gold btn-sm', text: 'Save' });
+      const cancel = el('button', { type: 'button', class: 'btn btn-ghost btn-sm', text: 'Cancel' });
+      const form = el('form', { class: 'odd-rename-form' }, [input, el('div', { class: 'odd-actions' }, [save, cancel]), note]);
+      const close = () => { form.remove(); title.hidden = false; e.target.hidden = false; e.target.focus(); };
+      cancel.addEventListener('click', close);
+      form.addEventListener('keydown', (k) => { if (k.key === 'Escape') { k.preventDefault(); close(); } });
+      form.addEventListener('submit', async (s) => {
+        s.preventDefault();
+        const next = input.value.trim();
+        if (!next) { note.textContent = 'Give it a short title.'; return input.focus(); }
+        save.disabled = true;
+        try {
+          const r = await postJSON(`/api/oddities/${o.id}/title`, { title: next });
+          o.caption = r.caption;
+          title.textContent = r.caption;
+          fig.querySelector('.odd-media img')?.setAttribute('alt', r.caption);
+          close();
+        } catch (err) {
+          note.textContent = err.message;
+          save.disabled = false;
+        }
+      });
+      title.hidden = true;
+      e.target.hidden = true;
+      title.after(form);
+      input.focus();
+      input.select();
+    });
+  }
+
   function actionButton(label, cls, onClick) {
     return el('button', { type: 'button', class: `btn btn-ghost btn-sm ${cls}`, text: label, onclick: onClick });
   }
@@ -166,6 +204,7 @@
       if (!full) {
         // the showcase only reacts; reporting and removing happen in the hall
       } else if (me.manager || o.mine) {
+        actions.push(renameButton(o));
         actions.push(actionButton('Remove', 'odd-remove', async (e) => {
           if (!confirm('Remove this from the Hall of Oddities? It will be deleted.')) return;
           e.target.disabled = true;
@@ -201,6 +240,7 @@
     for (const o of queue) {
       const note = [o.kind === 'clip' ? 'Clip: needs a human look' : `Scan: ${o.scan || 'unknown'}`, o.reports ? `${o.reports} report${o.reports === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
       const c = card(o, [
+        renameButton(o),
         actionButton('Approve', 'odd-approve', async (e) => { e.target.disabled = true; try { await postJSON(`/api/oddities/${o.id}/approve`); load(); } catch (err) { alert(err.message); e.target.disabled = false; } }),
         actionButton('Remove', 'odd-remove', async (e) => {
           if (!confirm('Delete this upload?')) return;
