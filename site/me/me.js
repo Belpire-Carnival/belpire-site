@@ -425,7 +425,10 @@
 
   async function load() {
     try {
-      [me, t] = await Promise.all([api('/api/me'), api('/api/tickets').catch((err) => (err.status === 401 || err.status === 403 ? null : Promise.reject(err)))]);
+      // The first load shares the header's /api/me request; later refreshes ask again.
+      const meNow = load.fresh ? api('/api/me') : (window.belpireMe ||= api('/api/me').catch(() => null)).then((d) => d || api('/api/me'));
+      load.fresh = true;
+      [me, t] = await Promise.all([meNow, api('/api/tickets').catch((err) => (err.status === 401 || err.status === 403 ? null : Promise.reject(err)))]);
     } catch {
       gate.replaceChildren(el('div', { class: 'panel' }, [el('p', { text: 'The ticket booth is closed for a moment. Try again shortly.' })]));
       return;

@@ -27,16 +27,18 @@ export async function liveStatus(env, now = Date.now()) {
   const streamers = [];
   const onStage = [];
   if (SNOWFLAKE.test(String(stage || '')) && env.DISCORD_BOT_TOKEN) {
-    for (const id of liveIds(env)) {
+    // Ask about every Ringleader at once; the results keep the configured order.
+    const states = await Promise.all(liveIds(env).map(async (id) => {
       try {
         const vs = await getVoiceState(env, id);
-        if (!vs || vs.channel_id !== stage) continue;
-        const name = displayName(vs.member || (await getMember(env, id)));
-        (vs.self_stream ? streamers : onStage).push(name);
+        if (!vs || vs.channel_id !== stage) return null;
+        return { stream: Boolean(vs.self_stream), name: displayName(vs.member || (await getMember(env, id))) };
       } catch (err) {
         console.warn(`Voice state lookup failed: ${err.message}`);
+        return null;
       }
-    }
+    }));
+    for (const s of states) if (s) (s.stream ? streamers : onStage).push(s.name);
   }
   let event = null;
   if (streamers.length && env.DB) {

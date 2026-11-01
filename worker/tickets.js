@@ -365,23 +365,31 @@ export async function handleTickets(request, env) {
       const who = await memberInfo(env, session, { fresh: staffAction });
       if (!who.member) return fail(403, 'not_member', 'Tickets are for members of the Belpire Discord.');
       if (parts.length === 0) {
-        const show = await currentShow(env);
         const day = etDay();
+        const left = (game, plays) => store.countRefs(`${game}:${session.uid}:${day}:`).then((n) => Math.max(0, plays - n));
+        // Everything below is independent, so ask for it all at once instead of one query after another.
+        const [show, wallet, shell, rings, striker, history, orders, scores, catalog] = await Promise.all([
+          currentShow(env).then((s) => (s ? store.getCheckin(session.uid, s.key).then((c) => ({ title: s.title, checkedIn: Boolean(c), paid: Number(c?.paid || 0), cap: RULES.attendCap })) : null)),
+          summary(env, session.uid),
+          left('shell', RULES.shellPlays),
+          left('rings', RULES.ringPlays),
+          left('striker', RULES.strikerPlays),
+          store.history(session.uid, 25),
+          store.myOrders(session.uid, 10),
+          highScores(env, session.uid),
+          loadCatalog(env, url.origin)
+        ]);
         return json({
           me: { name: who.name, manager: who.manager },
-          wallet: await summary(env, session.uid),
+          wallet,
           rules: RULES,
-          games: {
-            shell: { left: Math.max(0, RULES.shellPlays - (await store.countRefs(`shell:${session.uid}:${day}:`))) },
-            rings: { left: Math.max(0, RULES.ringPlays - (await store.countRefs(`rings:${session.uid}:${day}:`))) },
-            striker: { left: Math.max(0, RULES.strikerPlays - (await store.countRefs(`striker:${session.uid}:${day}:`))) }
-          },
-          show: show ? await store.getCheckin(session.uid, show.key).then((c) => ({ title: show.title, checkedIn: Boolean(c), paid: Number(c?.paid || 0), cap: RULES.attendCap })) : null,
-          history: (await store.history(session.uid, 25)).map((h) => ({ amount: h.amount, kind: h.kind, note: h.note, at: h.created_at })),
+          games: { shell: { left: shell }, rings: { left: rings }, striker: { left: striker } },
+          show,
+          history: history.map((h) => ({ amount: h.amount, kind: h.kind, note: h.note, at: h.created_at })),
           prizes: PRIZES,
-          orders: (await store.myOrders(session.uid, 10)).map(publicOrder),
-          highScores: await highScores(env, session.uid),
-          catalog: (await loadCatalog(env, url.origin)).map((c) => ({ key: c.key, name: c.name, group: c.group }))
+          orders: orders.map(publicOrder),
+          highScores: scores,
+          catalog: catalog.map((c) => ({ key: c.key, name: c.name, group: c.group }))
         });
       }
       if (!who.manager) return fail(403, 'not_manager', 'Staff only.');
