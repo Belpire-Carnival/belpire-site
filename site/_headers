@@ -36,5 +36,3 @@
 /bureau/img/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
-/star-citizen/fintac-crest.webp
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

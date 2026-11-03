@@ -1,4 +1,4 @@
-// The Star Citizen page (belpire.com/star-citizen/).
+// The Star Citizen division page (bureau.belpire.com/rsi1/): server status, Comm-Link news and the Toolbox.
 //
 //  • Every 10 minutes (Cron Trigger) refresh() reads RSI's status page JSON and the Comm-Link hub
 //    (plus, hourly, the GitHub release feeds of tracked community tools), stores one snapshot in KV,
@@ -12,7 +12,7 @@ import { RSI_BASE, STATUS_BASE, parseStatus, parseIssues, parseCommLink } from '
 import { postEmbeds, newsEmbed, incidentEmbed, systemEmbed } from './discord.js';
 import { releasesFeedUrl, parseReleasesAtom } from './github.js';
 
-const UA = 'BelpireCarnival/1.0 (+https://belpire.com/star-citizen/)';
+const UA = 'BelpireCarnival/1.0 (+https://bureau.belpire.com/rsi1/)';
 const SNAPSHOT_KEY = 'sc:snapshot';
 const SEEN_KEY = 'sc:seen';
 const STALE_MS = 30 * 60 * 1000;
@@ -35,7 +35,7 @@ async function readJson(kv, key) {
   }
 }
 
-// Community tools whose GitHub releases are shown on the page (see site/star-citizen/tools.json).
+// Community tools whose GitHub releases are shown on the page (see site/bureau/rsi1/tools.json).
 // Release feeds are checked at most hourly — they change rarely and GitHub is shared by everyone.
 export const TRACKED_REPOS = ['Osiris-DevWorks/smart-citizen', 'MrKraken/StarStrings'];
 const RELEASES_EVERY_MS = 55 * 60 * 1000;

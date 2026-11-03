@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Star Citizen [DIV_RSI1] — Bureau of Finality</title>
-  <meta name="description" content="The Bureau of Finality's Star Citizen division (FINTAC): freight, bounty contracts and black-site raids. Casual, PvE-first, recruiting now.">
+  <meta name="description" content="The Bureau of Finality's Star Citizen division (FINTAC): live server status, Comm-Link news, the pilots' Toolbox, and freight, bounty and black-site contracts. Casual, PvE-first, recruiting.">
   <link rel="canonical" href="https://bureau.belpire.com/rsi1/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bureau of Finality">
   <meta property="og:title" content="Star Citizen [DIV_RSI1] — Bureau of Finality">
-  <meta property="og:description" content="The Bureau of Finality's Star Citizen division (FINTAC): freight, bounty contracts and black-site raids. Casual, PvE-first, recruiting now.">
+  <meta property="og:description" content="The Bureau of Finality's Star Citizen division (FINTAC): live server status, Comm-Link news, the pilots' Toolbox, and freight, bounty and black-site contracts. Casual, PvE-first, recruiting.">
   <meta property="og:url" content="https://bureau.belpire.com/rsi1/">
   <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
   <meta property="og:image:width" content="1200">
@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="../bureau.css">
   <link rel="preload" href="../img/scene-rsi1.webp" as="image" imagesrcset="../img/scene-rsi1-600.webp 600w, ../img/scene-rsi1.webp 1200w" imagesizes="max(100vw, 1100px)">
   <script src="../fx.js" defer></script>
+  <script src="sc.js" defer></script>
 </head>
 <body class="division" data-division="rsi1">
   <a class="skip" href="#operations">Skip to content</a>
@@ -34,8 +35,9 @@
       <a class="brand" href="../"><span class="brand-text">The Bureau of Finality</span> <span class="brand-sid">[ FINTAC ]</span></a>
       <nav class="top-nav" aria-label="On this page">
         <a href="#operations">Operations</a>
+        <a href="#comm-array">Comm Array</a>
         <a href="#theatre">Theatre</a>
-        <a href="#enlist">Enlist</a>
+        <a href="#quartermaster">Quartermaster</a>
       </nav>
       <a class="btn btn-gold btn-sm" href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">Enlist<span class="visually-hidden"> (opens a new tab)</span></a>
     </div>
@@ -97,12 +99,46 @@
       </div>
     </section>
 
-    <section id="theatre" class="band" aria-labelledby="theatre-h">
+    <section id="comm-array" class="band" aria-labelledby="comm-h">
       <div class="wrap section">
         <header class="sec-head">
-          <p class="kicker"><span>02</span> Field notes</p>
+          <p class="kicker"><span>02</span> Uplink to the &rsquo;verse</p>
+          <h2 id="comm-h">The Comm Array</h2>
+          <p class="sec-lede">Live from Roberts Space Industries: whether the &rsquo;verse is up, and what Command just transmitted.</p>
+        </header>
+        <div class="tabs" role="tablist" aria-label="Comm Array channels" hidden>
+          <button class="tab" type="button" role="tab" id="tab-status" aria-controls="panel-status" aria-selected="true"><span class="tab-ch">CH-1</span> Network Status</button>
+          <button class="tab" type="button" role="tab" id="tab-feed" aria-controls="panel-feed" aria-selected="false" tabindex="-1"><span class="tab-ch">CH-2</span> Comm-Link Feed</button>
+        </div>
+        <div class="tab-panel" id="panel-status" role="tabpanel" aria-labelledby="tab-status">
+          <div class="panel-bar">
+            <h3 class="sub-h">Network Status</h3>
+            <a class="sec-link" href="https://status.robertsspaceindustries.com/" target="_blank" rel="noopener">Official status page<span class="visually-hidden"> (opens a new tab)</span></a>
+          </div>
+          <div class="summary hud" id="summary" role="status" aria-live="polite">
+            <span class="dot" aria-hidden="true"></span><span id="summary-text">Checking the &rsquo;verse&hellip;</span>
+          </div>
+          <div class="systems" id="systems"></div>
+          <h4 class="sub-h sub-h-sm">Incidents</h4>
+          <div class="incidents" id="incidents"></div>
+        </div>
+        <div class="tab-panel" id="panel-feed" role="tabpanel" aria-labelledby="tab-feed">
+          <div class="panel-bar">
+            <h3 class="sub-h">Comm-Link Feed</h3>
+            <a class="sec-link" href="https://robertsspaceindustries.com/comm-link" target="_blank" rel="noopener">All Comm-Links on RSI<span class="visually-hidden"> (opens a new tab)</span></a>
+          </div>
+          <div class="news-grid" id="news-list" aria-live="polite"></div>
+        </div>
+        <p class="muted small" id="updated"></p>
+      </div>
+    </section>
+
+    <section id="theatre" aria-labelledby="theatre-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>03</span> Field notes</p>
           <h2 id="theatre-h">The theatre</h2>
-          <p class="sec-lede">How the Bureau&rsquo;s creed plays out in the &rsquo;verse.</p>
+          <p class="sec-lede">How DIV_RSI1 runs a contract, and how to get on the next one. The creed and rules of engagement are at <a href="../#conduct">Bureau HQ</a>.</p>
         </header>
         <div class="two">
           <div class="panel hud">
@@ -111,38 +147,32 @@
               <li class="dot">Every op has a Squad Leader. Their call is final until the contract closes.</li>
               <li class="dot">Pilots, haulers, medics and boots on the ground count the same.</li>
               <li class="dot">Heavy freight rides with escorts; nobody hauls alone into a contested lane.</li>
+              <li class="dot">Interdicted or contested at the objective? Answer with overwhelming force, then back to the mission.</li>
               <li class="dot">Payouts and salvage are split fairly across everyone who flew.</li>
             </ul>
           </div>
           <div class="panel hud">
-            <h3>Rules in the &rsquo;verse</h3>
-            <ul class="marks">
-              <li class="no">No piracy, no griefing, no unprovoked PvP. Not even for an easy score.</li>
-              <li class="yes">Interdicted, fired on or contested at the objective? Answer with overwhelming force.</li>
-              <li class="no">No looting a site without the go-ahead.</li>
-              <li class="yes">Threat cleared, back to the mission.</li>
-            </ul>
+            <h3>Reporting in</h3>
+            <ol class="report">
+              <li><b>Get an RSI account.</b> A free Roberts Space Industries account is all it takes.</li>
+              <li><b>Join FINTAC.</b> Through <a href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Spectrum<span class="visually-hidden"> (opens a new tab)</span></a> or the <a href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">org page<span class="visually-hidden"> (opens a new tab)</span></a>. Casual commitment, PvE first.</li>
+              <li><b>Find your squad.</b> Ops are called in the <a href="https://belpire.com/join/">Belpire Carnival Discord</a>.</li>
+            </ol>
           </div>
         </div>
-        <p class="note">The full creed, chain of command and history live at <a href="../">Bureau HQ</a>.</p>
       </div>
     </section>
 
-    <section id="enlist" class="enlist" aria-labelledby="enlist-h">
+    <!-- Tools list lives in tools.json beside this page -->
+    <section id="quartermaster" class="band" aria-labelledby="qm-h">
       <div class="wrap section">
         <header class="sec-head">
-          <p class="kicker"><span>03</span> Recruitment</p>
-          <h2 id="enlist-h">Enlist in DIV_RSI1</h2>
+          <p class="kicker"><span>04</span> Supply &amp; refit</p>
+          <h2 id="qm-h">The Quartermaster</h2>
+          <p class="sec-lede">Kit issued to every pilot before launch: the community tools DIV_RSI1 flies with.</p>
         </header>
-        <ol class="steps">
-          <li class="hud"><h3>Get an RSI account</h3><p>A free Roberts Space Industries account is all you need to join an org.</p></li>
-          <li class="hud"><h3>Apply to FINTAC</h3><p>Join the Bureau on RSI or find us on Spectrum. Casual commitment, PvE first.</p></li>
-          <li class="hud"><h3>Find your squad</h3><p>Ops are planned in the Belpire Carnival Discord. Join it to get on the next run.</p></li>
-        </ol>
-        <div class="cta-row">
-          <a class="btn btn-silver" href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Enlist on Spectrum<span class="visually-hidden"> (opens a new tab)</span></a>
-          <a class="btn btn-line" href="https://belpire.com/join/">Join the Discord</a>
-        </div>
+        <div id="tool-categories"></div>
+        <p class="muted small tools-disclaimer">These are independent community projects, not run by the Bureau, Belpire or Cloud Imperium. Downloads change files on your PC, so only use the official links above, and use them at your own discretion.</p>
       </div>
     </section>
   </main>
@@ -151,7 +181,7 @@
     <div class="wrap foot-col">
       <img src="../img/crest-96.webp" width="96" height="107" alt="" loading="lazy">
       <p>The Bureau of Finality deploys with the <a href="https://belpire.com/">Belpire Carnival</a>. <a href="../">Back to Bureau HQ</a>.</p>
-      <p class="fine">This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users is property of its respective owners.</p>
+      <p class="fine">This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users is property of its respective owners. Status and Comm-Link information comes from robertsspaceindustries.com.</p>
       <p class="fine"><a href="https://belpire.com/privacy/">Privacy Policy</a> &middot; <a href="https://belpire.com/terms/">Terms of Use</a></p>
     </div>
   </footer>
