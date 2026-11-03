@@ -11,10 +11,10 @@
   <meta property="og:title" content="Star Citizen [DIV_RSI1] — Bureau of Finality">
   <meta property="og:description" content="The Bureau of Finality's Star Citizen division (FINTAC): freight, bounty contracts and black-site raids. Casual, PvE-first, recruiting now.">
   <meta property="og:url" content="https://bureau.belpire.com/rsi1/">
-  <meta property="og:image" content="https://belpire.com/og/bureau.jpg">
+  <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="The Bureau of Finality crest in navy and bronze over a battle in space and on the ground">
+  <meta property="og:image:alt" content="The Bureau of Finality crest over the division's battle scene">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#060C1E">
   <link rel="icon" href="../crest.svg" type="image/svg+xml">
@@ -23,7 +23,8 @@
   <link rel="preload" href="/fonts/cinzel-700.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="../bureau.css">
-  <script src="../battle.js" defer></script>
+  <link rel="preload" href="../img/scene-rsi1.webp" as="image" imagesrcset="../img/scene-rsi1-600.webp 600w, ../img/scene-rsi1.webp 1200w" imagesizes="max(100vw, 1100px)">
+  <script src="../fx.js" defer></script>
 </head>
 <body class="division" data-division="rsi1">
   <a class="skip" href="#operations">Skip to content</a>
@@ -49,19 +50,31 @@
   </header>
 
   <main>
-    <section class="hero hero-div" id="top" aria-labelledby="hero-h">
-      <canvas id="battle" aria-hidden="true"></canvas>
-      <div class="hero-shade" aria-hidden="true"></div>
-      <div class="hero-inner wrap">
-        <img class="div-crest" src="../img/crest-360.webp" width="360" height="401" alt="" fetchpriority="high">
-        <h1 id="hero-h">Star Citizen Division</h1>
-        <p class="enterprise">[ THE BUREAU&rsquo;S FIRST NEW FRONT ]</p>
-        <p class="stamps"><span class="stamp stamp-classified">[DIV_RSI1]</span><span class="stamp">SECTOR // STANTON</span><span class="stamp stamp-live"><span class="blip" aria-hidden="true"></span>Recruiting</span></p>
-        <p class="lede">Salvaged in Stanton in 2945 and never left. Tactical PvE operations, system-wide: freight, bounty contracts and black-site raids, seen through to the end.</p>
-        <div class="cta-row">
-          <a class="btn btn-silver" href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Enlist on Spectrum<span class="visually-hidden"> (opens a new tab)</span></a>
-          <a class="btn btn-line" href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">Org page on RSI<span class="visually-hidden"> (opens a new tab)</span></a>
+    <section class="hero-art" id="top" aria-labelledby="hero-h">
+      <div class="stage" data-scene="rsi1">
+        <img class="art" src="../img/scene-rsi1.webp" srcset="../img/scene-rsi1-600.webp 600w, ../img/scene-rsi1.webp 1200w" sizes="max(100vw, 1100px)" width="1200" height="804" alt="" fetchpriority="high">
+        <canvas id="fx" aria-hidden="true"></canvas>
+        <div class="art-crest">
+          <div class="emblem-halo" aria-hidden="true"></div>
+          <img class="emblem-img" src="../img/crest-720.webp" srcset="../img/crest-360.webp 360w, ../img/crest-720.webp 720w" sizes="(max-width: 600px) 45vw, 360px" width="720" height="803" alt="The Bureau of Finality crest">
+          <span class="emblem-shine" aria-hidden="true"></span>
         </div>
+        <div class="art-copy">
+          <h1 id="hero-h">Star Citizen</h1>
+          <p class="art-sub">[ DIV_RSI1 <b>//</b> THE BUREAU&rsquo;S FIRST NEW FRONT ]</p>
+          <p class="art-motto" lang="la">Finem Ultimum Nos Afferimus</p>
+        </div>
+      </div>
+      <div class="art-cta">
+        <a class="btn btn-navy" href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Enlist on Spectrum<span class="visually-hidden"> (opens a new tab)</span></a>
+        <a class="btn btn-ghost" href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">Org page on RSI<span class="visually-hidden"> (opens a new tab)</span></a>
+      </div>
+    </section>
+
+    <section class="brief-band" aria-label="Division at a glance">
+      <div class="wrap">
+        <p class="stamps"><span class="stamp stamp-classified">[DIV_RSI1]</span><span class="stamp">SECTOR // STANTON</span><span class="stamp stamp-live"><span class="blip" aria-hidden="true"></span>Recruiting</span></p>
+        <p class="brief">Salvaged in Stanton in 2945 and never left. Tactical PvE operations, system-wide: freight, bounty contracts and black-site raids, seen through to the end.</p>
         <dl class="specs">
           <div><dt>Org SID</dt><dd>FINTAC</dd></div>
           <div><dt>Type</dt><dd>Private military company</dd></div>

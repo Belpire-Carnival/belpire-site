@@ -276,9 +276,9 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 @media (max-width: 1100px) { .div-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .div-grid { grid-template-columns: 1fr; } .div-card { min-height: 0; } }
 
-/* Division pages: a shorter hero with a smaller crest and the spec strip */
-.hero-div { min-height: 0; padding-block: 56px 64px; }
-.div-crest { width: clamp(110px, 18vw, 170px); height: auto; filter: drop-shadow(0 0 20px rgba(38, 72, 154, .7)) drop-shadow(0 12px 22px rgba(0, 0, 0, .7)); animation: emblem-in 1.2s cubic-bezier(.2, .8, .2, 1) both; }
+/* Division pages: the brief and spec strip under the hero */
+.brief-band { padding-block: 34px 6px; }
+.brief { max-width: 760px; margin: 0 auto; text-align: center; font-size: 19px; color: var(--soft); }
 .specs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px 0 0; }
 .specs div { padding: 8px 14px; border: 1px solid var(--line-blue); background: rgba(5, 10, 26, .75); text-align: left; }
 .specs dt { font-family: var(--hud); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
@@ -287,10 +287,58 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .emblem, .emblem-halo, .emblem-shine, .blip, .scroll-cue, .comms-run, .div-crest { animation: none; }
+  .emblem, .emblem-halo, .emblem-shine, .blip, .scroll-cue, .comms-run { animation: none; }
   .div-card-live, .div-card-forming { transition: none; }
   .comms-run + .comms-run { display: none; }
   .comms-track { white-space: normal; }
   .comms-run { flex-wrap: wrap; justify-content: center; }
   .virtue { transition: none; }
 }
+
+/* ---------------------------------------------------------------- division art heroes
+   The painted scene (1200x804) fills a stage sized to cover the hero. Crest and copy sit in image
+   pixels (calc(var(--sw) * n / 1200)) so they land exactly where the art expects them at any width. */
+@property --z { syntax: '<number>'; inherits: false; initial-value: 1.02; }
+@property --px { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --py { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.hero-art { --hh: clamp(560px, calc(100svh - 116px), 1000px); position: relative; height: var(--hh); overflow: hidden; background: #03060F; isolation: isolate; }
+.stage { --sw: max(100vw, calc(var(--hh) * 1.4925)); position: absolute; left: 50%; top: 0; width: var(--sw); height: calc(var(--sw) * 0.67); transform-origin: 50% 32%;
+  transform: translateX(-50%) translate(var(--px), var(--py)) scale(var(--z)); transition: --px .8s ease-out, --py .8s ease-out; animation: stage-drift 38s ease-in-out infinite alternate; }
+@keyframes stage-drift { from { --z: 1.02; } to { --z: 1.07; } }
+.stage .art, .stage #fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage .art { object-fit: cover; }
+.hero-art::after { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 6, 15, .55), transparent 14%, transparent 72%, rgba(3, 6, 15, .85)); }
+.stage[data-scene="bf1"] { --cx: 598; --cy: 352; --ch: 300; --ty: 34; --tf: 80; }
+.stage[data-scene="sq1"] { --cx: 598; --cy: 351; --ch: 298; --ty: 40; --tf: 64; }
+.stage[data-scene="rsi1"] { --cx: 600; --cy: 359; --ch: 305; --ty: 46; --tf: 80; }
+.stage[data-scene="se1"] { --cx: 600; --cy: 360; --ch: 304; --ty: 46; --tf: 80; }
+.art-crest { position: absolute; z-index: 2; left: calc(var(--sw) * var(--cx) / 1200); top: calc(var(--sw) * var(--cy) / 1200); height: calc(var(--sw) * var(--ch) / 1200); aspect-ratio: 720 / 803; transform: translate(-50%, -50%); }
+.art-crest .emblem-img { position: relative; z-index: 1; width: 100%; height: 100%; filter: drop-shadow(0 0 18px rgba(38, 72, 154, .65)) drop-shadow(0 14px 24px rgba(0, 0, 0, .7)); }
+.art-copy { position: absolute; z-index: 2; left: 50%; top: calc(var(--sw) * var(--ty) / 1200); width: min(94vw, calc(var(--sw) * .9)); transform: translateX(-50%); text-align: center; }
+.art-copy h1 { margin: 0; font-family: var(--hud); font-weight: 600; font-size: min(calc(var(--sw) * var(--tf) / 1200), 12vw); line-height: 1; letter-spacing: .02em; text-transform: uppercase;
+  background: linear-gradient(180deg, #FFF1D6 5%, var(--gold-hi) 38%, var(--gold) 70%, var(--gold-deep)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .7)) drop-shadow(0 0 22px rgba(197, 155, 95, .3)); }
+.art-sub { margin-top: calc(var(--sw) * 14 / 1200); font-family: var(--hud); font-weight: 600; font-size: min(calc(var(--sw) * 23 / 1200), 4.4vw); letter-spacing: .03em; color: var(--ivory); text-shadow: 0 2px 8px #000; }
+.art-sub b { color: var(--gold-hi); font-weight: 600; }
+.art-motto { margin-top: calc(var(--sw) * 8 / 1200); font-family: var(--hud); font-weight: 600; text-transform: uppercase; font-size: min(calc(var(--sw) * 16 / 1200), 3.6vw); letter-spacing: .06em; color: var(--gold-hi); text-shadow: 0 2px 8px #000; }
+.art-cta { position: absolute; z-index: 2; left: 50%; bottom: clamp(18px, 5.5%, 56px); transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; width: min(94vw, 900px); }
+.art-or { font-family: var(--hud); font-weight: 600; font-size: 13px; letter-spacing: .1em; color: var(--soft); text-shadow: 0 1px 6px #000; }
+.btn-navy { background: linear-gradient(180deg, #33478A, #1E2C5E); color: var(--ivory); box-shadow: inset 0 0 0 1px rgba(150, 175, 240, .55); }
+.btn-navy:hover { color: #fff; filter: brightness(1.15); }
+.btn-ghost { position: relative; isolation: isolate; background: rgba(195, 202, 218, .55); color: var(--ivory); }
+.btn-ghost::before { content: ''; position: absolute; inset: 1px; z-index: -1; background: rgba(7, 16, 41, .9); clip-path: polygon(11.5px 0, 100% 0, 100% calc(100% - 11.5px), calc(100% - 11.5px) 100%, 0 100%, 0 11.5px); }
+.btn-ghost:hover { color: #fff; }
+.brief-band .stamps { justify-content: center; margin: 0 0 18px; }
+@media (max-width: 600px) {
+  .art-cta { gap: 8px; }
+  .art-cta .btn { flex: 1 1 calc(50% - 8px); min-height: 44px; padding: 8px 10px; font-size: 13px; letter-spacing: .06em; }
+  .art-or { display: none; }
+  .hero-art { --hh: clamp(600px, calc(100svh - 116px), 860px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage { animation: none; transition: none; }
+}
+/* The long Squad title gets a smaller cap on phones so it stays off the crest. */
+.stage[data-scene="sq1"] .art-copy h1 { font-size: min(calc(var(--sw) * var(--tf) / 1200), 7.6vw); }
+@media (max-width: 600px) { .art-sub { font-size: min(calc(var(--sw) * 23 / 1200), 3.8vw); } .art-cta .btn { font-size: 12.5px; letter-spacing: .04em; } }
