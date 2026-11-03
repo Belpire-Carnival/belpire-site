@@ -22,12 +22,14 @@
   "triggers": {
     "crons": ["*/10 * * * *"]
   },
+  "placement": { "mode": "smart" },
   "observability": {
     "logs": {
       "enabled": true,
       "invocation_logs": true,
       "persist": true
-    }
+    },
+    "issues": { "enabled": true }
   },
   "workers_dev": true,
   "previews": {},
