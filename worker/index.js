@@ -1,7 +1,8 @@
 // belpire-site Worker — belpire.com
 //
-// Almost everything is static files from site/. This code only runs for /api/* and /auth/*
-// (see run_worker_first in wrangler.jsonc) and for the Cron Trigger.
+// Almost everything is static files from site/. The Worker sees every request first (run_worker_first in
+// wrangler.jsonc) so it can serve bureau.belpire.com from site/bureau/; /api/* and /auth/* are code, the
+// rest goes straight to the static files. It also runs the Cron Trigger.
 
 import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
@@ -15,6 +16,7 @@ import { handleStaffChat, purgeStaffMessages } from './staff-chat.js';
 import { handleTickets, payAttendance, weeklyHighScores } from './tickets.js';
 import { handleInteraction } from './interactions.js';
 import { handleMe } from './me.js';
+import { bureauRoute } from './bureau.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -29,11 +31,29 @@ function json(body, status = 200, extra = {}) {
 
 const methodNotAllowed = (allow) => json({ error: 'method not allowed' }, 405, { Allow: allow });
 
+// bureau.belpire.com: the page and its own files come from site/bureau/; anything missing goes to its front page.
+async function serveBureau(request, env, path) {
+  const target = new URL(request.url);
+  target.pathname = path;
+  const res = await env.ASSETS.fetch(new Request(target, request));
+  // The static server tidies URLs (adds a trailing slash, drops index.html); keep those redirects on this host.
+  const loc = res.headers.get('Location');
+  if (res.status >= 300 && res.status < 400 && loc) {
+    const next = new URL(loc, target);
+    if (next.origin === target.origin && next.pathname.startsWith('/bureau/')) return Response.redirect(`${target.origin}${next.pathname.slice('/bureau'.length)}${next.search}`, res.status);
+  }
+  if (res.status === 404 && (request.method === 'GET' || request.method === 'HEAD')) return Response.redirect(`${new URL(request.url).origin}/`, 302);
+  return res;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const { pathname } = url;
     const isGet = request.method === 'GET' || request.method === 'HEAD';
+
+    const bureau = bureauRoute(url);
+    if (bureau) return bureau.redirect ? Response.redirect(bureau.redirect, bureau.status) : serveBureau(request, env, bureau.path);
 
     if (pathname.startsWith('/auth/')) {
       if (pathname === '/auth/login') return isGet ? handleLogin(request, env) : methodNotAllowed('GET, HEAD');

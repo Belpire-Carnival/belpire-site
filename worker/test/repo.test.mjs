@@ -55,7 +55,7 @@ test('wrangler.jsonc parses and has no placeholders left', async () => {
   const src = await readFile(join(ROOT, 'wrangler.jsonc'), 'utf8');
   const cfg = parseJsonc(src);
   assert.equal(cfg.name, 'belpire-site');
-  assert.ok(cfg.assets?.run_worker_first?.includes('/api/*'));
+  assert.equal(cfg.assets?.run_worker_first, true, 'The Worker must see every request first (bureau.belpire.com routing in worker/bureau.js).');
   assert.doesNotMatch(src, /REPLACE_WITH_/, 'Fill in the real IDs in wrangler.jsonc before merging (see the private runbook).');
   for (const db of cfg.d1_databases || []) assert.match(db.database_id, /^[0-9a-f-]{36}$/, `D1 ${db.binding}: database_id should be a UUID`);
 });
@@ -67,7 +67,7 @@ test('the site only ships .js modules (browsers refuse scripts served with the w
 });
 
 test('every public page has a link-preview image that exists', async () => {
-  const pages = ['index.html', 'oddities/index.html', 'big-tent/index.html', 'backstage/index.html', 'me/index.html', 'jackbox/index.html', 'star-citizen/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
+  const pages = ['index.html', 'oddities/index.html', 'big-tent/index.html', 'backstage/index.html', 'me/index.html', 'jackbox/index.html', 'star-citizen/index.html', 'bureau/index.html', 'bureau/rsi1/index.html', 'bureau/se1/index.html', 'bureau/bf1/index.html', 'bureau/sq1/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
   for (const page of pages) {
     const html = await readFile(join(ROOT, 'site', page), 'utf8');
     const img = html.match(/<meta property="og:image" content="https:\/\/belpire\.com\/([^"]+)">/);
