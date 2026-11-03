@@ -21,7 +21,7 @@ const FEED_PATH = resolve(ROOT, 'site/data/feed.json');
 const JACKBOX_PATH = resolve(ROOT, 'site/jackbox/packs.json');
 const TENTS = new Set(['horror', 'party', 'other']);
 // Games a Bureau of Finality division covers: their news shows on bureau.belpire.com, not the Midway.
-const DIVISIONS = new Set(['rsi1', 'se1', 'bf1', 'sq1', 'tc1', 'ds1']);
+const DIVISIONS = new Set(['rsi1', 'se1', 'bf1', 'tc1', 'ds1']);
 const divisionOf = (game) => (DIVISIONS.has(game.division) ? { division: game.division } : {});
 const UA = 'BelpireCarnivalFeed/1.0 (+https://belpire.com)';
 
