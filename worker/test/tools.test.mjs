@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TRACKED_REPOS } from '../star-citizen.js';
 
-const tools = JSON.parse(readFileSync(new URL('../../site/star-citizen/tools.json', import.meta.url), 'utf8'));
+const tools = JSON.parse(readFileSync(new URL('../../site/bureau/rsi1/tools.json', import.meta.url), 'utf8'));
 const KINDS = ['web', 'app', 'overlay', 'extension', 'game-file'];
 
 test('every tool has a name, an https link, a known kind and a description', () => {

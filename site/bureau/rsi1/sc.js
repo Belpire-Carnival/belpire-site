@@ -1,4 +1,5 @@
-// The Star Citizen page front end. Reads /api/star-citizen (served by the Worker) and renders it.
+// DIV_RSI1 (Star Citizen division) live panels: server status, Comm-Link and the Toolbox.
+// Reads /api/star-citizen (served by the Worker on this host) and tools.json beside this page.
 const REFRESH_MS = 2 * 60 * 1000;
 
 const LABELS = { operational: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', notice: 'Notice', unknown: 'Unknown' };
@@ -180,7 +181,7 @@ function renderTools() {
 
 async function loadTools() {
   try {
-    const res = await fetch('/star-citizen/tools.json', { cache: 'no-cache' });
+    const res = await fetch('tools.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     toolsData = await res.json();
     renderTools();
@@ -207,8 +208,37 @@ async function load() {
   }
 }
 
+// The Comm Array: two channels (Network Status, Comm-Link Feed) as tabs. Without this script both
+// panels simply show one after the other.
+function initTabs() {
+  const list = document.querySelector('.tabs[role="tablist"]');
+  if (!list) return;
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const show = (tab, focus) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    }
+    if (focus) tab.focus();
+  };
+  list.hidden = false;
+  list.closest('section')?.classList.add('has-tabs');
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => show(tab));
+    tab.addEventListener('keydown', (e) => {
+      const k = { ArrowRight: 1, ArrowLeft: -1, Home: -i, End: tabs.length - 1 - i }[e.key];
+      if (k === undefined) return;
+      e.preventDefault();
+      show(tabs[(i + k + tabs.length) % tabs.length], true);
+    });
+  });
+  show(tabs.find((t) => t.getAttribute('aria-selected') === 'true') || tabs[0]);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('year').textContent = String(new Date().getFullYear());
+  initTabs();
   loadTools();
   load();
   setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);

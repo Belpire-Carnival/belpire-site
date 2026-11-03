@@ -63,3 +63,6 @@ html { scroll-padding-top: 96px; }
   .acct-menu { left: 12px; right: 12px; width: auto; top: calc(100% + 4px); max-height: calc(100vh - 90px); overflow-y: auto; }
   .acct-menu::before { display: none; }
 }
+
+/* The Bureau link (bureau.belpire.com) carries a small gold tag. */
+.nav-links .nav-tag { font-size: .82em; letter-spacing: .08em; color: var(--gold, #D9B26A); }

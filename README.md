@@ -8,8 +8,8 @@ The website for the **Belpire Carnival**, a Discord community for multiplayer ho
 
 - `site/` — the website: plain HTML, CSS and JavaScript, no framework.
 - `site/join/` — the box office: verify your Discord account to get the invite.
-- `site/star-citizen/` — the Star Citizen page: server status, Comm-Link news and community tools.
-- `worker/` — a small Cloudflare Worker behind the Star Citizen page and the Discord invite check.
+- `site/bureau/` — the Bureau of Finality at bureau.belpire.com: HQ and one page per game division. The Star Citizen division (`site/bureau/rsi1/`) carries server status, Comm-Link news and community tools.
+- `worker/` — a small Cloudflare Worker behind the Star Citizen division, the subdomain routing and the Discord invite check.
 - `config/games.json` — the community's favorite games, grouped into tents (horror, party and The Sideshow).
 - `scripts/` — the build step that refreshes game news from Steam.
 
