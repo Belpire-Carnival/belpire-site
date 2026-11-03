@@ -1,0 +1,92 @@
+{
+  "_readme": "Reference links shown in this division's Quartermaster. Edit freely: url must be https; kind is one of official, wiki, map, web, app, overlay, bureau.",
+  "categories": [
+    {
+      "name": "Bureau channels",
+      "tools": [
+        {
+          "name": "Bureau clan on Bungie.net",
+          "url": "https://www.bungie.net/7/en/Clan/Profile/5461011",
+          "kind": "bureau",
+          "description": "The Bureau's Destiny clan. Request to join, then report in on Discord."
+        }
+      ]
+    },
+    {
+      "name": "Gear & builds",
+      "blurb": "The tools Bungie's own help centre points players to.",
+      "tools": [
+        {
+          "name": "Destiny Item Manager",
+          "url": "https://destinyitemmanager.com/",
+          "kind": "web",
+          "description": "Move gear between characters and the vault, build loadouts and run the loadout optimizer."
+        },
+        {
+          "name": "light.gg",
+          "url": "https://www.light.gg/",
+          "kind": "web",
+          "description": "Gear database with god rolls, community perk picks and popular loadouts."
+        },
+        {
+          "name": "D2ArmorPicker",
+          "url": "https://d2armorpicker.com/",
+          "kind": "web",
+          "description": "Finds the armor in your vault that hits the stats a build needs."
+        }
+      ]
+    },
+    {
+      "name": "Activities & stats",
+      "tools": [
+        {
+          "name": "Today in Destiny",
+          "url": "https://www.todayindestiny.com/",
+          "kind": "web",
+          "description": "Daily and weekly rotations, vendor stock and what's left to do this reset."
+        },
+        {
+          "name": "Braytech",
+          "url": "https://bray.tech/",
+          "kind": "web",
+          "description": "Checklists, triumphs, collections, maps and clan data."
+        },
+        {
+          "name": "Raid Report",
+          "url": "https://raid.report/",
+          "kind": "web",
+          "description": "Raid clears, times and leaderboards."
+        },
+        {
+          "name": "Dungeon Report",
+          "url": "https://dungeon.report/",
+          "kind": "web",
+          "description": "The same for dungeons."
+        },
+        {
+          "name": "Trials Report",
+          "url": "https://destinytrialsreport.com/",
+          "kind": "web",
+          "description": "Trials of Osiris and Crucible performance for you or your fireteam."
+        },
+        {
+          "name": "D2Checkpoint",
+          "url": "https://d2checkpoint.com/",
+          "kind": "web",
+          "description": "Join a bot to pick up a raid or dungeon encounter checkpoint."
+        }
+      ]
+    },
+    {
+      "name": "Support",
+      "tools": [
+        {
+          "name": "Bungie Help",
+          "url": "https://help.bungie.net/",
+          "kind": "official",
+          "description": "Server status, known issues and account help from Bungie."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "_readme": "Reference links shown in this division's Quartermaster. Edit freely: url must be https; kind is one of official, wiki, map, web, app, overlay, bureau.",
+  "categories": [
+    {
+      "name": "Bureau channels",
+      "tools": [
+        {
+          "name": "Bureau of Finality on HD2 Clans",
+          "url": "https://hd2clans.com/clan/2105-bureau-of-finality",
+          "kind": "bureau",
+          "description": "The clan page. Join here, then report in on Discord."
+        }
+      ]
+    },
+    {
+      "name": "Intel",
+      "blurb": "Where the war stands, and what everything in your loadout does.",
+      "tools": [
+        {
+          "name": "Helldivers.io",
+          "url": "https://helldivers.io/",
+          "kind": "map",
+          "description": "Live Galactic War map: planet liberation, the current Major Order and where Helldivers are deploying."
+        },
+        {
+          "name": "Helldivers 2 Wiki",
+          "url": "https://helldivers.wiki.gg/",
+          "kind": "wiki",
+          "description": "Community wiki: stratagems and their codes, weapons, enemies, warbonds and planets."
+        },
+        {
+          "name": "Helldivers 2 on Steam",
+          "url": "https://store.steampowered.com/news/app/553850",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        }
+      ]
+    }
+  ]
+}
