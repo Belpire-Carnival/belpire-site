@@ -250,15 +250,15 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 .divs { border-top: 1px solid rgba(110, 150, 230, .16); background: linear-gradient(180deg, rgba(11, 26, 62, .85), rgba(5, 10, 26, .9)); }
 .divs-row { display: flex; overflow-x: auto; scrollbar-width: none; }
 .divs-row::-webkit-scrollbar { display: none; }
-.div-tab { position: relative; flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 8px 20px; font-family: var(--hud); font-size: 17px; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; color: var(--muted); white-space: nowrap; }
+.div-tab { position: relative; flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 54px; padding: 7px 18px; font-family: var(--hud); font-size: 16px; line-height: 1.15; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; color: var(--muted); white-space: nowrap; }
 .div-tab + .div-tab::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: rgba(148, 160, 186, .3); }
 .div-tab:hover { color: var(--ivory); }
 .div-game { color: inherit; }
-.div-code { color: var(--gold); }
+.div-code { color: var(--gold); font-size: 12.5px; letter-spacing: .12em; }
 .div-tab[aria-current="page"] { color: #fff; }
 .div-tab[aria-current="page"] .div-code { color: var(--gold-hi); }
 .div-tab[aria-current="page"]::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold-hi), transparent); }
-@media (max-width: 900px) { .div-tab { font-size: 14px; padding: 8px 14px; } }
+@media (max-width: 900px) { .div-tab { font-size: 14px; padding: 7px 14px; } .div-code { font-size: 11.5px; } }
 
 /* Division cards on HQ */
 .div-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
@@ -313,6 +313,9 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 .stage[data-scene="sq1"] { --cx: 598; --cy: 351; --ch: 298; --ty: 40; --tf: 64; }
 .stage[data-scene="rsi1"] { --cx: 600; --cy: 359; --ch: 305; --ty: 46; --tf: 80; }
 .stage[data-scene="se1"] { --cx: 600; --cy: 360; --ch: 304; --ty: 46; --tf: 80; }
+/* The Tom Clancy and Destiny posters put the crest on top and the title beneath it. */
+.stage[data-scene="tc1"] { --cx: 600; --cy: 160; --ch: 300; --ty: 345; --tf: 84; }
+.stage[data-scene="ds1"] { --cx: 600; --cy: 170; --ch: 292; --ty: 345; --tf: 84; }
 .art-crest { position: absolute; z-index: 2; left: calc(var(--sw) * var(--cx) / 1200); top: calc(var(--sw) * var(--cy) / 1200); height: calc(var(--sw) * var(--ch) / 1200); aspect-ratio: 720 / 803; transform: translate(-50%, -50%); }
 .art-crest .emblem-img { position: relative; z-index: 1; width: 100%; height: 100%; filter: drop-shadow(0 0 18px rgba(38, 72, 154, .65)) drop-shadow(0 14px 24px rgba(0, 0, 0, .7)); }
 .art-copy { position: absolute; z-index: 2; left: 50%; top: calc(var(--sw) * var(--ty) / 1200); width: min(94vw, calc(var(--sw) * .9)); transform: translateX(-50%); text-align: center; }
@@ -413,3 +416,95 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 .report li::before { content: counter(rep, decimal-leading-zero); position: absolute; left: 0; top: 0; font-family: var(--hud); font-weight: 600; color: var(--gold-hi); }
 .report b { color: var(--ivory); }
 @media (max-width: 600px) { .tab { flex: 1 1 50%; justify-content: center; padding: 10px 8px; font-size: 13px; letter-spacing: .06em; } .tab-ch { display: none; } }
+
+/* Bureau Patches (patches.js): Steam patch notes for the division's games */
+.patch-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.patch { display: flex; flex-direction: column; overflow: hidden; }
+.patch-art { display: block; width: 100%; height: auto; aspect-ratio: 460 / 215; object-fit: cover; border-bottom: 1px solid var(--line); }
+.patch-body { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 18px 20px 16px; }
+.patch-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--muted); font-size: 14px; }
+.patch-game { font-family: var(--hud); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gold-hi); }
+.patch h3 { font-family: var(--body); font-weight: 600; font-size: 18px; letter-spacing: 0; line-height: 1.35; }
+.patch p { color: var(--soft); font-size: 16px; }
+.patch a.read { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; font-family: var(--hud); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: 14px; }
+#patches-updated { margin-top: 16px; }
+
+/* A division hero without painted art (canvas behind): the same copy, in normal flow. */
+.art-copy-flow { position: static; transform: none; width: auto; margin-top: 18px; }
+.art-copy-flow h1 { font-size: clamp(40px, 7vw, 84px); }
+.art-copy-flow .art-sub { margin-top: 12px; font-size: clamp(15px, 2vw, 22px); }
+.art-copy-flow .art-motto { margin-top: 8px; font-size: clamp(13px, 1.5vw, 16px); }
+
+/* ---------------------------------------------------------------- HQ historical record
+   The four eras sit on one rail, joined by a gold-and-blue conduit with a pulse running along it
+   (the owner's timeline mockup). Era art is cropped from that mockup, painted labels removed. */
+.record { position: relative; overflow: hidden; }
+.record::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(60% 40% at 50% 0%, rgba(38, 72, 154, .28), transparent 70%), repeating-linear-gradient(0deg, rgba(150, 175, 240, .035) 0 1px, transparent 1px 44px), repeating-linear-gradient(90deg, rgba(150, 175, 240, .035) 0 1px, transparent 1px 44px); }
+.record-head { text-align: center; margin-inline: auto; }
+.record-head .kicker { justify-content: center; }
+.record-file { margin: 6px 0 4px; font-family: var(--hud); font-weight: 600; font-size: 15px; letter-spacing: .16em; color: var(--soft); }
+.record-file b { color: var(--gold-hi); }
+.record-head h2 { max-width: 22ch; margin-inline: auto; }
+.origin { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'crest meta' 'crest text'; gap: 8px 28px; align-items: center; max-width: 920px; margin: 26px auto 44px; padding: 22px 26px;
+  background: linear-gradient(100deg, rgba(38, 72, 154, .35), rgba(7, 16, 41, .85)); border: 1px solid var(--line); }
+.origin-crest { grid-area: crest; width: 112px; height: auto; filter: drop-shadow(0 0 16px rgba(197, 155, 95, .35)); }
+.origin-meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0; }
+.origin-meta div { display: flex; flex-direction: column; }
+.origin-meta dt { font-family: var(--hud); font-weight: 600; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.origin-meta dd { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--hud); font-weight: 600; font-size: 20px; letter-spacing: .06em; color: var(--gold-hi); }
+.origin-text { grid-area: text; margin: 0; color: var(--soft); }
+.origin-text strong { color: var(--ivory); }
+
+.eras { --conduit: 64px; list-style: none; margin: 0; padding: 0; position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+/* the conduit: a gold line with a blue under-glow, running behind the cards at art height */
+.eras::before, .eras::after { content: ''; position: absolute; left: 2%; right: 2%; top: calc(var(--conduit) + 120px); height: 2px; pointer-events: none; }
+.eras::before { background: linear-gradient(90deg, transparent, var(--gold) 8%, var(--gold-hi) 50%, var(--gold) 92%, transparent); box-shadow: 0 0 12px rgba(197, 155, 95, .55), 0 6px 18px rgba(70, 140, 255, .35); }
+.eras::after { width: 120px; left: 0; right: auto; background: radial-gradient(closest-side, #FFF1D6, rgba(255, 220, 160, .6) 40%, transparent); height: 8px; margin-top: -3px; animation: conduit 6s linear infinite; }
+@keyframes conduit { from { transform: translateX(-120px); } to { transform: translateX(calc(min(100vw, 1240px))); } }
+.era { position: relative; z-index: 1; display: flex; flex-direction: column; background: rgba(5, 11, 28, .92); border: 1px solid var(--line-blue); box-shadow: 0 18px 40px rgba(0, 0, 0, .45);
+  transition: opacity .7s ease calc(var(--i) * .12s), transform .7s ease calc(var(--i) * .12s), border-color .3s; }
+.record.will-reveal:not(.is-in) .era { opacity: 0; transform: translateY(24px); }
+.era:hover { border-color: var(--line); }
+.era-bar { margin: 0; padding: 10px 14px; font-family: var(--hud); font-weight: 600; font-size: 14px; letter-spacing: .1em; color: var(--ivory); background: linear-gradient(90deg, rgba(38, 72, 154, .5), rgba(7, 16, 41, .6)); border-bottom: 1px solid var(--line-blue); }
+.era-bar b { color: var(--gold-hi); }
+.era-num { color: var(--gold-hi); }
+.era-range { display: block; margin-top: 2px; font-size: 12.5px; letter-spacing: .16em; color: var(--muted); }
+.era-art { position: relative; margin: 10px; aspect-ratio: 536 / 460; overflow: hidden; border: 1px solid rgba(197, 155, 95, .35); }
+.era-art img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.04); animation: era-pan 18s ease-in-out infinite alternate; animation-delay: calc(var(--i) * -4s); }
+@keyframes era-pan { from { transform: scale(1.04) translate(-1.2%, 0); } to { transform: scale(1.12) translate(1.2%, -1.5%); } }
+/* corner brackets and a scan sweep */
+.era-art::before { content: ''; position: absolute; inset: 8px; z-index: 1; pointer-events: none;
+  background: linear-gradient(var(--gold-hi), var(--gold-hi)) top left / 16px 2px, linear-gradient(var(--gold-hi), var(--gold-hi)) top left / 2px 16px, linear-gradient(var(--gold-hi), var(--gold-hi)) top right / 16px 2px, linear-gradient(var(--gold-hi), var(--gold-hi)) top right / 2px 16px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) bottom left / 16px 2px, linear-gradient(var(--gold-hi), var(--gold-hi)) bottom left / 2px 16px, linear-gradient(var(--gold-hi), var(--gold-hi)) bottom right / 16px 2px, linear-gradient(var(--gold-hi), var(--gold-hi)) bottom right / 2px 16px; background-repeat: no-repeat; opacity: .8; }
+.era-art::after { content: ''; position: absolute; left: 0; right: 0; top: -30%; height: 30%; z-index: 1; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(150, 190, 255, .14), transparent); animation: era-scan 7s linear infinite; animation-delay: calc(var(--i) * -1.7s); }
+@keyframes era-scan { to { top: 100%; } }
+.era-chip { position: absolute; z-index: 2; left: 12px; bottom: 12px; max-width: calc(100% - 24px); padding: 4px 9px; font-family: var(--hud); font-weight: 600; font-size: 12px; letter-spacing: .08em; color: var(--gold-hi); background: rgba(3, 6, 15, .82); box-shadow: inset 0 0 0 1px var(--line); }
+.era-chip-high { bottom: calc(45% + 10px); }
+.era-body { display: flex; flex-direction: column; gap: 8px; padding: 4px 16px 18px; flex: 1; }
+.era-body h3 { font-size: 19px; }
+.era-tag { margin: -4px 0 0; font-family: var(--hud); font-weight: 600; font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold-hi); }
+.era-body > p { margin: 0; color: var(--soft); font-size: 15.5px; }
+.era-log { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; border-top: 1px dashed var(--line-blue); padding-top: 10px; font-size: 14.5px; color: var(--soft); }
+.era-log li { display: grid; grid-template-columns: 88px 1fr; gap: 8px; }
+.era-log time { font-family: var(--hud); font-weight: 600; letter-spacing: .06em; color: var(--ivory); }
+.era-divs { margin-top: auto !important; padding-top: 6px; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.era-divs a { display: inline-flex; align-items: center; min-height: 44px; font-family: var(--hud); font-weight: 600; font-size: 14px; letter-spacing: .1em; }
+.era-now { border-color: var(--line); box-shadow: 0 0 0 1px rgba(197, 155, 95, .25), 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(70, 120, 255, .18); }
+.record-close { text-align: center; margin-top: 44px; }
+.record-close footer { margin-top: 10px; font-family: var(--hud); font-weight: 600; font-size: 18px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-hi); }
+@media (max-width: 1100px) { .eras { grid-template-columns: repeat(2, 1fr); } .eras::before, .eras::after { display: none; } }
+@media (max-width: 640px) {
+  .eras { grid-template-columns: 1fr; padding-left: 18px; }
+  .eras::before { display: block; left: 0; right: auto; top: 0; bottom: 0; width: 2px; height: auto; background: linear-gradient(var(--gold), var(--navy-500) 50%, var(--gold)); }
+  .era::before { content: ''; position: absolute; left: -24px; top: 18px; width: 12px; height: 12px; transform: rotate(45deg); background: var(--navy-900); border: 2px solid var(--gold); }
+  .era-now::before { background: var(--gold); }
+  .origin { grid-template-columns: 1fr; grid-template-areas: 'crest' 'meta' 'text'; justify-items: center; text-align: center; padding: 20px 18px; }
+  .origin-meta { justify-content: center; }
+  .origin-crest { width: 88px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .era { opacity: 1; transform: none; transition: none; }
+  .era-art img, .era-art::after, .eras::after { animation: none; }
+  .era-art::after { display: none; }
+}

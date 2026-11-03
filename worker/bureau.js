@@ -7,7 +7,7 @@
 // Other hosts (local dev, preview URLs) serve /bureau/ as a normal folder so it can be checked before a deploy.
 
 const MAIN_HOSTS = new Set(['belpire.com', 'www.belpire.com']);
-const SHARED = [/^\/fonts\//, /^\/favicon\.svg$/, /^\/apple-touch-icon\.png$/, /^\/og\//];
+const SHARED = [/^\/fonts\//, /^\/favicon\.svg$/, /^\/apple-touch-icon\.png$/, /^\/og\//, /^\/data\//];
 
 export const isBureauHost = (hostname) => hostname === 'bureau.belpire.com' || hostname.startsWith('bureau.localhost');
 

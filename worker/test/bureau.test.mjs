@@ -10,6 +10,7 @@ test('bureau.belpire.com maps onto site/bureau/, keeping shared fonts and icons'
   assert.deepEqual(route('https://bureau.belpire.com/bureau.css'), { path: '/bureau/bureau.css' });
   assert.deepEqual(route('https://bureau.belpire.com/fonts/barlow-400.woff2'), { path: '/fonts/barlow-400.woff2' });
   assert.deepEqual(route('https://bureau.belpire.com/favicon.svg'), { path: '/favicon.svg' });
+  assert.deepEqual(route('https://bureau.belpire.com/data/feed.json'), { path: '/data/feed.json' }, 'Bureau Patches read the shared game feed');
   assert.equal(route('https://bureau.belpire.com/api/star-citizen'), null, 'the API answers on the subdomain too');
   assert.deepEqual(route('https://bureau.belpire.com/auth/login'), { redirect: 'https://belpire.com/auth/login', status: 302 });
 });
