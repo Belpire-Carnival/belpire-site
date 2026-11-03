@@ -1,37 +1,55 @@
 {
-  "name": "belpire-site",
-  "main": "worker/index.js",
-  "compatibility_date": "2026-10-01",
-  "assets": {
-    "directory": "site",
-    "binding": "ASSETS",
-    "run_worker_first": true,
-    "not_found_handling": "404-page"
-  },
-  "kv_namespaces": [
-    { "binding": "SC_DATA", "id": "383c9c02baf3405b826636f5650f2078" }
-  ],
-  "d1_databases": [
-    { "binding": "DB", "database_name": "belpire-polls", "database_id": "a4cd8c8c-56b3-44b8-9599-b86e3b0cd036" }
-  ],
-  // Hall of Oddities: uploaded screenshots and clips, and the AI safety scan for pictures.
-  "r2_buckets": [
-    { "binding": "ODDITIES", "bucket_name": "belpire-oddities" }
-  ],
-  "ai": { "binding": "AI" },
-  "triggers": {
-    "crons": ["*/10 * * * *"]
-  },
-  "placement": { "mode": "smart" },
-  "observability": {
-    "logs": {
-      "enabled": true,
-      "invocation_logs": true,
-      "persist": true
-    },
-    "issues": { "enabled": true }
-  },
-  "workers_dev": true,
-  "previews": {},
-  "preview_urls": true
+	"name": "belpire-site",
+	"main": "worker/index.js",
+	"compatibility_date": "2026-10-01",
+	"assets": {
+		"directory": "site",
+		"binding": "ASSETS",
+		"run_worker_first": true,
+		"not_found_handling": "404-page"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "SC_DATA",
+			"id": "383c9c02baf3405b826636f5650f2078"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "belpire-polls",
+			"database_id": "a4cd8c8c-56b3-44b8-9599-b86e3b0cd036"
+		}
+	],
+	// Hall of Oddities: uploaded screenshots and clips, and the AI safety scan for pictures.
+	"r2_buckets": [
+		{
+			"binding": "ODDITIES",
+			"bucket_name": "belpire-oddities"
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	},
+	"triggers": {
+		"crons": [
+			"*/10 * * * *"
+		]
+	},
+	"placement": {
+		"mode": "smart"
+	},
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"issues": {
+			"enabled": true
+		}
+	},
+	"workers_dev": true,
+	"previews": {},
+	"preview_urls": true
 }

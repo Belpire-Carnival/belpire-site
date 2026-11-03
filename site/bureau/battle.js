@@ -25,10 +25,12 @@ function start(canvas) {
     rsi1: { space: true, planet: true, ships: 1.5, flak: 1.8, asteroids: true },
     se1: { sky: ['#050A1C', '#24132E', '#7A3418'], haze: '255, 120, 50', stars: 0.5, embers: 1.6 },
     bf1: { sky: ['#060B1B', '#1C2840', '#5C544A'], haze: '200, 190, 170', stars: 0.35, embers: 1, jets: true },
-    sq1: { sky: ['#02050D', '#071225', '#101C2C'], haze: '120, 150, 190', stars: 1, embers: 0.4 }
+    sq1: { sky: ['#02050D', '#071225', '#101C2C'], haze: '120, 150, 190', stars: 1, embers: 0.4 },
+    tc1: { sky: ['#03070E', '#0E1E26', '#2E3A3A'], haze: '150, 190, 180', stars: 0.6, embers: 0.8, jets: true, cast: 'bf1' }
   };
   const MODE = SCENES[document.body.dataset.division] ? document.body.dataset.division : 'hq';
   const S = SCENES[MODE];
+  const ACT = S.cast || MODE; // which cast of actors to use (tc1 borrows bf1's)
 
   let W = 0, H = 0, dpr = 1, u = 1, g = 0, hz = 0;
   let stars = [], ridge = [], hills = [], ships = [], bolts = [], sparks = [], smoke = [], flashes = [], embers = [];
@@ -100,27 +102,27 @@ function start(canvas) {
   function build() {
     troops = []; tanks = []; helis = []; fires = []; glows = []; critters = []; rocks = [];
     const L = W * 0.2, R = W * 0.8;
-    if (MODE === 'hq') {
+    if (ACT === 'hq') {
       fires = [[L - 70 * u, 1.2], [L + 30 * u, 0.8], [L + 95 * u, 1], [R + 80 * u, 0.9]].map(([x, k]) => ({ x, k, p: rand(0, 6) }));
       troops = [...[-110, -40, 55, 120].map((dx, i) => trooperAt(L + dx * u, 1, i % 2 === 1)), ...[-130, -70, 130].map((dx, i) => trooperAt(R + dx * u, -1, i === 1))];
       tanks = [{ x: R - 10 * u, dir: -1, cd: rand(1, 3), flash: 0 }];
       helis = [{ x: R + 40 * u, y: g - 92 * u, vx: 14 * u, home: R + 40 * u, range: 90 * u, p: 0, cd: 99 }];
       glows = [{ x: L, y: g, r: 230, rgb: '255, 140, 50', a: 0.6, flicker: true }, { x: R, y: g - 20 * u, r: 240, rgb: '170, 195, 240', a: 0.42 }];
-    } else if (MODE === 'rsi1') {
+    } else if (ACT === 'rsi1') {
       rocks = Array.from({ length: Math.round(10 + W / 130) }, () => rock());
-    } else if (MODE === 'se1') {
+    } else if (ACT === 'se1') {
       for (let i = 0; i < 7; i++) troops.push(trooperAt(W * (0.06 + i * 0.06) + rand(-10, 10), 1));
       for (let i = 0; i < Math.round(10 + W / 120); i++) critters.push(critter(rand(W * 0.58, W * 1.05)));
       fires = [0.12, 0.3, 0.5, 0.72, 0.9].map((k) => ({ x: W * k + rand(-30, 30), k: rand(0.8, 1.4), p: rand(0, 6) }));
       glows = [{ x: W * 0.3, y: g, r: 420, rgb: '255, 120, 40', a: 0.45, flicker: true }, { x: W * 0.78, y: g, r: 380, rgb: '255, 90, 40', a: 0.35, flicker: true }];
-    } else if (MODE === 'bf1') {
+    } else if (ACT === 'bf1') {
       tanks = [{ x: W * 0.16, dir: 1, cd: rand(1, 3), flash: 0 }, { x: W * 0.34, dir: 1, cd: rand(2, 4), flash: 0 }, { x: W * 0.82, dir: -1, cd: rand(1, 3), flash: 0 }];
       for (let i = 0; i < 5; i++) troops.push(trooperAt(W * (0.05 + i * 0.07) + rand(-12, 12), 1));
       for (let i = 0; i < 4; i++) troops.push(trooperAt(W * (0.66 + i * 0.07) + rand(-12, 12), -1));
       helis = [{ x: W * 0.26, y: g - 150 * u, vx: 18 * u, home: W * 0.26, range: 120 * u, p: 0, cd: rand(2, 4), dir: 1 }, { x: W * 0.74, y: g - 190 * u, vx: -14 * u, home: W * 0.74, range: 100 * u, p: 1, cd: rand(2, 4), dir: -1 }];
       fires = [0.24, 0.56, 0.88].map((k) => ({ x: W * k + rand(-30, 30), k: rand(0.7, 1.1), p: rand(0, 6) }));
       glows = [{ x: W * 0.5, y: hz, r: 600, rgb: '210, 190, 160', a: 0.22 }, { x: W * 0.2, y: g, r: 300, rgb: '255, 150, 60', a: 0.3, flicker: true }];
-    } else if (MODE === 'sq1') {
+    } else if (ACT === 'sq1') {
       for (let i = 0; i < 6; i++) troops.push(trooperAt(W * (0.05 + i * 0.055) + rand(-8, 8), 1, Math.random() < 0.7));
       for (let i = 0; i < 6; i++) troops.push(trooperAt(W * (0.67 + i * 0.055) + rand(-8, 8), -1, Math.random() < 0.7));
       fires = [{ x: W * 0.5 + rand(-60, 60), k: 0.8, p: 0 }];
@@ -225,14 +227,14 @@ function start(canvas) {
       tr.flash = Math.max(0, tr.flash - dt);
       tr.cd -= dt;
       if (tr.cd > 0) continue;
-      tr.cd = MODE === 'sq1' ? rand(0.25, 1.2) : rand(0.6, 2.2);
+      tr.cd = ACT === 'sq1' ? rand(0.25, 1.2) : rand(0.6, 2.2);
       tr.flash = 0.08;
       const mx = tr.x + tr.dir * 15 * u, my = g - (tr.kneel ? 14 : 22) * u;
       let ang;
-      if (MODE === 'se1' && critters.length) {
+      if (ACT === 'se1' && critters.length) {
         const c = critters.reduce((a, b) => (Math.abs(b.x - tr.x) < Math.abs(a.x - tr.x) ? b : a));
         ang = Math.atan2(g - 8 * u - my, c.x - mx) + rand(-0.04, 0.04);
-      } else if (MODE === 'sq1' || MODE === 'bf1') {
+      } else if (ACT === 'sq1' || ACT === 'bf1') {
         ang = (tr.dir > 0 ? 0 : Math.PI) + tr.dir * -rand(0.01, 0.12);
       } else {
         ang = -Math.PI / 2 + tr.dir * rand(0.25, 0.9);
@@ -248,7 +250,7 @@ function start(canvas) {
       tk.flash = 0.18;
       const mx = tk.x + tk.dir * 74 * u, my = g - 27 * u;
       boom(mx, my, false);
-      if (MODE === 'bf1') {
+      if (ACT === 'bf1') {
         tracer(mx, my, (tk.dir > 0 ? 0 : Math.PI) - tk.dir * 0.04, '#FFE2A8', 'shell', 1100);
         timers['hit' + tk.x] = 0.5;
       }
@@ -260,14 +262,14 @@ function start(canvas) {
       h.x += h.vx * dt;
       if (Math.abs(h.x - h.home) > h.range) h.vx *= -1;
       h.cd -= dt;
-      if (MODE === 'bf1' && h.cd <= 0) {
+      if (ACT === 'bf1' && h.cd <= 0) {
         h.cd = rand(2.5, 5);
         tracer(h.x + h.dir * 20 * u, h.y + 8 * u, (h.dir > 0 ? 0 : Math.PI) + h.dir * 0.35, '#FFD08A', 'shell', 700);
       }
     }
 
     // Shells landing on the far side (Battlefield) and a constant rumble of artillery on the horizon.
-    if (MODE === 'bf1') {
+    if (ACT === 'bf1') {
       if (Math.random() < dt * 1.6) {
         const x = rand(0, W);
         flashes.push({ x, y: hz + rand(-6, 6), r: rand(30, 60), life: 0.4, max: 0.4 });
@@ -277,7 +279,7 @@ function start(canvas) {
     }
 
     // Helldivers: the swarm, drop pods and orbital strikes.
-    if (MODE === 'se1') {
+    if (ACT === 'se1') {
       for (const c of critters) {
         c.x += c.vx * dt;
         c.p += dt * 8;
@@ -316,7 +318,7 @@ function start(canvas) {
     }
 
     // Squad: illumination flares drift down; mortars land between the lines.
-    if (MODE === 'sq1') {
+    if (ACT === 'sq1') {
       if (every('flare', 2.2, 4, dt) && flares.length < 3) flares.push({ x: rand(W * 0.2, W * 0.8), y: rand(H * 0.12, H * 0.28), vy: rand(14, 22), life: 8, max: 8, p: rand(0, 6) });
       for (const f of flares) {
         f.y += f.vy * dt;
@@ -763,7 +765,7 @@ function start(canvas) {
     ctx.lineTo(W + 20, H + 2);
     ctx.closePath();
     ctx.fill();
-    if (MODE === 'sq1') {
+    if (ACT === 'sq1') {
       // Sandbag lines on either side of no man's land.
       ctx.fillStyle = INK;
       for (const [a, b] of [[0, 0.4], [0.6, 1]]) for (let x = W * a; x < W * b; x += 14 * u) {
@@ -825,7 +827,7 @@ function start(canvas) {
     helis.forEach(drawHeli);
     drawGlows();
     drawLight();
-    if (MODE === 'hq' || !S.space) drawRidge();
+    if (ACT === 'hq' || !S.space) drawRidge();
     if (S.citadel) drawCitadel();
     if (S.corners) drawCornerGround();
     ctx.globalCompositeOperation = 'lighter';

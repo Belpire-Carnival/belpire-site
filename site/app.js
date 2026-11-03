@@ -315,10 +315,12 @@ async function loadFeed() {
     const res = await fetch('/data/feed.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    // Games a Bureau of Finality division covers have their news on bureau.belpire.com instead.
+    const carnival = (item) => !item.division;
     feed = {
       upcoming: Array.isArray(data.upcoming) ? data.upcoming : [],
-      favorites: Array.isArray(data.favorites) ? data.favorites : [],
-      tracked: Array.isArray(data.tracked) ? data.tracked : []
+      favorites: Array.isArray(data.favorites) ? data.favorites.filter(carnival) : [],
+      tracked: Array.isArray(data.tracked) ? data.tracked.filter(carnival) : []
     };
     const updated = document.getElementById('feed-updated');
     if (data.generatedAt) updated.textContent = `Pulled from Steam · updated ${formatDate(data.generatedAt)}`;

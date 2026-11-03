@@ -20,6 +20,9 @@ const CONFIG_PATH = resolve(ROOT, 'config/games.json');
 const FEED_PATH = resolve(ROOT, 'site/data/feed.json');
 const JACKBOX_PATH = resolve(ROOT, 'site/jackbox/packs.json');
 const TENTS = new Set(['horror', 'party', 'other']);
+// Games a Bureau of Finality division covers: their news shows on bureau.belpire.com, not the Midway.
+const DIVISIONS = new Set(['rsi1', 'se1', 'bf1', 'sq1', 'tc1', 'ds1']);
+const divisionOf = (game) => (DIVISIONS.has(game.division) ? { division: game.division } : {});
 const UA = 'BelpireCarnivalFeed/1.0 (+https://belpire.com)';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -27,7 +30,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function getJson(url, { retries = 2 } = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+      // A stalled Steam request must not hang the build: give up after 15 s and retry or skip.
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
       if (res.status === 429 && attempt < retries) {
         await sleep(15000 * (attempt + 1));
         continue;
@@ -145,6 +149,7 @@ async function fetchFavorites(config, previous) {
           appid,
           name: game.name || details?.name || `App ${appid}`,
           tent,
+          ...divisionOf(game),
           kind: classifyNews(n),
           title: cleanText(n.title, 120),
           summary: cleanText(n.contents),
@@ -155,7 +160,7 @@ async function fetchFavorites(config, previous) {
       }
     } catch (err) {
       console.warn(`News failed for ${appid}: ${err.message} (keeping previous items)`);
-      out.push(...previous.filter((p) => p.appid === appid));
+      out.push(...previous.filter((p) => p.appid === appid).map((p) => ({ ...p, ...divisionOf(game) })));
     }
   }
   return out.sort((a, b) => b.date.localeCompare(a.date));
@@ -224,7 +229,7 @@ async function fetchTracked(config, previous, news) {
     if (!appid) continue;
     let image = known.get(appid) || null;
     if (!image) image = (await appDetails(appid).catch(() => null))?.header_image || null;
-    out.push({ appid, name: f.name, tent: TENTS.has(f.tent) ? f.tent : 'other', image });
+    out.push({ appid, name: f.name, tent: TENTS.has(f.tent) ? f.tent : 'other', ...divisionOf(f), image });
   }
   return out;
 }

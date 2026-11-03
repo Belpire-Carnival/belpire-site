@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="../bureau.css">
   <link rel="preload" href="../img/scene-se1.webp" as="image" imagesrcset="../img/scene-se1-600.webp 600w, ../img/scene-se1.webp 1200w" imagesizes="max(100vw, 1100px)">
   <script src="../fx.js" defer></script>
+  <script src="../patches.js" defer></script>
 </head>
 <body class="division" data-division="se1">
   <a class="skip" href="#profile">Skip to content</a>
@@ -35,6 +36,7 @@
       <nav class="top-nav" aria-label="On this page">
         <a href="#profile">Profile</a>
         <a href="#drop">On the drop</a>
+        <a href="#patches">Patches</a>
       </nav>
       <a class="btn btn-gold btn-sm" href="https://hd2clans.com/clan/2105/join" target="_blank" rel="noopener">Enlist<span class="visually-hidden"> (opens a new tab)</span></a>
     </div>
@@ -44,6 +46,8 @@
         <a class="div-tab" href="./" aria-current="page"><span class="div-game">Helldivers</span> <span class="div-code">[DIV_SE1]</span></a>
         <a class="div-tab" href="../bf1/"><span class="div-game">Battlefield</span> <span class="div-code">[DIV_BF1]</span></a>
         <a class="div-tab" href="../sq1/"><span class="div-game">Squad</span> <span class="div-code">[DIV_SQ1]</span></a>
+        <a class="div-tab" href="../tc1/"><span class="div-game">Tom Clancy</span> <span class="div-code">[DIV_TC1]</span></a>
+        <a class="div-tab" href="../ds1/"><span class="div-game">Destiny</span> <span class="div-code">[DIV_DS1]</span></a>
       </div>
     </nav>
   </header>
@@ -60,7 +64,7 @@
         </div>
         <div class="art-copy">
           <h1 id="hero-h">Helldivers</h1>
-          <p class="art-sub">[ DIV_SE1 <b>//</b> WHERE THE OLD GUARD WAS FORGED ]</p>
+          <p class="art-sub">[ DIV_SE1 <b>//</b> ERA IV // THE DROP ]</p>
           <p class="art-motto" lang="la">Finem Ultimum Nos Afferimus</p>
         </div>
       </div>
@@ -75,7 +79,7 @@
     <section class="brief-band" aria-label="Division at a glance">
       <div class="wrap">
         <p class="stamps"><span class="stamp stamp-classified">[DIV_SE1]</span><span class="stamp">HOME // MALEVELON CREEK</span><span class="stamp stamp-live"><span class="blip" aria-hidden="true"></span>Recruiting</span></p>
-        <p class="brief">The front where the Bureau learned its first rule. A high-precision, objective-focused clan that puts mission success ahead of personal glory and kill counts, and carries out the Major Orders.</p>
+        <p class="brief">Era IV of the Historical Record: the Old Guard on the outer boundaries, dropping in where the Major Orders are hardest. A high-precision, objective-focused clan that puts mission success ahead of personal glory and kill counts.</p>
         <dl class="specs">
           <div><dt>Game</dt><dd>Helldivers 2</dd></div>
           <div><dt>Platforms</dt><dd>PC &middot; PlayStation &middot; Xbox</dd></div>
@@ -127,10 +131,22 @@
       </div>
     </section>
 
+    <section id="patches" class="band" aria-labelledby="patches-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>03</span> Patch notes &amp; news</p>
+          <h2 id="patches-h">Bureau Patches</h2>
+          <p class="sec-lede" id="patches-games">Official updates for the games this division plays, straight from Steam.</p>
+        </header>
+        <div class="patch-list" id="patches-list" aria-live="polite"><p class="empty">Pulling the latest patch notes&hellip;</p></div>
+        <p class="muted small" id="patches-updated"></p>
+      </div>
+    </section>
+
     <section id="enlist" class="enlist" aria-labelledby="enlist-h">
       <div class="wrap section">
         <header class="sec-head">
-          <p class="kicker"><span>03</span> Recruitment</p>
+          <p class="kicker"><span>04</span> Recruitment</p>
           <h2 id="enlist-h">Enlist in DIV_SE1</h2>
         </header>
         <ol class="steps">
