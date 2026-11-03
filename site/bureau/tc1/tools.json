@@ -1,0 +1,74 @@
+{
+  "_readme": "Reference links shown in this division's Quartermaster. Edit freely: url must be https; kind is one of official, wiki, map, web, app, overlay, bureau.",
+  "categories": [
+    {
+      "name": "The Division & The Division 2",
+      "tools": [
+        {
+          "name": "r/thedivision wiki: The Division 2",
+          "url": "https://www.reddit.com/r/thedivision/wiki/thedivision2",
+          "kind": "wiki",
+          "description": "The community's guide hub: returning-player guide, builds basics, factions and the FAQ."
+        },
+        {
+          "name": "The Division on Steam",
+          "url": "https://store.steampowered.com/news/app/365590",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        },
+        {
+          "name": "The Division 2 on Steam",
+          "url": "https://store.steampowered.com/news/app/2221490",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        }
+      ]
+    },
+    {
+      "name": "Ghost Recon Wildlands & Breakpoint",
+      "tools": [
+        {
+          "name": "Ghost Recon Wiki",
+          "url": "https://ghostrecon.fandom.com/wiki/Weapons_of_Breakpoint",
+          "kind": "wiki",
+          "description": "Breakpoint weapons and where to find their blueprints; the wiki also covers Wildlands gear and missions."
+        },
+        {
+          "name": "Auroa interactive map",
+          "url": "https://wand.com/maps/ghost-recon-breakpoint/auroa",
+          "kind": "map",
+          "description": "Breakpoint map with blueprints, bivouacs, points of interest and a checklist."
+        },
+        {
+          "name": "Bolivia interactive map",
+          "url": "https://guides4gamers.com/ghost-recon-wildlands/maps/bolivia/",
+          "kind": "map",
+          "description": "Wildlands map with missions, collectibles and points of interest."
+        },
+        {
+          "name": "Ghost Recon Wildlands on Steam",
+          "url": "https://store.steampowered.com/news/app/460930",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        },
+        {
+          "name": "Ghost Recon Breakpoint on Steam",
+          "url": "https://store.steampowered.com/news/app/2231380",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        }
+      ]
+    },
+    {
+      "name": "Support",
+      "tools": [
+        {
+          "name": "Ubisoft Help",
+          "url": "https://www.ubisoft.com/en-us/help",
+          "kind": "official",
+          "description": "Ubisoft account help, connectivity and known issues for every Tom Clancy game."
+        }
+      ]
+    }
+  ]
+}
