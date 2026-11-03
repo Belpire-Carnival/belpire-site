@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Bureau of Finality [FINTAC] — Multi-game gaming enterprise</title>
+  <meta name="description" content="The Bureau of Finality (FINTAC) is a multi-game gaming enterprise: one creed, divisions in Star Citizen, Helldivers, Battlefield and Squad. PvE first, casual, recruiting now.">
+  <link rel="canonical" href="https://bureau.belpire.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bureau of Finality">
+  <meta property="og:title" content="Bureau of Finality — Headquarters">
+  <meta property="og:description" content="One creed, divisions across the games we play. PvE first, casual, recruiting now.">
+  <meta property="og:url" content="https://bureau.belpire.com/">
+  <meta property="og:image" content="https://belpire.com/og/bureau.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Bureau of Finality crest in navy and bronze over a space battle">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#060C1E">
+  <link rel="icon" href="crest.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/cinzel-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="img/crest-720.webp" as="image" imagesrcset="img/crest-360.webp 360w, img/crest-720.webp 720w" imagesizes="(max-width: 600px) 62vw, 360px">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="bureau.css">
+  <script src="battle.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#creed">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="./"><span class="brand-text">The Bureau of Finality</span> <span class="brand-sid">[ FINTAC ]</span></a>
+      <nav class="top-nav" aria-label="On this page">
+        <a href="#creed">Creed</a>
+        <a href="#divisions">Divisions</a>
+        <a href="#dossier">Dossier</a>
+        <a href="#conduct">Conduct</a>
+        <a href="#command">Command</a>
+      </nav>
+      <a class="btn btn-gold btn-sm" href="#enlist">Enlist</a>
+    </div>
+    <nav class="divs" aria-label="Divisions">
+      <div class="wrap divs-row">
+        <a class="div-tab" href="rsi1/"><span class="div-game">Star Citizen</span> <span class="div-code">[DIV_RSI1]</span></a>
+        <a class="div-tab" href="se1/"><span class="div-game">Helldivers</span> <span class="div-code">[DIV_SE1]</span></a>
+        <a class="div-tab" href="bf1/"><span class="div-game">Battlefield</span> <span class="div-code">[DIV_BF1]</span></a>
+        <a class="div-tab" href="sq1/"><span class="div-game">Squad</span> <span class="div-code">[DIV_SQ1]</span></a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="top" aria-labelledby="hero-h">
+      <canvas id="battle" aria-hidden="true"></canvas>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-inner wrap">
+        <div class="emblem">
+          <div class="emblem-halo" aria-hidden="true"></div>
+          <img class="emblem-img" src="img/crest-720.webp" srcset="img/crest-360.webp 360w, img/crest-720.webp 720w" sizes="(max-width: 600px) 62vw, 360px" width="720" height="803" alt="The Bureau of Finality crest: a silver star over a sword and the scales of Sacrificium and Accuratia, ringed in navy and bronze, with the motto Finem Ultimum Nos Afferimus" fetchpriority="high">
+          <span class="emblem-shine" aria-hidden="true"></span>
+        </div>
+        <h1 id="hero-h">Bureau of Finality</h1>
+        <p class="motto"><span lang="la">Finem Ultimum Nos Afferimus</span></p>
+        <p class="enterprise">[ MULTI-GAME GAMING ENTERPRISE ]</p>
+        <p class="stamps"><span class="stamp stamp-classified">[CLASSIFIED]</span><span class="stamp">DIVISION_00</span><span class="stamp stamp-live"><span class="blip" aria-hidden="true"></span>Recruiting</span></p>
+        <p class="visually-hidden">One creed across every game we play: Star Citizen, Helldivers, Battlefield and Squad.</p>
+        <div class="cta-row">
+          <a class="btn btn-silver" href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Enlist on Spectrum<span class="visually-hidden"> (opens a new tab)</span></a>
+          <a class="btn btn-line" href="#dossier">Open the dossier</a>
+        </div>
+      </div>
+      <a class="front-tag front-se1" href="se1/">[DIV_SE1]</a>
+      <a class="front-tag front-bf1" href="bf1/">[DIV_BF1]</a>
+      <p class="hud-corner hud-left" aria-hidden="true">UPLINK // BOF-HQ<br>STATUS // ONLINE<br>GRID 25.668 // 15.000</p>
+      <p class="hud-corner hud-right" aria-hidden="true">DIVISIONS // 04<br>ACTIVE // RSI1 · SE1<br>RECRUITING // OPEN</p>
+      <a class="scroll-cue" href="#creed"><span class="visually-hidden">Scroll to the creed</span><span aria-hidden="true">&#8964;</span></a>
+    </section>
+
+    <div class="comms" aria-label="Status">
+      <div class="comms-track" aria-hidden="true">
+        <div class="comms-run"><span>HQ // ONLINE</span><span>DIV_RSI1 // STAR CITIZEN // ACTIVE</span><span>DIV_SE1 // HELLDIVERS // ACTIVE</span><span>DIV_BF1 // BATTLEFIELD // FORMING</span><span>DIV_SQ1 // SQUAD // FORMING</span><span>ROE // PVE FIRST</span><span>FINEM ULTIMUM NOS AFFERIMUS</span></div>
+        <div class="comms-run"><span>HQ // ONLINE</span><span>DIV_RSI1 // STAR CITIZEN // ACTIVE</span><span>DIV_SE1 // HELLDIVERS // ACTIVE</span><span>DIV_BF1 // BATTLEFIELD // FORMING</span><span>DIV_SQ1 // SQUAD // FORMING</span><span>ROE // PVE FIRST</span><span>FINEM ULTIMUM NOS AFFERIMUS</span></div>
+      </div>
+      <p class="visually-hidden">Headquarters online. Star Citizen and Helldivers divisions active; Battlefield and Squad divisions forming. Rules of engagement: PvE first. Recruiting.</p>
+    </div>
+
+    <section id="creed" class="section wrap" aria-labelledby="creed-h">
+      <header class="sec-head">
+        <p class="kicker"><span>01</span> The crest</p>
+        <h2 id="creed-h">The creed on the crest</h2>
+        <p class="sec-lede">Every mark on the Bureau&rsquo;s seal stands for something, in every division and every game. Balanced on the scales, held up by the sword, under one star.</p>
+      </header>
+      <div class="creed">
+        <article class="virtue virtue-wide">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4l5 14h15l-12 9 5 15-13-9-13 9 5-15L4 18h15z"/></svg>
+          <h3>The Admiral&rsquo;s Will</h3>
+          <p>The star at the top. Command sets the course, and on a live contract the call is final.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6v28M18 30h12M24 34v8M10 16h28M14 16l-6 12h12zM34 16l-6 12h12z"/></svg>
+          <h3>Sacrificium</h3>
+          <p class="virtue-sub">The Martyr&rsquo;s Sacrifice</p>
+          <p>The unit before the self. Cover the squad, hold the line, carry the wounded out.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="14"/><circle cx="24" cy="24" r="4"/><path d="M24 4v10M24 34v10M4 24h10M34 24h10"/></svg>
+          <h3>Accuratia</h3>
+          <p class="virtue-sub">The Sheriff&rsquo;s Precision</p>
+          <p>Every shot accounted for. Confirm the target, hit what you aim at, nothing else.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 40 40 8M30 8h10v10M8 30l10 10"/></svg>
+          <h3>Strategy</h3>
+          <p>The plan comes before the fight. Brief it, fly it, hold formation.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 38V26a10 10 0 0 1 20 0v12M10 38h28M24 6v6M12 10l4 4M36 10l-4 4"/></svg>
+          <h3>Objective</h3>
+          <p>The mission is the point. Ego gets people killed, so the objective comes first.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 10c-8 0-12 5-12 10 0 4 4 6 8 6v14h8V26c4 0 8-2 8-6 0-5-4-10-12-10zM16 42h16"/></svg>
+          <h3>Demolition</h3>
+          <p>When it has to come down, it comes down. Objectives cleared and sealed.</p>
+        </article>
+        <article class="virtue">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 12c6-2 12-2 16 2 4-4 10-4 16-2v26c-6-2-12-2-16 2-4-4-10-4-16-2zM24 14v26"/></svg>
+          <h3>Eliminatio</h3>
+          <p>The book closes on every contract. Threats end; the Bureau goes home.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="divisions" class="band" aria-labelledby="divisions-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>02</span> Order of battle</p>
+          <h2 id="divisions-h">Divisions</h2>
+          <p class="sec-lede">Each game gets its own division with its own operations, roster and way to join. Same creed, same chain of command, same rules of engagement.</p>
+        </header>
+        <div class="div-grid">
+          <a class="div-card div-card-live hud" href="rsi1/">
+            <span class="div-card-code">[DIV_RSI1]</span>
+            <span class="div-card-game">Star Citizen</span>
+            <span class="div-card-text">Freight, bounty contracts and black-site raids across Stanton and beyond.</span>
+            <span class="div-card-status"><span class="blip" aria-hidden="true"></span>Active &middot; recruiting</span>
+            <span class="div-card-go" aria-hidden="true">Report in &rarr;</span>
+          </a>
+          <a class="div-card div-card-live hud" href="se1/">
+            <span class="div-card-code">[DIV_SE1]</span>
+            <span class="div-card-game">Helldivers</span>
+            <span class="div-card-text">Objective-first dives for the Major Orders. PC, PlayStation and Xbox.</span>
+            <span class="div-card-status"><span class="blip" aria-hidden="true"></span>Active &middot; recruiting</span>
+            <span class="div-card-go" aria-hidden="true">Report in &rarr;</span>
+          </a>
+          <a class="div-card div-card-forming hud" href="bf1/">
+            <span class="div-card-code">[DIV_BF1]</span>
+            <span class="div-card-game">Battlefield</span>
+            <span class="div-card-text">Combined arms under one chain of command. Being raised now.</span>
+            <span class="div-card-status">Forming &middot; report in</span>
+            <span class="div-card-go" aria-hidden="true">Report in &rarr;</span>
+          </a>
+          <a class="div-card div-card-forming hud" href="sq1/">
+            <span class="div-card-code">[DIV_SQ1]</span>
+            <span class="div-card-game">Squad</span>
+            <span class="div-card-text">Fireteams, comms and discipline at scale. Being raised now.</span>
+            <span class="div-card-status">Forming &middot; report in</span>
+            <span class="div-card-go" aria-hidden="true">Report in &rarr;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="dossier" aria-labelledby="dossier-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>03</span> History</p>
+          <h2 id="dossier-h">The dossier</h2>
+        </header>
+        <ol class="timeline">
+          <li><span class="year">2184</span><div class="tl-card"><h3>Founded</h3><p>Raised as a precision unit and hardened in the sieges of Malevelon Creek and Hellmire, the front <a href="se1/">DIV_SE1</a> still holds. The Old Guard learned the rule the unit still runs on: ego gets people killed.</p></div></li>
+          <li><span class="year">2186</span><div class="tl-card"><h3>The jump that failed</h3><p>An FTL jump went wrong. The command vessel dropped out of contact and the whole crew went under in cryo-stasis aboard a drifting ghost ship.</p></div></li>
+          <li><span class="year">+750 yrs</span><div class="tl-card"><h3>The long drift</h3><p>Centuries passed. Empires rose. Nobody came looking.</p></div></li>
+          <li><span class="year">2945</span><div class="tl-card"><h3>Salvaged in Stanton</h3><p>Salvagers cracked the pods open in a system run by corporations and outlaws. The Bureau woke, took stock and stood up its first new division there: <a href="rsi1/">DIV_RSI1</a>.</p></div></li>
+          <li class="tl-now"><span class="year">Now</span><div class="tl-card"><h3>Every front</h3><p>No empire-building, no glory-seeking. Wherever the Bureau deploys, clients get the job done and operatives share the payout.</p></div></li>
+        </ol>
+        <blockquote class="pull"><p>Discipline over ego. The unit over the individual.</p></blockquote>
+      </div>
+    </section>
+
+    <section id="conduct" class="band" aria-labelledby="conduct-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>04</span> The charter</p>
+          <h2 id="conduct-h">Rules of engagement</h2>
+          <p class="sec-lede">These hold in every division.</p>
+        </header>
+        <div class="two">
+          <div class="panel hud">
+            <h3>When we fire</h3>
+            <ul class="marks">
+              <li class="no">No unprovoked hostilities, piracy, griefing or PvP.</li>
+              <li class="yes">Fired on, or a hostile contests the objective? Answer with overwhelming force.</li>
+              <li class="yes">Threat cleared, back to the mission.</li>
+            </ul>
+          </div>
+          <div class="panel hud">
+            <h3>How we operate</h3>
+            <ul class="marks">
+              <li class="yes">Follow the plan and hold formation.</li>
+              <li class="no">No looting without the go-ahead.</li>
+              <li class="yes">Comms stay clear and professional.</li>
+              <li class="no">Toxicity and insubordination mean review and discharge.</li>
+            </ul>
+          </div>
+        </div>
+        <blockquote class="pull"><p>Survival requires discipline. Victory requires focus.</p></blockquote>
+      </div>
+    </section>
+
+    <section id="command" class="section wrap" aria-labelledby="command-h">
+      <header class="sec-head">
+        <p class="kicker"><span>05</span> Chain of command</p>
+        <h2 id="command-h">Command</h2>
+      </header>
+      <div class="two">
+        <ol class="ranks" aria-label="Ranks, highest first">
+          <li><span class="chev" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span>Colonel</span></li>
+          <li><span class="chev" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Major</span></li>
+          <li><span class="chev" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Warrant Officer</span></li>
+          <li><span class="chev" aria-hidden="true"><i></i><i></i><i></i></span><span>Sergeant</span></li>
+          <li><span class="chev" aria-hidden="true"><i></i><i></i></span><span>Private</span></li>
+          <li><span class="chev" aria-hidden="true"><i></i></span><span>Recruit</span></li>
+        </ol>
+        <div class="panel hud">
+          <h3>How it works</h3>
+          <ul class="marks">
+            <li class="dot">One chain of command across every division.</li>
+            <li class="dot">Rank is earned by showing up and being reliable, not handed out.</li>
+            <li class="dot">On a live contract, the Squad Leader&rsquo;s call is final.</li>
+            <li class="dot">Every role counts the same, and payouts are split fairly across everyone who deployed.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="enlist" class="enlist" aria-labelledby="enlist-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>06</span> Recruitment</p>
+          <h2 id="enlist-h">Enlist</h2>
+        </header>
+        <ol class="steps">
+          <li class="hud"><h3>Join the Discord</h3><p>The Bureau plans every op in the Belpire Carnival Discord. Start there.</p></li>
+          <li class="hud"><h3>Pick your division</h3><p>Choose the game you deploy in. Each division page says how to sign up in that game.</p></li>
+          <li class="hud"><h3>Report for duty</h3><p>Show up to your first op. Casual commitment, PvE first, rank earned on the job.</p></li>
+        </ol>
+        <div class="cta-row">
+          <a class="btn btn-gold" href="https://belpire.com/join/">Join the Discord</a>
+          <a class="btn btn-line" href="#divisions">Choose a division</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-col">
+      <img src="img/crest-96.webp" width="96" height="107" alt="" loading="lazy">
+      <p>The Bureau of Finality deploys with the <a href="https://belpire.com/">Belpire Carnival</a>.</p>
+      <p class="fine">Unofficial fan site. Game names belong to their publishers; the Bureau is not affiliated with or endorsed by any of them.</p>
+      <p class="fine"><a href="https://belpire.com/privacy/">Privacy Policy</a> &middot; <a href="https://belpire.com/terms/">Terms of Use</a></p>
+    </div>
+  </footer>
+</body>
+</html>
