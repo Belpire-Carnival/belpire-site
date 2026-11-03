@@ -27,7 +27,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function getJson(url, { retries = 2 } = {}) {
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+      // A stalled Steam request must not hang the build: give up after 15 s and retry or skip.
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
       if (res.status === 429 && attempt < retries) {
         await sleep(15000 * (attempt + 1));
         continue;
