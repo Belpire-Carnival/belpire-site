@@ -1,7 +1,7 @@
 // The header on every page: on narrow screens the links fold into a Menu button, and the sign-in button
 // in the top right becomes your account menu.
 // The sign-in button in the top right of every page. Signed out it's a plain link to "Verify with Discord".
-// Signed in it becomes a menu that shows what matters to you: your tickets, your punch card, polls you
+// Signed in it becomes a menu that shows what matters to you: your Slivers and coin, your punch card, polls you
 // haven't voted in, your Game Night pass, and (for Ringleaders) what's waiting Backstage.
 (() => {
   const link = document.querySelector('[data-account]');
@@ -81,7 +81,7 @@
     }
     if (me.member) {
       const t = me.tickets;
-      items.push(item('/me/', '🎟️', 'Your Ticket Booth', { note: t ? `${t.balance.toLocaleString()} Slivers` : null, current: here === '/me/' }));
+      items.push(item('/me/', '🎟️', 'Your Ticket Booth', { note: t ? `${t.balance.toLocaleString()} Slivers${t.coin ? ` · ${t.coin.name}` : ''}` : null, current: here === '/me/' }));
       if (t && !t.punchedToday) {
         items.push(item('/me/#punch', '🕳️', 'Punch card ready', { note: `+${t.nextPunch}`, hot: true }));
         attention++;
@@ -109,7 +109,11 @@
     const toggle = el('button', { type: 'button', class: 'acct-toggle', 'aria-expanded': 'false', 'aria-controls': id, 'aria-haspopup': 'true' }, [
       el('span', { class: 'acct-badge', 'aria-hidden': 'true', text: initials(me.name) }),
       el('span', { class: 'acct-name', text: me.name }),
-      me.tickets ? el('span', { class: 'acct-tix', text: `🎟 ${me.tickets.balance.toLocaleString()}` }) : null,
+      me.tickets ? el('span', { class: 'acct-tix' }, [
+        me.tickets.coin ? el('img', { class: 'acct-coin', src: me.tickets.coin.icon, width: '22', height: '22', alt: `${me.tickets.coin.name} coin` }) : null,
+        el('span', { class: 'acct-tix-num', text: me.tickets.balance.toLocaleString() }),
+        el('span', { class: 'visually-hidden', text: ' Slivers' })
+      ]) : null,
       attention ? el('span', { class: 'acct-dot', 'aria-hidden': 'true' }) : null,
       el('span', { class: 'visually-hidden', text: attention ? ` (${attention} thing${attention === 1 ? '' : 's'} waiting)` : '' })
     ]);
@@ -142,8 +146,14 @@
     link.replaceWith(wrap);
     // The Ticket Booth page tells us when your balance changes.
     document.addEventListener('belpire:tickets', (e) => {
-      const tix = toggle.querySelector('.acct-tix');
-      if (tix && Number.isFinite(e.detail?.balance)) tix.textContent = `🎟 ${e.detail.balance.toLocaleString()}`;
+      const num = toggle.querySelector('.acct-tix-num');
+      if (num && Number.isFinite(e.detail?.balance)) num.textContent = e.detail.balance.toLocaleString();
+      const img = toggle.querySelector('.acct-coin');
+      const coin = e.detail?.coin;
+      if (img && coin && /^\/assets\/slivers\/[a-z-]+-64\.webp$/.test(coin.icon)) {
+        img.src = coin.icon;
+        img.alt = `${coin.name} coin`;
+      }
     });
   }
 

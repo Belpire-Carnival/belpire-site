@@ -1,5 +1,5 @@
-// Your Ticket Booth (/me/): what's waiting for you, your tickets, the daily punch card, Find the Pea,
-// game-night check-in, the Prize Booth, High Scores and your ticket stubs. Every outcome is decided by the
+// Your Ticket Booth (/me/): what's waiting for you, your Slivers and Sliver coin, the daily punch card,
+// Find the Pea, game-night check-in, the Prize Booth, High Scores and your Sliver ledger. Every outcome is decided by the
 // server; this page only shows it.
 (() => {
   const gate = document.getElementById('tb-gate');
@@ -42,7 +42,12 @@
     clearTimeout(flash.timer);
     flash.timer = setTimeout(() => box.replaceChildren(), 6000);
   }
-  const announce = () => document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance: t?.wallet.balance ?? 0 } }));
+  // The coin for a balance, from the ladder the API sends (worker/coins.js is the one source of truth).
+  const coinOf = (balance) => (t?.coins || []).reduce((got, c) => (balance >= c.min ? c : got), t?.coins?.[0] || null);
+  const announce = () => {
+    const balance = t?.wallet.balance ?? 0;
+    document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance, coin: coinOf(balance) } }));
+  };
 
   // ---------------------------------------------------------------- gate
 
@@ -92,14 +97,37 @@
 
   function wallet() {
     const w = t.wallet;
+    const coin = coinOf(w.balance);
+    if (!coin) return; // the API always sends the coin ladder; without it there is nothing to draw
+    const i = t.coins.indexOf(coin);
+    const next = t.coins[i + 1] || null;
+    const meter = next ? el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': String(coin.min), 'aria-valuemax': String(next.min), 'aria-valuenow': String(w.balance), 'aria-label': `Progress to the ${next.name} coin` }, el('span', { class: 'tb-meter-fill' })) : null;
     $('tb-wallet').replaceChildren(
-      el('div', { class: 'tb-ticket', role: 'img', 'aria-label': `${tickets(w.balance)} to spend` }, [
-        el('span', { class: 'tb-ticket-kicker', text: 'ADMIT ONE · BELPIRE' }),
-        el('span', { class: 'tb-ticket-num', text: w.balance.toLocaleString() }),
-        el('span', { class: 'tb-ticket-label', text: 'tickets to spend' })
+      el('div', { class: 'tb-coin-card' }, [
+        el('img', { class: 'tb-coin', src: coin.image, width: '160', height: '160', alt: `${coin.name} Sliver coin` }),
+        el('div', { class: 'tb-coin-text' }, [
+          el('p', { class: 'tb-coin-name', text: coin.name }),
+          el('p', { class: 'tb-coin-num' }, [el('strong', { text: w.balance.toLocaleString() }), ` Sliver${w.balance === 1 ? '' : 's'} to spend`]),
+          meter,
+          el('p', { class: 'meta', text: next ? `${(next.min - w.balance).toLocaleString()} more to the ${next.name} coin` : 'The rarest coin in Belpire.' })
+        ])
       ]),
       el('p', { class: 'meta', text: `${tickets(w.lifetime)} won all-time${w.rank ? ` · #${w.rank} on the High Scores` : w.hidden ? ' · hidden from the High Scores' : ''}` })
     );
+    if (meter) meter.firstChild.style.setProperty('--fill', `${Math.min(100, Math.round((100 * (w.balance - coin.min)) / (next.min - coin.min)))}%`);
+    coins(i);
+  }
+
+  // Every coin and what it takes. Yours is lit; the ones you've passed stay bright, the rest are dim.
+  function coins(mine) {
+    const list = $('tb-coins');
+    if (!list) return;
+    list.replaceChildren(...t.coins.map((c, i) => el('li', { class: i === mine ? 'mine' : i < mine ? 'past' : 'ahead' }, [
+      el('img', { src: c.icon, width: '56', height: '56', alt: '', loading: 'lazy' }),
+      el('span', { class: 'tb-coins-name', text: c.name }),
+      el('span', { class: 'tb-coins-min', text: c.min ? `${c.min.toLocaleString()}+ Slivers` : 'Under 100' }),
+      i === mine ? el('span', { class: 'tb-coins-you', text: 'Your coin' }) : null
+    ])));
   }
 
   function punchCard() {
@@ -392,6 +420,7 @@
     const list = $('tb-scores');
     list.replaceChildren(...(t.highScores.length ? t.highScores.map((r) => el('li', { class: r.me ? 'me' : '' }, [
       el('span', { class: 'tb-rank', text: `#${r.rank}` }),
+      r.coin ? el('img', { class: 'tb-score-coin', src: r.coin.icon, width: '28', height: '28', alt: `${r.coin.name} coin`, title: `${r.coin.name} coin` }) : null,
       el('span', { class: 'tb-score-name', text: r.name }),
       r.badge ? el('span', { class: 'tb-badge', title: 'Fan Favorite', 'aria-label': 'Fan Favorite', text: '✦' }) : null,
       el('span', { class: 'tb-score', text: r.lifetime.toLocaleString() })

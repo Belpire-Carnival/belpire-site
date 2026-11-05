@@ -130,7 +130,7 @@ export function ticketStore(db) {
     },
     async leaderboard(limit = 10) {
       await ensure(db);
-      return (await db.prepare('SELECT user_id, name, lifetime, badge_until FROM ticket_wallets WHERE hidden = 0 AND lifetime > 0 ORDER BY lifetime DESC, updated_at ASC LIMIT ?').bind(limit).all()).results;
+      return (await db.prepare('SELECT user_id, name, balance, lifetime, badge_until FROM ticket_wallets WHERE hidden = 0 AND lifetime > 0 ORDER BY lifetime DESC, updated_at ASC LIMIT ?').bind(limit).all()).results;
     },
     async rank(uid) {
       await ensure(db);

@@ -93,6 +93,9 @@ export async function verifyDiscord(env, signature, timestamp, body, now = Date.
 
 const reply = (content, { ephemeral = true } = {}) =>
   Response.json({ type: 4, data: { content: content.slice(0, 2000), flags: ephemeral ? EPHEMERAL : 0, allowed_mentions: { parse: [] } } });
+// The same reply with the member's Sliver coin as a small picture beside it.
+const replyCoin = (coin, content) =>
+  Response.json({ type: 4, data: { content: content.slice(0, 2000), flags: EPHEMERAL, allowed_mentions: { parse: [] }, embeds: [{ color: 0xd9b26a, thumbnail: { url: `https://belpire.com${coin.image}` }, description: `${coin.name} · coin ${coin.level} of 11` }] } });
 const opt = (data, name) => data?.options?.find((o) => o.name === name)?.value;
 const nameOf = (member) => String(member?.nick || member?.user?.global_name || member?.user?.username || 'A member').slice(0, 64);
 
@@ -108,7 +111,7 @@ async function run(env, interaction) {
   switch (data.name) {
     case 'slivers': {
       const s = await summary(env, uid);
-      return reply(`🎟️ **${ticketsText(s.balance)}** in your pocket · ${ticketsText(s.lifetime)} won all-time${s.rank ? ` · #${s.rank} on the High Scores` : ''}\n${s.punchedToday ? `Punch card done today (streak ${s.streak}).` : `Your punch card is waiting: \`/punch-card\` for ${ticketsText(s.nextPunch)}.`}\nMore at ${site}`);
+      return replyCoin(s.coin, `🪙 **${s.coin.name}** coin${s.coin.next ? ` · ${s.coin.next.need.toLocaleString()} more to ${s.coin.next.name}` : ''}\n🎟️ **${ticketsText(s.balance)}** in your pocket · ${ticketsText(s.lifetime)} won all-time${s.rank ? ` · #${s.rank} on the High Scores` : ''}\n${s.punchedToday ? `Punch card done today (streak ${s.streak}).` : `Your punch card is waiting: \`/punch-card\` for ${ticketsText(s.nextPunch)}.`}\nMore at ${site}`);
     }
     case 'punch-card': {
       const r = await punch(env, uid, name);
