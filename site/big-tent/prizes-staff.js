@@ -1,4 +1,4 @@
-// Backstage (/backstage/): Prize Booth orders to fulfil or refund, and handing out tickets.
+// Backstage (/backstage/): Prize Booth orders to fulfil or refund, and handing out Slivers.
 // The API only answers Ringleaders; everyone else gets an empty slot.
 (() => {
   const slot = document.getElementById('gn-backstage-prizes');
@@ -88,7 +88,7 @@
       results,
       chosen,
       el('div', { class: 'give-row' }, [
-        el('div', { class: 'field' }, [el('label', { for: amount.id, text: 'Tickets (minus takes back)' }), amount]),
+        el('div', { class: 'field' }, [el('label', { for: amount.id, text: 'Slivers (minus takes back)' }), amount]),
         el('div', { class: 'field give-note' }, [el('label', { for: note.id, text: 'Why (they see this)' }), note])
       ]),
       el('div', { class: 'btn-row' }, [give]),
@@ -103,7 +103,7 @@
       give.disabled = true;
       try {
         const r = await api('/api/tickets/award', { userId: who.id, amount: Number(amount.value), note: note.value });
-        status.textContent = r.amount > 0 ? `Gave ${r.name} ${r.amount} tickets. They have ${r.balance} now.` : `Took ${-r.amount} back from ${r.name}. They have ${r.balance} now.`;
+        status.textContent = r.amount > 0 ? `Gave ${r.name} ${r.amount} Slivers. They have ${r.balance} now.` : `Took ${-r.amount} back from ${r.name}. They have ${r.balance} now.`;
         who = null;
         chosen.textContent = 'Nobody picked yet.';
         search.value = '';
@@ -115,8 +115,8 @@
       }
     });
     return el('div', { class: 'panel' }, [
-      el('div', { class: 'panel-head' }, [el('h2', { text: 'Hand out tickets' })]),
-      el('p', { class: 'meta', text: 'Reward a great night, a great clip or a great scream. Up to 500 at a time; a minus takes tickets back (never below zero). Or use /give-tickets in Discord.' }),
+      el('div', { class: 'panel-head' }, [el('h2', { text: 'Hand out Slivers' })]),
+      el('p', { class: 'meta', text: 'Reward a great night, a great clip or a great scream. Up to 500 at a time; a minus takes Slivers back (never below zero). Or use /give-tickets in Discord.' }),
       form
     ]);
   }

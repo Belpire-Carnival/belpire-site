@@ -81,7 +81,7 @@
     }
     if (me.member) {
       const t = me.tickets;
-      items.push(item('/me/', '🎟️', 'Your Ticket Booth', { note: t ? `${t.balance.toLocaleString()} tickets` : null, current: here === '/me/' }));
+      items.push(item('/me/', '🎟️', 'Your Ticket Booth', { note: t ? `${t.balance.toLocaleString()} Slivers` : null, current: here === '/me/' }));
       if (t && !t.punchedToday) {
         items.push(item('/me/#punch', '🕳️', 'Punch card ready', { note: `+${t.nextPunch}`, hot: true }));
         attention++;

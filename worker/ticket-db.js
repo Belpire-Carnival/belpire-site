@@ -83,11 +83,11 @@ export function ticketStore(db) {
       return Number((await this.wallet(uid)).balance);
     },
     // Takes `cost` only if the balance covers it. Returns the new balance, or null if it doesn't.
-    async spend(uid, cost, kind, note) {
+    async spend(uid, cost, kind, note, ref = null) {
       await ensure(db);
       const r = await db.prepare('UPDATE ticket_wallets SET balance = balance - ?, updated_at = ? WHERE user_id = ? AND balance >= ?').bind(cost, nowIso(), uid, cost).run();
       if (!r.meta.changes) return null;
-      await db.prepare('INSERT INTO ticket_ledger (id, user_id, amount, kind, note, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), uid, -cost, kind, note, nowIso()).run();
+      await db.prepare('INSERT INTO ticket_ledger (id, user_id, amount, kind, note, ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(newId(), uid, -cost, kind, note, ref, nowIso()).run();
       return Number((await this.wallet(uid)).balance);
     },
     async setPunch(uid, day, streak) {

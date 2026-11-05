@@ -23,7 +23,7 @@
     for (const k of [].concat(kids)) if (k) n.append(k);
     return n;
   }
-  const tickets = (n) => `${Number(n).toLocaleString()} ticket${Math.abs(n) === 1 ? '' : 's'}`;
+  const tickets = (n) => `${Number(n).toLocaleString()} Sliver${Math.abs(n) === 1 ? '' : 's'}`;
   const when = (iso) => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -52,14 +52,14 @@
     if (!me?.signedIn) {
       gate.replaceChildren(el('div', { class: 'panel' }, [
         el('h2', { text: 'Show your ticket at the gate' }),
-        el('p', { text: 'Sign in with Discord to see your tickets, play the carnival games and cash in at the Prize Booth.' }),
+        el('p', { text: 'Sign in with Discord to see your Slivers, play the carnival games and cash in at the Prize Booth.' }),
         el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/auth/login?return=/me/', text: 'Sign in with Discord' })]),
         el('p', { class: 'meta', text: 'We only check your Discord account and server membership; see the Privacy Policy.' })
       ]));
     } else {
       gate.replaceChildren(el('div', { class: 'panel' }, [
         el('h2', { text: `Almost in, ${me.name}` }),
-        el('p', { text: 'Tickets, games and prizes are for members of the Belpire Discord. Grab your ticket into the server, then come back here.' }),
+        el('p', { text: 'Slivers, games and prizes are for members of the Belpire Discord. Grab your ticket into the server, then come back here.' }),
         el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/join/', text: 'Get your ticket' })])
       ]));
     }
@@ -75,7 +75,7 @@
     ])));
     if (!t.wallet.punchedToday) card('#punch', '🕳️', 'Punch card ready', `+${tickets(t.wallet.nextPunch)} waiting today`);
     for (const p of me.polls?.unvoted || []) card(`/big-tent/?poll=${encodeURIComponent(p.id)}`, '🗳️', `Vote: ${p.title}`, 'Rank your four, or dare the Wheel of Doom');
-    if (me.live?.live) card('/big-tent/', '🔴', 'Live on The Main Stage', me.live.canJoin ? 'A Ringleader is on. Hop in and check in for tickets' : 'A Ringleader is on stage right now');
+    if (me.live?.live) card('/big-tent/', '🔴', 'Live on The Main Stage', me.live.canJoin ? 'A Ringleader is on. Hop in and check in for Slivers' : 'A Ringleader is on stage right now');
     if (me.pass === 'none') card('/big-tent/#passes', '🎪', 'Get a Game Night pass', 'Your key to The Main Stage');
     else if (me.pass === 'pending') card('/big-tent/#passes', '⏳', 'Pass waiting for a stamp', 'A Ringleader will DM you', false);
     if (me.manager && me.staff) {
@@ -123,7 +123,7 @@
     $('tb-punch').replaceChildren(
       holes,
       el('div', { class: 'btn-row' }, [btn]),
-      el('p', { class: 'meta', text: `${t.rules.punchBase} tickets a day, plus ${t.rules.punchStreakStep} more for every day in a row (up to +${t.rules.punchStreakStep * t.rules.punchStreakMax}). Miss a day and the streak starts over. Resets at midnight Eastern.` })
+      el('p', { class: 'meta', text: `${t.rules.punchBase} Slivers a day, plus ${t.rules.punchStreakStep} more for every day in a row (up to +${t.rules.punchStreakStep * t.rules.punchStreakMax}). Miss a day and the streak starts over. Resets at midnight Eastern.` })
     );
   }
 
@@ -135,9 +135,9 @@
     }
     box.hidden = false;
     const s = t.show;
-    const kids = [el('p', {}, [el('strong', { text: s.title }), document.createTextNode(` is on. Be in The Main Stage (not deafened) to earn ${t.rules.attendPerCheck} tickets every 10 minutes, up to ${s.cap} a show.`)])];
+    const kids = [el('p', {}, [el('strong', { text: s.title }), document.createTextNode(` is on. Be in The Main Stage (not deafened) to earn ${t.rules.attendPerCheck} Slivers every 10 minutes, up to ${s.cap} a show.`)])];
     if (s.checkedIn) {
-      kids.push(el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(s.cap), 'aria-valuenow': String(s.paid), 'aria-label': 'Attendance tickets this show' }, el('span', { class: 'tb-meter-fill' })));
+      kids.push(el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(s.cap), 'aria-valuenow': String(s.paid), 'aria-label': 'Attendance Slivers this show' }, el('span', { class: 'tb-meter-fill' })));
       kids.push(el('p', { class: 'meta', text: `Checked in ✓ ${s.paid} of ${s.cap} earned so far.` }));
     } else {
       const btn = el('button', { type: 'button', class: 'btn btn-gold', text: 'Check in to the show' });
@@ -228,7 +228,7 @@
     const buttons = ['front', 'middle', 'back'].map((row) => {
       const b = el('button', { type: 'button', class: 'btn btn-ghost btn-sm tb-row-btn', disabled: !left }, [
         el('strong', { text: `${row[0].toUpperCase()}${row.slice(1)} row` }),
-        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} tickets` })
+        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} Slivers` })
       ]);
       b.addEventListener('click', () => toss(row));
       return b;
@@ -277,7 +277,7 @@
     const tower = el('div', { class: 'tb-tower', 'aria-hidden': 'true' }, [bell, el('div', { class: 'tb-track' }, puck), scale]);
     const tiers = el('ul', { class: 'tb-tiers' }, t.rules.strikerTiers.slice().reverse().map((x) => el('li', {}, [
       el('strong', { text: x.label }),
-      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} tickets` : 'no prize'}` })
+      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} Slivers` : 'no prize'}` })
     ])));
     const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [strikerLast, left ? (strikerLast ? 'Swing again?' : 'Step up and swing.') : 'Your arms need a rest. Back at midnight Eastern.'].filter(Boolean).join(' ') });
     const btn = el('button', { type: 'button', class: 'btn btn-gold', text: '🔨 Swing the mallet', disabled: !left });
@@ -402,7 +402,7 @@
       hide.disabled = true;
       try {
         await api('/api/tickets/privacy', { hidden: hide.checked });
-        flash(hide.checked ? 'You\'re off the High Scores. Your tickets still count.' : 'You\'re back on the High Scores.');
+        flash(hide.checked ? 'You\'re off the High Scores. Your Slivers still count.' : 'You\'re back on the High Scores.');
         await load();
       } catch (err) {
         flash(err.message, 'error');
@@ -436,7 +436,7 @@
     if (!me.signedIn || !me.member || !t) return showGate();
     gate.hidden = true;
     app.hidden = false;
-    $('tb-greeting').textContent = `Welcome back, ${me.name}. Here's what's waiting, and the tickets you've won along the way.`;
+    $('tb-greeting').textContent = `Welcome back, ${me.name}. Here's what's waiting, and the Slivers you've won along the way.`;
     todo();
     wallet();
     punchCard();

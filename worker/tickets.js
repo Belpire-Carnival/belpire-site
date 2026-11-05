@@ -51,7 +51,14 @@ export const RULES = {
   ],
   attendPerCheck: 3,
   attendCap: 60,
-  awardMax: 500
+  awardMax: 500,
+  // The Concession Tent: snacks bought with Slivers. Orders are counted for the curd Feats.
+  concessionDaily: 10,
+  snacks: {
+    curds: { name: 'Cheese Curds', icon: '🧀', cost: 5, line: 'A paper boat of cheese curds, still squeaking. The RingMistress will not discuss the recipe.' },
+    apple: { name: 'Candy Apple', icon: '🍎', cost: 4, line: 'A candy apple from the cart, glossy red and a little too warm.' },
+    popcorn: { name: 'Popcorn', icon: '🍿', cost: 3, line: 'A striped bag of popcorn. Every kernel is popped. Nobody saw the machine running.' }
+  }
 };
 const SNOWFLAKE = /^\d{17,20}$/;
 const ID = /^[a-f0-9]{24}$/;
@@ -80,7 +87,7 @@ const prevDay = (day) => etDay(Date.parse(`${day}T12:00:00Z`) - 86400000);
 
 export const cleanText = (s, max) => String(s ?? '').replace(/[\u0000-\u001f\u007f‎‏‪-‮⁦-⁩]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 const plural = (n, word) => `${n} ${word}${Math.abs(n) === 1 ? '' : 's'}`;
-export const ticketsText = (n) => plural(n, 'ticket');
+export const ticketsText = (n) => plural(n, 'Sliver'); // the currency is Slivers; code names keep 'tickets'
 
 function randomInt(n) {
   const buf = new Uint32Array(1);
@@ -222,7 +229,7 @@ const clean = (s) => String(s).replace(/[*_`~|>\\#@:<]/g, '').trim() || 'A membe
 export function highScoresMessage(weekly, allTime, now = Date.now()) {
   const from = shortDate.format(new Date(now - 7 * 86400000));
   const to = shortDate.format(new Date(now - 86400000));
-  const line = (r, i, n) => `${MEDALS[i] || `**${i + 1}.**`} ${clean(r.name)}${r.badge ? ' ✦' : ''} · ${Number(n).toLocaleString('en-US')} tickets`;
+  const line = (r, i, n) => `${MEDALS[i] || `**${i + 1}.**`} ${clean(r.name)}${r.badge ? ' ✦' : ''} · ${Number(n).toLocaleString('en-US')} Slivers`;
   const parts = [`## 🏆 Midway High Scores · ${from} – ${to}`];
   parts.push('**This week\'s top earners**');
   parts.push(weekly.length ? weekly.map((r, i) => line(r, i, r.won)).join('\n') : '*A quiet week on the Midway. The booth is still open.*');
@@ -294,10 +301,33 @@ export async function redeem(env, uid, name, { prize: prizeId, detail, game } = 
   return { order: publicOrder(o), balance };
 }
 
+const hourFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' });
+const etHour = (ms) => Number(hourFmt.format(new Date(ms)));
+
+// The Concession Tent. Spends Slivers on a snack and counts the order (refs feed the curd Feats).
+// Leaving a snack on the counter between midnight and 4 a.m. Eastern means something eats it.
+export async function concession(env, uid, name, snackId, leave = false, now = Date.now()) {
+  const snack = RULES.snacks[snackId];
+  if (!snack) throw new TicketError(400, 'snack', 'The Concession Tent doesn\'t serve that.');
+  const store = ticketStore(env.DB);
+  const day = etDay(now);
+  const today = await store.countRefs(`concession:${uid}:${day}:`);
+  if (today >= RULES.concessionDaily) throw new TicketError(429, 'full', 'That\'s enough snacks for one day. The Concession Tent reopens at midnight Eastern.');
+  const ref = `concession:${uid}:${day}:${snackId}:${today + 1}`;
+  const balance = await store.spend(uid, snack.cost, 'concession', `Concession Tent: ${snack.name}`, ref);
+  if (balance === null) throw new TicketError(402, 'short', `${snack.name} costs ${ticketsText(snack.cost)}. Keep playing!`);
+  const night = etHour(now) < 4;
+  const eaten = Boolean(leave && night);
+  const curds = snackId === 'curds'
+    ? Number((await env.DB.prepare('SELECT COUNT(*) AS n FROM ticket_ledger WHERE ref LIKE ?').bind(`concession:${uid}:%:curds:%`).first()).n)
+    : null;
+  return { snack: snack.name, icon: snack.icon, cost: snack.cost, line: snack.line, balance, left: Boolean(leave), eaten, curdsAllTime: curds, ordersToday: today + 1 };
+}
+
 export async function award(env, by, userId, amount, note) {
   if (!SNOWFLAKE.test(String(userId || ''))) throw new TicketError(400, 'user', 'Pick someone from the list.');
   amount = Math.trunc(Number(amount));
-  if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > RULES.awardMax) throw new TicketError(400, 'amount', `Hand out between 1 and ${RULES.awardMax} tickets (or take some back with a minus).`);
+  if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > RULES.awardMax) throw new TicketError(400, 'amount', `Hand out between 1 and ${RULES.awardMax} Slivers (or take some back with a minus).`);
   const m = await getMember(env, userId);
   if (!m) throw new TicketError(404, 'not_member', 'That person isn\'t in the server.');
   const name = String(m.nick || m.user?.global_name || m.user?.username || 'A member').slice(0, 64);
@@ -363,7 +393,7 @@ export async function handleTickets(request, env) {
   try {
     if (request.method === 'GET') {
       const who = await memberInfo(env, session, { fresh: staffAction });
-      if (!who.member) return fail(403, 'not_member', 'Tickets are for members of the Belpire Discord.');
+      if (!who.member) return fail(403, 'not_member', 'Slivers are for members of the Belpire Discord.');
       if (parts.length === 0) {
         const day = etDay();
         const left = (game, plays) => store.countRefs(`${game}:${session.uid}:${day}:`).then((n) => Math.max(0, plays - n));
@@ -410,7 +440,7 @@ export async function handleTickets(request, env) {
       return fail(403, 'forbidden', 'Use the buttons on belpire.com.');
     }
     const who = await memberInfo(env, session, { fresh: staffAction });
-    if (!who.member) return fail(403, 'not_member', 'Tickets are for members of the Belpire Discord.');
+    if (!who.member) return fail(403, 'not_member', 'Slivers are for members of the Belpire Discord.');
     const body = await request.json().catch(() => ({}));
 
     if (parts.length === 1 && parts[0] === 'punch') return json({ ok: true, ...(await punch(env, session.uid, who.name)) });
