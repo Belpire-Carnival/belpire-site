@@ -83,11 +83,11 @@ export function ticketStore(db) {
       return Number((await this.wallet(uid)).balance);
     },
     // Takes `cost` only if the balance covers it. Returns the new balance, or null if it doesn't.
-    async spend(uid, cost, kind, note) {
+    async spend(uid, cost, kind, note, ref = null) {
       await ensure(db);
       const r = await db.prepare('UPDATE ticket_wallets SET balance = balance - ?, updated_at = ? WHERE user_id = ? AND balance >= ?').bind(cost, nowIso(), uid, cost).run();
       if (!r.meta.changes) return null;
-      await db.prepare('INSERT INTO ticket_ledger (id, user_id, amount, kind, note, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), uid, -cost, kind, note, nowIso()).run();
+      await db.prepare('INSERT INTO ticket_ledger (id, user_id, amount, kind, note, ref, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(newId(), uid, -cost, kind, note, ref, nowIso()).run();
       return Number((await this.wallet(uid)).balance);
     },
     async setPunch(uid, day, streak) {
@@ -130,7 +130,7 @@ export function ticketStore(db) {
     },
     async leaderboard(limit = 10) {
       await ensure(db);
-      return (await db.prepare('SELECT user_id, name, lifetime, badge_until FROM ticket_wallets WHERE hidden = 0 AND lifetime > 0 ORDER BY lifetime DESC, updated_at ASC LIMIT ?').bind(limit).all()).results;
+      return (await db.prepare('SELECT user_id, name, balance, lifetime, badge_until FROM ticket_wallets WHERE hidden = 0 AND lifetime > 0 ORDER BY lifetime DESC, updated_at ASC LIMIT ?').bind(limit).all()).results;
     },
     async rank(uid) {
       await ensure(db);

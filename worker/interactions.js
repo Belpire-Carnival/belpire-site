@@ -2,39 +2,48 @@
 // app's Interactions Endpoint URL); we check Discord's signature and answer straight away. No always-on
 // connection needed. Tickets use the same bank as belpire.com, so both always agree.
 //
+// Buttons and forms for alpha tester sign-ups are handled in alpha.js.
 // Commands are registered once with `npm run commands` (scripts/register-commands.mjs).
 // Runtime secret: DISCORD_PUBLIC_KEY (the app's public key, used to verify each request).
 
 import { pollConfig, sendOpenPost } from './polls.js';
+import { handleAlpha, isAlphaInteraction } from './alpha.js';
 import { pollStore } from './poll-db.js';
 import { PRIZES, prizeById } from './prizes.js';
-import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, summary, highScores, ticketsText, RULES, TicketError } from './tickets.js';
+import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, summary, highScores, concession, ticketsText, RULES, TicketError } from './tickets.js';
 
 const EPHEMERAL = 64;
 const enc = new TextEncoder();
 const PEA_SHELLS = ['🥫', '🥫', '🥫'];
 
 export const COMMANDS = [
-  { name: 'tickets', description: 'Your Belpire ticket balance, streak and rank', type: 1 },
-  { name: 'punch-card', description: 'Punch your daily card for free tickets (streaks pay more)', type: 1 },
+  { name: 'slivers', description: 'Your Slivers: balance, streak and rank', type: 1 },
+  { name: 'punch-card', description: 'Punch your daily card for free Slivers (streaks pay more)', type: 1 },
   {
-    name: 'find-the-pea', description: 'The shell game: pick a shell and win tickets if the pea is under it', type: 1,
+    name: 'find-the-pea', description: 'The shell game: pick a shell and win Slivers if the pea is under it', type: 1,
     options: [{ type: 4, name: 'shell', description: 'Which shell?', required: true, choices: [{ name: 'Left', value: 1 }, { name: 'Middle', value: 2 }, { name: 'Right', value: 3 }] }]
   },
   {
     name: 'ring-toss', description: 'Toss a ring at the bottles: near rows are easier, far rows pay more', type: 1,
     options: [{ type: 3, name: 'row', description: 'Which row?', required: true, choices: [
-      { name: `Front (${RULES.ringRows.front.odds / 10}% · ${RULES.ringRows.front.prize} tickets)`, value: 'front' },
-      { name: `Middle (${RULES.ringRows.middle.odds / 10}% · ${RULES.ringRows.middle.prize} tickets)`, value: 'middle' },
-      { name: `Back (${RULES.ringRows.back.odds / 10}% · ${RULES.ringRows.back.prize} tickets)`, value: 'back' }
+      { name: `Front (${RULES.ringRows.front.odds / 10}% · ${RULES.ringRows.front.prize} Slivers)`, value: 'front' },
+      { name: `Middle (${RULES.ringRows.middle.odds / 10}% · ${RULES.ringRows.middle.prize} Slivers)`, value: 'middle' },
+      { name: `Back (${RULES.ringRows.back.odds / 10}% · ${RULES.ringRows.back.prize} Slivers)`, value: 'back' }
     ] }]
   },
   { name: 'high-striker', description: 'Swing the mallet. Ring the bell for the jackpot', type: 1 },
-  { name: 'checkin', description: 'Check in to tonight\'s show from The Main Stage to earn attendance tickets', type: 1 },
-  { name: 'high-scores', description: 'The Midway High Scores: most tickets won', type: 1 },
+  {
+    name: 'concession', description: 'The Concession Tent: spend Slivers on a snack', type: 1,
+    options: [
+      { type: 3, name: 'snack', description: 'What are you having?', required: true, choices: Object.entries(RULES.snacks).map(([value, x]) => ({ name: `${x.name} (${x.cost} Slivers)`, value })) },
+      { type: 5, name: 'leave-it', description: 'Leave it on the counter instead of eating it', required: false }
+    ]
+  },
+  { name: 'checkin', description: 'Check in to tonight\'s show from The Main Stage to earn attendance Slivers', type: 1 },
+  { name: 'high-scores', description: 'The Midway High Scores: most Slivers won', type: 1 },
   { name: 'prizes', description: 'What\'s in the Prize Booth', type: 1 },
   {
-    name: 'redeem', description: 'Spend tickets at the Prize Booth', type: 1,
+    name: 'redeem', description: 'Spend Slivers at the Prize Booth', type: 1,
     options: [
       { type: 3, name: 'prize', description: 'Which prize?', required: true, choices: PRIZES.map((p) => ({ name: `${p.name} (${p.cost})`, value: p.id })) },
       { type: 3, name: 'note', description: 'What you want (which oddity, which colour…)', required: false, max_length: 200 }
@@ -42,7 +51,7 @@ export const COMMANDS = [
   },
   { name: 'poll', description: 'Ringleaders: post the open game-night poll to #general again', type: 1 },
   {
-    name: 'give-tickets', description: 'Ringleaders: hand out (or take back) tickets', type: 1,
+    name: 'give-slivers', description: 'Ringleaders: hand out (or take back) Slivers', type: 1,
     options: [
       { type: 6, name: 'member', description: 'Who?', required: true },
       { type: 4, name: 'amount', description: 'How many (negative takes back)', required: true, min_value: -RULES.awardMax, max_value: RULES.awardMax },
@@ -84,6 +93,9 @@ export async function verifyDiscord(env, signature, timestamp, body, now = Date.
 
 const reply = (content, { ephemeral = true } = {}) =>
   Response.json({ type: 4, data: { content: content.slice(0, 2000), flags: ephemeral ? EPHEMERAL : 0, allowed_mentions: { parse: [] } } });
+// The same reply with the member's Sliver coin as a small picture beside it.
+const replyCoin = (coin, content) =>
+  Response.json({ type: 4, data: { content: content.slice(0, 2000), flags: EPHEMERAL, allowed_mentions: { parse: [] }, embeds: [{ color: 0xd9b26a, thumbnail: { url: `https://belpire.com${coin.image}` }, description: `${coin.name} · coin ${coin.level} of 11` }] } });
 const opt = (data, name) => data?.options?.find((o) => o.name === name)?.value;
 const nameOf = (member) => String(member?.nick || member?.user?.global_name || member?.user?.username || 'A member').slice(0, 64);
 
@@ -97,9 +109,9 @@ async function run(env, interaction) {
   const site = 'https://belpire.com/me/';
 
   switch (data.name) {
-    case 'tickets': {
+    case 'slivers': {
       const s = await summary(env, uid);
-      return reply(`🎟️ **${ticketsText(s.balance)}** in your pocket · ${ticketsText(s.lifetime)} won all-time${s.rank ? ` · #${s.rank} on the High Scores` : ''}\n${s.punchedToday ? `Punch card done today (streak ${s.streak}).` : `Your punch card is waiting: \`/punch-card\` for ${ticketsText(s.nextPunch)}.`}\nMore at ${site}`);
+      return replyCoin(s.coin, `🪙 **${s.coin.name}** coin${s.coin.next ? ` · ${s.coin.next.need.toLocaleString()} more to ${s.coin.next.name}` : ''}\n🎟️ **${ticketsText(s.balance)}** in your pocket · ${ticketsText(s.lifetime)} won all-time${s.rank ? ` · #${s.rank} on the High Scores` : ''}\n${s.punchedToday ? `Punch card done today (streak ${s.streak}).` : `Your punch card is waiting: \`/punch-card\` for ${ticketsText(s.nextPunch)}.`}\nMore at ${site}`);
     }
     case 'punch-card': {
       const r = await punch(env, uid, name);
@@ -129,7 +141,15 @@ async function run(env, interaction) {
     case 'high-scores': {
       const rows = await highScores(env, uid);
       if (!rows.length) return reply('🏆 The High Scores board is empty. Be the first: `/punch-card`.', { ephemeral: false });
-      return reply(`🏆 **Midway High Scores** (tickets won)\n${rows.map((r) => `${r.rank}. ${r.name.replace(/[*_`~|>\\]/g, '')}${r.badge ? ' ✦' : ''}: ${r.lifetime}`).join('\n')}\nFull board: ${site}`, { ephemeral: false });
+      return reply(`🏆 **Midway High Scores** (Slivers won)\n${rows.map((r) => `${r.rank}. ${r.name.replace(/[*_`~|>\\]/g, '')}${r.badge ? ' ✦' : ''}: ${r.lifetime}`).join('\n')}\nFull board: ${site}`, { ephemeral: false });
+    }
+    case 'concession': {
+      const r = await concession(env, uid, name, opt(data, 'snack'), Boolean(opt(data, 'leave-it')));
+      const tail = ` −${ticketsText(r.cost)}. Balance: ${ticketsText(r.balance)}.`;
+      if (r.eaten) return reply(`🌙 You leave the ${r.snack.toLowerCase()} on the counter and step out. When you come back, the counter is bare. Something ate it.${tail}`, { ephemeral: false });
+      if (r.left) return reply(`🍽️ You leave the ${r.snack.toLowerCase()} on the counter. It's still there. For now.${tail}`);
+      const curds = r.curdsAllTime ? ` That's order **#${r.curdsAllTime}** of curds.` : '';
+      return reply(`${r.icon} ${r.line}${curds}${tail}`);
     }
     case 'prizes':
       return reply(`🎁 **The Prize Booth**\n${PRIZES.map((p) => `• **${p.name}**: ${ticketsText(p.cost)}. ${p.blurb}`).join('\n')}\nRedeem with \`/redeem\` or at ${site}`);
@@ -150,8 +170,8 @@ async function run(env, interaction) {
       }
       return reply(`🗳️ ${lines.join('\n')}`);
     }
-    case 'give-tickets': {
-      if (!manager) return reply('🎪 Only the Ringleaders can hand out tickets.');
+    case 'give-slivers': {
+      if (!manager) return reply('🎪 Only the Ringleaders can hand out Slivers.');
       const r = await award(env, name, opt(data, 'member'), opt(data, 'amount'), opt(data, 'reason'));
       return reply(`🎟️ ${r.amount > 0 ? `Gave **${r.name}** ${ticketsText(r.amount)}` : `Took ${ticketsText(-r.amount)} back from **${r.name}**`}. Their balance: ${ticketsText(r.balance)}.`);
     }
@@ -173,6 +193,15 @@ export async function handleInteraction(request, env) {
     return new Response('Bad request', { status: 400 });
   }
   if (interaction.type === 1) return Response.json({ type: 1 }); // PING
+  // Buttons (3) and forms (5) for alpha tester sign-ups. Approvals arrive from a DM, outside the server.
+  if ((interaction.type === 3 || interaction.type === 5) && isAlphaInteraction(interaction)) {
+    try {
+      return await handleAlpha(env, interaction);
+    } catch (err) {
+      console.error(`Alpha sign-up error: ${err.stack || err.message}`);
+      return reply('🎡 The sign-up desk jammed. Try again in a moment.');
+    }
+  }
   if (interaction.type !== 2) return reply('🎪 Not sure what to do with that.');
   if (!env.DB || !pollConfig(env).ok) return reply('🎪 The ticket booth is being set up. Try again soon.');
   try {
