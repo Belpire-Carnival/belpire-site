@@ -24,11 +24,11 @@
 .tb-coin-num strong { display: block; font: 900 clamp(40px, 7vw, 56px)/1 var(--display); color: var(--text, #F4EBDD); }
 
 /* the coin ladder */
-.tb-coins { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.tb-coins { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
 .tb-coins li { display: grid; justify-items: center; gap: 4px; padding: 12px 8px; border-radius: 8px; border: 1px solid var(--line-strong); text-align: center; }
-.tb-coins img { width: 56px; height: 56px; }
-.tb-coins li.ahead img { filter: grayscale(.85) brightness(.6); }
+.tb-coins img { width: 64px; height: 64px; } /* shown exactly as painted, never tinted */
 .tb-coins li.mine { border-color: var(--gold); background: rgba(217, 178, 106, .1); box-shadow: 0 0 0 1px var(--gold) inset; }
+.tb-coins-tier { font: 700 11px var(--serif); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .tb-coins-name { font-weight: 700; font-size: 14px; }
 .tb-coins-min { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .tb-coins-you { font: 700 11px var(--serif); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }

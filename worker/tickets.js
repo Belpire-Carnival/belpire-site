@@ -349,13 +349,13 @@ export async function summary(env, uid) {
     nextPunch: punchAmount(w?.punch_day === prevDay(today) ? Number(w.streak || 0) + 1 : 1),
     hidden: Boolean(w?.hidden),
     rank: await store.rank(uid),
-    coin: coinFor(w?.balance)
+    coin: coinFor(w?.lifetime)
   };
 }
 
 export async function highScores(env, uid = null, limit = 10) {
   const now = new Date().toISOString();
-  return (await ticketStore(env.DB).leaderboard(limit)).map((r, i) => ({ rank: i + 1, name: r.name, lifetime: Number(r.lifetime), coin: coinFor(r.balance), badge: Boolean(r.badge_until && r.badge_until > now), me: r.user_id === uid }));
+  return (await ticketStore(env.DB).leaderboard(limit)).map((r, i) => ({ rank: i + 1, name: r.name, lifetime: Number(r.lifetime), coin: coinFor(r.lifetime), badge: Boolean(r.badge_until && r.badge_until > now), me: r.user_id === uid }));
 }
 
 const publicOrder = (o) => ({ id: o.id, prize: o.prize, name: prizeById(o.prize)?.name || o.prize, cost: o.cost, detail: o.detail, game: o.game_name, status: o.status || 'pending', at: o.created_at || new Date().toISOString(), reason: o.reason || null });

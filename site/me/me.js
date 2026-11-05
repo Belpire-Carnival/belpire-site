@@ -42,11 +42,16 @@
     clearTimeout(flash.timer);
     flash.timer = setTimeout(() => box.replaceChildren(), 6000);
   }
-  // The coin for a balance, from the ladder the API sends (worker/coins.js is the one source of truth).
-  const coinOf = (balance) => (t?.coins || []).reduce((got, c) => (balance >= c.min ? c : got), t?.coins?.[0] || null);
+  // The coin for lifetime Slivers won, from the ladder the API sends (worker/coins.js is the one source of truth).
+  const coinOf = (lifetime) => (t?.coins || []).reduce((got, c) => (lifetime >= c.min ? c : got), t?.coins?.[0] || null);
   const announce = () => {
-    const balance = t?.wallet.balance ?? 0;
-    document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance, coin: coinOf(balance) } }));
+    const w = t?.wallet;
+    document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance: w?.balance ?? 0, coin: coinOf(w?.lifetime ?? 0) } }));
+  };
+  // A win adds to both what you hold and what you've won all-time (the coin follows the second).
+  const won = (r) => {
+    t.wallet.balance = r.balance;
+    if (r.amount > 0) t.wallet.lifetime += r.amount;
   };
 
   // ---------------------------------------------------------------- gate
@@ -97,35 +102,36 @@
 
   function wallet() {
     const w = t.wallet;
-    const coin = coinOf(w.balance);
+    const coin = coinOf(w.lifetime);
     if (!coin) return; // the API always sends the coin ladder; without it there is nothing to draw
     const i = t.coins.indexOf(coin);
     const next = t.coins[i + 1] || null;
-    const meter = next ? el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': String(coin.min), 'aria-valuemax': String(next.min), 'aria-valuenow': String(w.balance), 'aria-label': `Progress to the ${next.name} coin` }, el('span', { class: 'tb-meter-fill' })) : null;
+    const meter = next ? el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': String(coin.min), 'aria-valuemax': String(next.min), 'aria-valuenow': String(w.lifetime), 'aria-label': `Progress to the ${next.name} coin` }, el('span', { class: 'tb-meter-fill' })) : null;
     $('tb-wallet').replaceChildren(
       el('div', { class: 'tb-coin-card' }, [
-        el('img', { class: 'tb-coin', src: coin.image, width: '160', height: '160', alt: `${coin.name} Sliver coin` }),
+        el('img', { class: 'tb-coin', src: coin.image, width: '160', height: '160', alt: `${coin.name} Sliver coin: ${coin.look}` }),
         el('div', { class: 'tb-coin-text' }, [
-          el('p', { class: 'tb-coin-name', text: coin.name }),
+          el('p', { class: 'tb-coin-name', text: `Tier ${coin.tier} · ${coin.name}` }),
           el('p', { class: 'tb-coin-num' }, [el('strong', { text: w.balance.toLocaleString() }), ` Sliver${w.balance === 1 ? '' : 's'} to spend`]),
           meter,
-          el('p', { class: 'meta', text: next ? `${(next.min - w.balance).toLocaleString()} more to the ${next.name} coin` : 'The rarest coin in Belpire.' })
+          el('p', { class: 'meta', text: next ? `Win ${(next.min - w.lifetime).toLocaleString()} more to reach ${next.name}` : 'The rarest coin in Belpire.' })
         ])
       ]),
       el('p', { class: 'meta', text: `${tickets(w.lifetime)} won all-time${w.rank ? ` · #${w.rank} on the High Scores` : w.hidden ? ' · hidden from the High Scores' : ''}` })
     );
-    if (meter) meter.firstChild.style.setProperty('--fill', `${Math.min(100, Math.round((100 * (w.balance - coin.min)) / (next.min - coin.min)))}%`);
+    if (meter) meter.firstChild.style.setProperty('--fill', `${Math.min(100, Math.round((100 * (w.lifetime - coin.min)) / (next.min - coin.min)))}%`);
     coins(i);
   }
 
-  // Every coin and what it takes. Yours is lit; the ones you've passed stay bright, the rest are dim.
+  // Every coin and what it takes, shown exactly as painted. Yours is outlined.
   function coins(mine) {
     const list = $('tb-coins');
     if (!list) return;
     list.replaceChildren(...t.coins.map((c, i) => el('li', { class: i === mine ? 'mine' : i < mine ? 'past' : 'ahead' }, [
-      el('img', { src: c.icon, width: '56', height: '56', alt: '', loading: 'lazy' }),
+      el('img', { src: c.thumb, width: '64', height: '64', alt: '', loading: 'lazy', title: c.look }),
+      el('span', { class: 'tb-coins-tier', text: `Tier ${c.tier}` }),
       el('span', { class: 'tb-coins-name', text: c.name }),
-      el('span', { class: 'tb-coins-min', text: c.min ? `${c.min.toLocaleString()}+ Slivers` : 'Under 100' }),
+      el('span', { class: 'tb-coins-min', text: c.min ? `${c.min.toLocaleString()} won` : 'Where everyone starts' }),
       i === mine ? el('span', { class: 'tb-coins-you', text: 'Your coin' }) : null
     ])));
   }
@@ -225,7 +231,7 @@
       if (r.pea !== pick) shells[pick].classList.add('lifted');
       peaLast = r.win ? `Found it! +${tickets(r.amount)}.` : `Not under that one. It was shell ${r.pea + 1}.`;
       msg.textContent = peaLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.shell.left = r.playsLeft;
       wallet();
       announce();
@@ -280,7 +286,7 @@
       target.append(el('span', { class: `tb-ring ${r.win ? 'on' : 'off'}` }));
       ringsLast = r.win ? `Clink! A ringer on the ${r.row} row: +${tickets(r.amount)}.` : 'It bounced off the bottle necks.';
       msg.textContent = ringsLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.rings.left = r.playsLeft;
       wallet();
       announce();
@@ -330,7 +336,7 @@
       if (r.bell) tower.classList.add('rung');
       strikerLast = r.bell ? `DING DING DING! You rang the bell: +${tickets(r.amount)}.` : `${r.label}! The puck reached ${r.height}.${r.amount ? ` +${tickets(r.amount)}.` : ''}`;
       msg.textContent = strikerLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.striker.left = r.playsLeft;
       wallet();
       announce();
@@ -420,7 +426,7 @@
     const list = $('tb-scores');
     list.replaceChildren(...(t.highScores.length ? t.highScores.map((r) => el('li', { class: r.me ? 'me' : '' }, [
       el('span', { class: 'tb-rank', text: `#${r.rank}` }),
-      r.coin ? el('img', { class: 'tb-score-coin', src: r.coin.icon, width: '28', height: '28', alt: `${r.coin.name} coin`, title: `${r.coin.name} coin` }) : null,
+      r.coin ? el('img', { class: 'tb-score-coin', src: r.coin.thumb, width: '28', height: '28', alt: `${r.coin.name} coin`, title: `${r.coin.name} coin` }) : null,
       el('span', { class: 'tb-score-name', text: r.name }),
       r.badge ? el('span', { class: 'tb-badge', title: 'Fan Favorite', 'aria-label': 'Fan Favorite', text: '✦' }) : null,
       el('span', { class: 'tb-score', text: r.lifetime.toLocaleString() })
