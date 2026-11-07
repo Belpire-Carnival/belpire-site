@@ -4,6 +4,7 @@
 // wrangler.jsonc) so it can serve bureau.belpire.com from site/bureau/; /api/* and /auth/* are code, the
 // rest goes straight to the static files. It also runs the Cron Trigger.
 
+import { syncCoinRoles } from './coin-roles.js';
 import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
@@ -112,5 +113,6 @@ export default {
     ctx.waitUntil(payAttendance(env).catch((err) => console.warn(`Attendance pay failed: ${err.message}`)));
     ctx.waitUntil(purgeStaffMessages(env).catch((err) => console.warn(`Staff message purge failed: ${err.message}`)));
     ctx.waitUntil(purgeStaleUploads(env).catch((err) => console.warn(`Oddity upload cleanup failed: ${err.message}`)));
+    ctx.waitUntil(syncCoinRoles(env).catch((err) => console.warn(`Coin role sync failed: ${err.message}`)));
   }
 };
