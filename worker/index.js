@@ -69,7 +69,7 @@ export default {
     if (pathname === '/api/passes' || pathname.startsWith('/api/passes/')) return handlePasses(request, env);
     if (pathname === '/api/backstage/messages' || pathname.startsWith('/api/backstage/messages/')) return handleStaffChat(request, env);
     if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
-    if (pathname === '/api/discord/interactions') return handleInteraction(request, env);
+    if (pathname === '/api/discord/interactions') return handleInteraction(request, env, ctx);
     if (pathname === '/api/me') return isGet ? handleMe(request, env) : methodNotAllowed('GET, HEAD');
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
