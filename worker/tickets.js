@@ -29,7 +29,7 @@ import { readSession } from './auth.js';
 import { memberInfo, pollConfig, loadCatalog } from './polls.js';
 import { pollStore } from './poll-db.js';
 import { liveStatus } from './live.js';
-import { getVoiceState, getMember, searchMembers, postMessage, sendDm, explain } from './discord-bot.js';
+import { getVoiceState, getMember, searchMembers, listMembers, postMessage, sendDm, explain } from './discord-bot.js';
 import { ticketStore, newId } from './ticket-db.js';
 import { PRIZES, prizeById } from './prizes.js';
 
@@ -335,6 +335,23 @@ export async function award(env, by, userId, amount, note) {
   const why = cleanText(note, 120) || (amount > 0 ? 'A gift from the Ringleaders' : 'Adjusted by the Ringleaders');
   const balance = await ticketStore(env.DB).change(userId, name, amount, amount > 0 ? 'award' : 'adjust', { note: why, by });
   return { name, amount, balance };
+}
+
+// A gift to every member of the server (bots skipped), from /give-everyone. `key` (the interaction ID) makes
+// each run pay each member once, even if Discord retries. Needs the Server Members intent, like the pass sync.
+export async function awardEveryone(env, by, amount, note, key) {
+  amount = Math.trunc(Number(amount));
+  if (!Number.isFinite(amount) || amount < 1 || amount > RULES.awardMax) throw new TicketError(400, 'amount', `Give everyone between 1 and ${RULES.awardMax} Slivers.`);
+  const why = cleanText(note, 120) || 'A gift from the Ringleaders to everyone';
+  const store = ticketStore(env.DB);
+  let given = 0, already = 0;
+  for (const m of await listMembers(env)) {
+    if (!m?.user?.id || m.user.bot) continue;
+    const name = String(m.nick || m.user.global_name || m.user.username || 'A member').slice(0, 64);
+    const r = await store.change(m.user.id, name, amount, 'award', { note: why, by, ref: `everyone:${key}:${m.user.id}` });
+    if (r === null) already++; else given++;
+  }
+  return { given, already, amount };
 }
 
 export async function summary(env, uid) {

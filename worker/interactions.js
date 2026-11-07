@@ -10,7 +10,7 @@ import { pollConfig, sendOpenPost } from './polls.js';
 import { handleAlpha, isAlphaInteraction } from './alpha.js';
 import { pollStore } from './poll-db.js';
 import { PRIZES, prizeById } from './prizes.js';
-import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, summary, highScores, concession, ticketsText, RULES, TicketError } from './tickets.js';
+import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, awardEveryone, summary, highScores, concession, ticketsText, RULES, TicketError } from './tickets.js';
 
 const EPHEMERAL = 64;
 const enc = new TextEncoder();
@@ -50,6 +50,13 @@ export const COMMANDS = [
     ]
   },
   { name: 'poll', description: 'Ringleaders: post the open game-night poll to #general again', type: 1 },
+  {
+    name: 'give-everyone', description: 'Ringleaders: give every member of the server some Slivers', type: 1,
+    options: [
+      { type: 4, name: 'amount', description: 'How many each', required: true, min_value: 1, max_value: RULES.awardMax },
+      { type: 3, name: 'reason', description: 'Why (everyone sees this in their Sliver ledger)', required: true, max_length: 120 }
+    ]
+  },
   {
     name: 'give-slivers', description: 'Ringleaders: hand out (or take back) Slivers', type: 1,
     options: [
@@ -99,7 +106,7 @@ const replyCoin = (coin, content) =>
 const opt = (data, name) => data?.options?.find((o) => o.name === name)?.value;
 const nameOf = (member) => String(member?.nick || member?.user?.global_name || member?.user?.username || 'A member').slice(0, 64);
 
-async function run(env, interaction) {
+async function run(env, interaction, ctx) {
   const member = interaction.member;
   const uid = member?.user?.id;
   if (interaction.guild_id !== env.DISCORD_GUILD_ID || !uid) return reply('🎪 The ticket booth only opens inside the Belpire server.');
@@ -170,6 +177,27 @@ async function run(env, interaction) {
       }
       return reply(`🗳️ ${lines.join('\n')}`);
     }
+    case 'give-everyone': {
+      if (!manager) return reply('🎪 Only the Ringleaders can hand out Slivers.');
+      const amount = Number(opt(data, 'amount'));
+      if (!Number.isInteger(amount) || amount < 1 || amount > RULES.awardMax) return reply(`🎪 Give everyone between 1 and ${RULES.awardMax} Slivers.`);
+      if (!ctx?.waitUntil) return reply('🎪 The Usher can\'t do that right now. Try again in a moment.');
+      // Paying everyone takes longer than Discord waits for an answer, so say "thinking…" now and finish after.
+      ctx.waitUntil((async () => {
+        let line;
+        try {
+          const r = await awardEveryone(env, name, amount, opt(data, 'reason'), interaction.id);
+          line = `🎟️ Gave **${r.given.toLocaleString()}** members ${ticketsText(r.amount)} each.${r.already ? ` (${r.already} already had this gift.)` : ''} Their coins and coin roles catch up within 10 minutes.`;
+        } catch (err) {
+          console.error(`give-everyone failed: ${err.stack || err.message}`);
+          line = `🎪 That didn't finish: ${err instanceof TicketError ? err.message : 'the ticket booth jammed'}. Running it again is safe for anyone already paid.`;
+        }
+        await fetch(`https://discord.com/api/v10/webhooks/${interaction.application_id}/${interaction.token}/messages/@original`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: line, allowed_mentions: { parse: [] } })
+        }).catch(() => {});
+      })());
+      return Response.json({ type: 5, data: { flags: EPHEMERAL } });
+    }
     case 'give-slivers': {
       if (!manager) return reply('🎪 Only the Ringleaders can hand out Slivers.');
       const r = await award(env, name, opt(data, 'member'), opt(data, 'amount'), opt(data, 'reason'));
@@ -180,7 +208,7 @@ async function run(env, interaction) {
   }
 }
 
-export async function handleInteraction(request, env) {
+export async function handleInteraction(request, env, ctx) {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
   const body = await request.text();
   if (body.length > 64 * 1024 || !(await verifyDiscord(env, request.headers.get('X-Signature-Ed25519'), request.headers.get('X-Signature-Timestamp'), body))) {
@@ -205,7 +233,7 @@ export async function handleInteraction(request, env) {
   if (interaction.type !== 2) return reply('🎪 Not sure what to do with that.');
   if (!env.DB || !pollConfig(env).ok) return reply('🎪 The ticket booth is being set up. Try again soon.');
   try {
-    return await run(env, interaction);
+    return await run(env, interaction, ctx);
   } catch (err) {
     if (err instanceof TicketError) return reply(`🎪 ${err.message}`);
     console.error(`Interaction error: ${err.stack || err.message}`);
