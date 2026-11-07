@@ -51,7 +51,11 @@ const SCHEMA = [
 ];
 const ready = new WeakMap();
 async function ensure(db) {
-  if (!ready.has(db)) ready.set(db, (async () => { for (const sql of SCHEMA) await db.prepare(sql).run(); })());
+  if (!ready.has(db)) ready.set(db, (async () => {
+    for (const sql of SCHEMA) await db.prepare(sql).run();
+    // Added later: the coin tier whose Discord role was last given (worker/coin-roles.js). Fails harmlessly once it exists.
+    await db.prepare('ALTER TABLE ticket_wallets ADD COLUMN coin_role INTEGER').run().catch(() => {});
+  })());
   await ready.get(db);
 }
 export const newId = () => [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(16).padStart(2, '0')).join('');
