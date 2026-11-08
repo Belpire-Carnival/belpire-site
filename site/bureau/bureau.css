@@ -216,6 +216,11 @@ h3 { font-family: var(--hud); font-weight: 600; font-size: 19px; letter-spacing:
 .ranks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ranks li { display: flex; align-items: center; gap: 18px; padding: 12px 18px; background: linear-gradient(90deg, rgba(26, 52, 115, .6), rgba(7, 16, 41, .6)); border: 1px solid var(--line-blue); font-family: var(--head); font-weight: 700; font-size: 19px; letter-spacing: .06em; }
 .ranks li:first-child { border-color: var(--gold); background: linear-gradient(90deg, rgba(156, 116, 38, .4), rgba(7, 16, 41, .6)); color: var(--gold-hi); }
+.command-cols .sub-h:first-child { margin-top: 0; }
+.ranks-earned li:first-child { border-color: var(--line-blue); background: linear-gradient(90deg, rgba(26, 52, 115, .6), rgba(7, 16, 41, .6)); color: inherit; }
+.ranks small { display: block; margin-top: 2px; font-family: var(--body); font-weight: 400; font-size: 14px; letter-spacing: .02em; color: var(--soft); }
+.staff-mark { display: inline-flex; align-items: center; justify-content: center; width: 34px; font-size: 20px; color: var(--gold); }
+.ranks-staff li:first-child .staff-mark { color: var(--gold-hi); font-size: 24px; }
 .chev { display: inline-flex; flex-direction: column-reverse; justify-content: center; gap: 2px; width: 34px; min-height: 34px; }
 .chev i { display: block; width: 26px; height: 8px; margin-inline: auto; background: var(--gold); clip-path: polygon(0 0, 50% 60%, 100% 0, 100% 40%, 50% 100%, 0 40%); }
 
