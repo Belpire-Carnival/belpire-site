@@ -1,6 +1,7 @@
-// Citizen Arsenal companion (DIV_RSI1). Everything you enter stays in this browser (localStorage).
+// Citizen Arsenal companion (DIV_RSI1). Everything you enter stays in this browser (localStorage); signed in with Discord, sync.js also saves it to your profile.
 // Live prices come from our own /api/sc-market; nothing here calls a third-party site.
 import C from './core.js';
+import { initSync } from './sync.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -1028,3 +1029,4 @@ Store.onChange(() => {
 });
 route(); tickVT(); renderOps(); renderLog(); renderFleet(); renderContracts();
 Store.init();
+initSync($('#acct'));

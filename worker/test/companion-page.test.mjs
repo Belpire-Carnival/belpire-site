@@ -8,6 +8,7 @@ const read = (f) => readFileSync(new URL(`../../site/bureau/rsi1/companion/${f}`
 const html = read('index.html');
 const app = read('app.js');
 const core = read('core.js');
+const sync = read('sync.js');
 
 test('the page has no inline scripts, styles or event handlers', () => {
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/i, 'inline <script>');
@@ -40,4 +41,13 @@ test('the page carries the unofficial-fan-site disclaimer and credits its data s
   assert.match(html, /unofficial Star Citizen fan tool/);
   assert.match(html, /UEX/);
   assert.match(html, /api\.star-citizen\.wiki/);
+});
+
+test('the sign-in and sync script only talks to our own profile API and sign-out, and builds its page with text', () => {
+  assert.match(sync, /const API = '\/api\/companion\/profile';/);
+  const urls = [...sync.matchAll(/fetch\(\s*(['"`])([^'"`]+)\1/g)].map((m) => m[2]);
+  assert.deepEqual(urls, ['/auth/logout']);
+  assert.doesNotMatch(sync, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
+  assert.doesNotMatch(sync, /https?:\/\//);
+  assert.match(html, /id="acct"/);
 });

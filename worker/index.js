@@ -19,7 +19,8 @@ import { handleStaffChat, purgeStaffMessages } from './staff-chat.js';
 import { handleTickets, payAttendance, weeklyHighScores } from './tickets.js';
 import { handleInteraction } from './interactions.js';
 import { handleMe } from './me.js';
-import { bureauRoute } from './bureau.js';
+import { bureauRoute, isBureauHost } from './bureau.js';
+import { handleCompanionAuth, handleProfile } from './companion.js';
 
 const API_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -59,6 +60,7 @@ export default {
     if (bureau) return bureau.redirect ? Response.redirect(bureau.redirect, bureau.status) : serveBureau(request, env, bureau.path);
 
     if (pathname.startsWith('/auth/')) {
+      if (isBureauHost(url.hostname)) return handleCompanionAuth(request, env, ctx);
       if (pathname === '/auth/login') return isGet ? handleLogin(request, env) : methodNotAllowed('GET, HEAD');
       if (pathname === '/auth/callback') return isGet ? handleCallback(request, env, ctx) : methodNotAllowed('GET, HEAD');
       if (pathname === '/auth/logout') return request.method === 'POST' ? handleLogout(request) : methodNotAllowed('POST');
@@ -72,6 +74,7 @@ export default {
     if (pathname === '/api/backstage/messages' || pathname.startsWith('/api/backstage/messages/')) return handleStaffChat(request, env);
     if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
     if (pathname === '/api/discord/interactions') return handleInteraction(request, env, ctx);
+    if (pathname === '/api/companion/profile' && isBureauHost(url.hostname)) return handleProfile(request, env);
     if (pathname === '/api/me') return isGet ? handleMe(request, env) : methodNotAllowed('GET, HEAD');
     if (pathname === '/api/sc-scan') {
       if (request.method !== 'POST') return methodNotAllowed('POST');

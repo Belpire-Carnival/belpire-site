@@ -12,7 +12,7 @@ test('bureau.belpire.com maps onto site/bureau/, keeping shared fonts and icons'
   assert.deepEqual(route('https://bureau.belpire.com/favicon.svg'), { path: '/favicon.svg' });
   assert.deepEqual(route('https://bureau.belpire.com/data/feed.json'), { path: '/data/feed.json' }, 'Bureau Patches read the shared game feed');
   assert.equal(route('https://bureau.belpire.com/api/star-citizen'), null, 'the API answers on the subdomain too');
-  assert.deepEqual(route('https://bureau.belpire.com/auth/login'), { redirect: 'https://belpire.com/auth/login', status: 302 });
+  assert.equal(route('https://bureau.belpire.com/auth/login'), null); // handled by the companion's own sign-in
 });
 
 test('belpire.com/bureau/ sends people to the subdomain; other hosts serve it as a folder', () => {

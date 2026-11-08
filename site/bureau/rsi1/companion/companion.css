@@ -142,3 +142,7 @@ main.app{min-height:60vh}
 .thumbs button{position:absolute;top:2px;right:2px;padding:0 5px;font-size:10px}
 .scanres{margin-top:8px}
 .scanres table td input{min-width:70px}
+.acct{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px;font-size:13px}
+.acct:empty{display:none}
+a.btn-link{display:inline-block;border:1px solid var(--bronze);color:var(--bronze-hi);padding:5px 12px;border-radius:2px;text-decoration:none;font:12px var(--display);letter-spacing:.1em;text-transform:uppercase}
+a.btn-link:hover,a.btn-link:focus-visible{background:rgba(192,138,74,.12)}
