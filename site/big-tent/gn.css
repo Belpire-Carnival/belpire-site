@@ -206,8 +206,6 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .pass-actions .btn { min-height: 44px; }
 .pass-reason { flex: 1 1 220px; min-height: 44px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--raised); color: var(--text); font: inherit; }
 .pass-reason:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-<<<<<<< ours
-=======
 
 /* Carnival ticker */
 .ticker { position: relative; background: #12090D; border-top: 3px solid var(--gold); border-bottom: 3px solid var(--gold);
@@ -282,4 +280,3 @@ button.btn-ghost:hover { border-color: var(--gold); }
 .odd-review-status:empty { display: none; }
 .odd-review-status { margin: 0; font-size: 14px; }
 @media (max-width: 560px) { .odd-review-item { grid-template-columns: 1fr; } }
->>>>>>> theirs
