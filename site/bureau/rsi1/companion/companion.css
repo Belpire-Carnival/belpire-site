@@ -146,3 +146,14 @@ main.app{min-height:60vh}
 .acct:empty{display:none}
 a.btn-link{display:inline-block;border:1px solid var(--bronze);color:var(--bronze-hi);padding:5px 12px;border-radius:2px;text-decoration:none;font:12px var(--display);letter-spacing:.1em;text-transform:uppercase}
 a.btn-link:hover,a.btn-link:focus-visible{background:rgba(192,138,74,.12)}
+
+/* ship builder */
+.bld{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:start}
+@media (max-width:900px){.bld{grid-template-columns:minmax(0,1fr)}}
+.bld select{min-width:200px}
+tr.grp th{text-align:left;font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--bronze);padding-top:10px}
+tr.changed td:first-child{border-left:2px solid var(--bronze)}
+td.ok{color:var(--ok)}
+td.warn{color:var(--warn)}
+.bldctl input{flex:1 1 200px;width:auto}.bldctl select{flex:2 1 280px;width:auto}
+.bld td select{width:100%}
