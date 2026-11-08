@@ -6,6 +6,8 @@
 
 import { syncCoinRoles } from './coin-roles.js';
 import { handleSnapshot, refresh } from './star-citizen.js';
+import { handleMarket, handleShip, refreshMarket } from './sc-market.js';
+import { handleScan } from './sc-scan.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
@@ -71,6 +73,11 @@ export default {
     if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
     if (pathname === '/api/discord/interactions') return handleInteraction(request, env, ctx);
     if (pathname === '/api/me') return isGet ? handleMe(request, env) : methodNotAllowed('GET, HEAD');
+    if (pathname === '/api/sc-scan') {
+      if (request.method !== 'POST') return methodNotAllowed('POST');
+      const { status, body } = await handleScan(request, env);
+      return json(body, status, { 'Cache-Control': 'no-store' });
+    }
     if (!isGet) return methodNotAllowed('GET, HEAD');
 
     if (pathname === '/api/live') {
@@ -98,6 +105,14 @@ export default {
       const snapshot = await handleSnapshot(env, ctx);
       return json(snapshot, 200, { 'Cache-Control': 'public, max-age=60' });
     }
+    if (pathname === '/api/sc-market') {
+      const market = await handleMarket(env, ctx);
+      return json(market, 200, { 'Cache-Control': 'public, max-age=300' });
+    }
+    if (pathname === '/api/sc-ship') {
+      const { status, body } = await handleShip(url, ctx);
+      return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+    }
     if (pathname === '/api/invite') {
       const { status, body } = await inviteFor(request, env);
       return json(body, status, { 'Cache-Control': 'private, no-store', Vary: 'Cookie' });
@@ -107,6 +122,7 @@ export default {
 
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refresh(env, { notify: true }));
+    ctx.waitUntil(refreshMarket(env).catch((err) => console.warn(`Market refresh failed: ${err.message}`)));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
     ctx.waitUntil(syncPendingPasses(env).catch((err) => console.warn(`Pass sync failed: ${err.message}`)));
     ctx.waitUntil(weeklyHighScores(env).catch((err) => console.warn(`Weekly High Scores failed: ${err.message}`)));
