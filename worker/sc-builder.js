@@ -16,6 +16,7 @@ export const WIKI_API = 'https://api.star-citizen.wiki/api';
 const UA = 'BelpireCarnival/1.0 (+https://bureau.belpire.com/rsi1/companion/)';
 const SNAP_KEY = 'sc:builder';
 const WORK_KEY = 'sc:builder:work';
+const LOCK_KEY = 'sc:builder:lock';
 export const REBUILD_MS = 24 * 60 * 60 * 1000;
 const PAGES_PER_TICK = 4;
 const MAX_PAGES = 40; // hard stop on one rebuild
@@ -170,7 +171,9 @@ export function buildSnapshot(version, ships, catalogue, stock = []) {
   const parts = new Map();
   for (const p of stock) if (p && !parts.has(p.id)) parts.set(p.id, p);
   for (const p of catalogue) if (p) parts.set(p.id, p);
-  const list = ships.filter((s) => s && s.slots.length).sort((a, b) => a.name.localeCompare(b.name));
+  const byId = new Map();
+  for (const s of ships) if (s && s.slots.length) byId.set(s.id, s);
+  const list = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
   return { version, updatedAt: new Date().toISOString(), source: 'Star Citizen Wiki API', ships: list, parts: [...parts.values()] };
 }
 
@@ -243,8 +246,14 @@ export async function stepWork(env, work) {
   return work;
 }
 
-export async function refreshBuilder(env, { force = false } = {}) {
+// `lock` (used by the cron) makes overlapping runs skip instead of racing on the saved progress; KV's smallest
+// expiry is 60 seconds, which is about one tick's worth of requests.
+export async function refreshBuilder(env, { force = false, lock = false } = {}) {
   const kv = env.SC_DATA;
+  if (lock) {
+    if (await kv.get(LOCK_KEY)) return null;
+    await kv.put(LOCK_KEY, '1', { expirationTtl: 60 });
+  }
   let work = await readJson(kv, WORK_KEY);
   if (!work) {
     const snap = await readJson(kv, SNAP_KEY);
@@ -261,15 +270,21 @@ export async function refreshBuilder(env, { force = false } = {}) {
   const snap = buildSnapshot(work.version, work.ships, work.parts, work.stock);
   if (!snap.ships.length) throw new Error('builder rebuild produced no ships');
   await kv.put(SNAP_KEY, JSON.stringify(snap));
-  await kv.delete(WORK_KEY);
+  // Cleanup is best effort: if KV refuses (rate limit), the snapshot is already published, and the leftover work
+  // state is replaced by the next rebuild or expires on its own.
+  try {
+    await kv.delete(WORK_KEY);
+  } catch (err) {
+    console.warn(`Builder work cleanup failed: ${err.message}`);
+  }
   return snap;
 }
 
 // GET /api/sc-builder
-export async function handleBuilder(env, ctx) {
+export async function handleBuilder(env) {
   const snap = await readJson(env.SC_DATA, SNAP_KEY);
   if (!snap) {
-    ctx.waitUntil(refreshBuilder(env).catch((err) => console.warn(`Builder refresh failed: ${err.message}`)));
+    // Only the cron builds the snapshot; a visitor's request never starts a rebuild (many visitors would pile up).
     const work = await readJson(env.SC_DATA, WORK_KEY);
     return { ready: false, progress: work ? { pages: work.pages, remaining: work.jobs.length } : null };
   }

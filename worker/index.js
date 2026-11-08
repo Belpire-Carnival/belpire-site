@@ -118,7 +118,7 @@ export default {
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-builder') {
-      const body = await handleBuilder(env, ctx);
+      const body = await handleBuilder(env);
       return json(body, 200, { 'Cache-Control': body.ready ? 'public, max-age=900' : 'no-store' });
     }
     if (pathname === '/api/invite') {
@@ -131,7 +131,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refresh(env, { notify: true }));
     ctx.waitUntil(refreshMarket(env).catch((err) => console.warn(`Market refresh failed: ${err.message}`)));
-    ctx.waitUntil(refreshBuilder(env).catch((err) => console.warn(`Ship builder refresh failed: ${err.message}`)));
+    ctx.waitUntil(refreshBuilder(env, { lock: true }).catch((err) => console.warn(`Ship builder refresh failed: ${err.message}`)));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
     ctx.waitUntil(syncPendingPasses(env).catch((err) => console.warn(`Pass sync failed: ${err.message}`)));
     ctx.waitUntil(weeklyHighScores(env).catch((err) => console.warn(`Weekly High Scores failed: ${err.message}`)));
