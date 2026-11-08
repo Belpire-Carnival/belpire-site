@@ -277,7 +277,7 @@
 
 <!-- ================= COMBAT ================= -->
 <section class="view" id="v-combat" aria-labelledby="h-combat">
-  <div class="hero"><div><h2 id="h-combat">Tactical Armory</h2><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span><span class="chip">Loadout notes</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
+  <div class="hero"><div><h2 id="h-combat">Tactical Armory</h2><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span><span class="chip">Ground loadouts</span><span class="chip">Wardrobe</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
   <div class="grid g2">
     <div class="card">
       <h3>TTK matrix</h3>
@@ -299,11 +299,13 @@
       <div class="row mt10"><button class="primary" id="bdDose">Inject</button><button class="ghost" id="bdReset">Reset</button></div>
       <div class="out" id="bdOut"></div>
       <h3 class="mt14">Loadout notes</h3>
-      <textarea id="loNotes" rows="6" placeholder="Undersuit · Helmet · Core · Arms · Legs · Backpack · Primary · Secondary · Sidearm · Utility. Saved in this browser."></textarea>
+      <textarea id="loNotes" rows="4" placeholder="Free notes. Saved in this browser."></textarea>
       <div class="row mt6"><button id="loSave">Save notes</button><button id="loBrief">Adjutant briefing</button></div>
       <textarea class="copybox" id="loBriefBox" readonly aria-label="Briefing text" hidden></textarea>
     </div>
   </div>
+  <div id="groundLoadouts" class="mt12"></div>
+  <div id="wardrobe" class="mt12"></div>
 </section>
 
 <!-- ================= CALCULATOR ================= -->

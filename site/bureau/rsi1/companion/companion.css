@@ -280,3 +280,21 @@ nav a[aria-current=page]{color:var(--hi);border-left-color:var(--bronze-hi);back
   .hero{grid-template-columns:minmax(0,1fr)}.hero .art{display:none}
 }
 .part select,.gun select{font-size:12px}
+
+/* ground loadouts and wardrobe */
+.lo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.lo-item{border:1px solid var(--bronze-lo);border-left:3px solid var(--bronze);padding:9px 11px;background:rgba(255,255,255,.02)}
+.lo-item.threat-high{border-left-color:var(--warn)}.lo-item.threat-low{border-left-color:var(--ok)}
+.outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.outfit{border:1px solid var(--bronze-lo);padding:10px;background:rgba(255,255,255,.02);display:flex;flex-direction:column;gap:6px}
+.outfit.worn{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+.mannequin{width:100%;max-height:230px}
+.mannequin .mq.on{stroke:var(--bronze-hi);stroke-width:1.2}
+.mannequin .mq.off{stroke:var(--bronze-lo);stroke-width:1;stroke-dasharray:3 3}
+.mannequin .hidden{display:none}
+.wardrobe-edit{display:grid;grid-template-columns:150px 1fr;gap:16px}
+@media(max-width:700px){.wardrobe-edit{grid-template-columns:1fr}.mq-wrap{max-width:150px}}
+.swatches{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.sw{padding:2px;border:1px solid transparent;background:none;min-width:0}
+.sw.sel{border-color:var(--bronze-hi)}
+.star{font-size:16px;padding:0 6px}

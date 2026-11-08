@@ -370,3 +370,71 @@ test('ship silhouettes follow the ship\'s role', () => {
   assert.equal(shipKind({ role: 'Heavy Salvage', career: 'Industrial' }), 'tool');
   assert.equal(shipKind({}), 'fighter');
 });
+
+// ---------------------------------------------------------------- guns the wiki does not list as child ports
+import { pilotGunSlots, turretGunSlots } from '../sc-builder.js';
+const cutlass = fx('cutlass-slim.json');
+
+test('the Cutlass Black\'s pilot gimbal mounts and manned turret become gun slots', () => {
+  const ship = slimShip(cutlass);
+  const guns = ship.slots.filter((s) => s.type === 'WeaponGun');
+  assert.equal(guns.length, 6);
+  const pilot = guns.filter((s) => /Weapon$/.test(s.id));
+  assert.deepEqual(pilot.map((s) => s.id), ['hardpoint_Left_Body_Weapon', 'hardpoint_Right_Body_Weapon', 'hardpoint_Left_Wing_Weapon', 'hardpoint_Right_Wing_Weapon']);
+  assert.deepEqual(pilot.map((s) => s.stockName), ['Mantis GT-220 Gatling', 'Mantis GT-220 Gatling', 'CF-337 Panther Repeater', 'CF-337 Panther Repeater']);
+  assert.ok(pilot.every((s) => s.min === 3 && s.max === 3));
+  const turret = guns.filter((s) => s.id.startsWith('hardpoint_turret/'));
+  assert.deepEqual(turret.map((s) => s.id), ['hardpoint_turret/hardpoint_weapon_right', 'hardpoint_turret/hardpoint_weapon_left']);
+  assert.ok(turret.every((s) => s.stock === 'bd13235d-1261-4b71-b32f-aed1a8beb526' && s.max === 3));
+  // The tractor turret and the countermeasure launchers are not guns.
+  assert.ok(!ship.slots.some((s) => /tractor|cm_launcher/.test(s.id)));
+});
+
+test('missile racks are swappable slots', () => {
+  const ship = slimShip(cutlass);
+  const racks = ship.slots.filter((s) => s.type === 'MissileLauncher');
+  assert.equal(racks.length, 6);
+  assert.ok(racks.every((s) => s.min === 4 && s.max === 4 && s.stock));
+});
+
+test('a ship whose turret guns are already ports is not given them twice', () => {
+  const ship = slimShip(carrack);
+  assert.equal(ship.slots.filter((s) => s.type === 'WeaponGun').length, 8);
+  assert.deepEqual(turretGunSlots(carrack.turrets, ship.slots), []);
+});
+
+test('pilot guns are only named when there is exactly one name per mount', () => {
+  const ports = cutlass.ports;
+  const names = cutlass.weaponry.fixed_weapons.weapons;
+  assert.equal(pilotGunSlots(ports, names)[0].stockName, 'Mantis GT-220 Gatling');
+  assert.equal('stockName' in pilotGunSlots(ports, names.slice(1))[0], false);
+  assert.equal(pilotGunSlots(ports, null).length, 4);
+});
+
+test('buildSnapshot finds a named stock gun in the catalogue by name and size', () => {
+  const ship = slimShip(cutlass);
+  const mantis = { id: 'mantis-id', name: 'Mantis GT-220 Gatling', type: 'WeaponGun', size: 3, wpn: { burst: 853.3, sustained: 629.1, alpha: 32 } };
+  const wrong = { id: 'mantis-s4', name: 'Mantis GT-220 Gatling', type: 'WeaponGun', size: 4 };
+  const cf = { id: 'cf-id', name: 'CF-337 Panther Repeater', type: 'WeaponGun', size: 3, wpn: { burst: 545.6, sustained: 278.9, alpha: 43.7 } };
+  const snap = buildSnapshot('4.10.2', [ship], [wrong, mantis, cf]);
+  const slots = snap.ships[0].slots;
+  assert.equal(slots.find((s) => s.id === 'hardpoint_Left_Body_Weapon').stock, 'mantis-id');
+  assert.equal(slots.find((s) => s.id === 'hardpoint_Right_Wing_Weapon').stock, 'cf-id');
+  assert.ok(slots.every((s) => !('stockName' in s)));
+  // A gun the catalogue does not have leaves the stock empty rather than guessing.
+  const snap2 = buildSnapshot('4.10.2', [ship], []);
+  assert.equal(snap2.ships[0].slots.find((s) => s.id === 'hardpoint_Left_Body_Weapon').stock, null);
+});
+
+test('the Cutlass\'s stock burst damage adds up to the wiki\'s own 2,797.8 for the pilot guns', () => {
+  const ship = slimShip(cutlass);
+  const mantis = { id: 'mantis-id', name: 'Mantis GT-220 Gatling', type: 'WeaponGun', size: 3, wpn: { burst: 853.3, sustained: 629.1, alpha: 32 } };
+  const cf = { id: 'cf-id', name: 'CF-337 Panther Repeater', type: 'WeaponGun', size: 3, wpn: { burst: 545.6, sustained: 278.9, alpha: 43.7 } };
+  const snap = buildSnapshot('4.10.2', [ship], [mantis, cf, { ...cf, id: 'bd13235d-1261-4b71-b32f-aed1a8beb526' }]);
+  const s = snap.ships[0];
+  const split = damageSplit(s, indexParts(snap.parts), {});
+  assert.equal(split.pilot.guns, 4);
+  assert.equal(Math.round(split.pilot.burst * 10) / 10, 2797.8);
+  assert.equal(split.turret.guns, 2);
+  assert.equal(Math.round(split.turret.burst * 10) / 10, 1091.2);
+});

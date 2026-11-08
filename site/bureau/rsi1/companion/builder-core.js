@@ -89,8 +89,8 @@ export function upgradeCost(ship, partsById, overrides = {}, now = Date.now()) {
 
 // ---------------------------------------------------------------- labels for the page
 
-export const TYPE_ORDER = ['WeaponGun', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
-export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars' };
+export const TYPE_ORDER = ['WeaponGun', 'MissileLauncher', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
+export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars', MissileLauncher: 'Missile racks' };
 
 // 'hardpoint_shield_generator_l' → 'shield generator l'. A turret gun keeps the turret in its name, so eight
 // guns read 'turret back rear · turret left', not eight identical 'class 2' rows.

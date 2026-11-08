@@ -31,8 +31,8 @@ const el = (tag, attrs = {}, ...kids) => {
 
 const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 });
 const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? 0;
-const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive'];
-const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet' };
+const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive', 'MissileLauncher'];
+const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet', MissileLauncher: 'combat' };
 
 export function initBuilder(host) {
   let data = null;

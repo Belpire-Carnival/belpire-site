@@ -5,6 +5,9 @@ import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { icon, bars } from './viz.js';
 import { heroArt } from './art.js';
+import { initLoadouts } from './loadouts.js';
+import { initOutfits } from './outfits.js';
+import { normalize as normLoadout } from './loadouts.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -490,6 +493,12 @@ function tickBDL() {
 }
 setInterval(() => { if (!document.hidden && $('#v-combat').classList.contains('on')) tickBDL(); }, 1000);
 tickBDL();
+{
+  const copyPlain = async (t) => { try { await navigator.clipboard.writeText(t); return true; } catch { return false; } };
+  initLoadouts($('#groundLoadouts'), { toast, copy: copyPlain });
+  const readLoadouts = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.loadouts')); return Array.isArray(v) ? v.map(normLoadout) : []; } catch { return []; } };
+  initOutfits($('#wardrobe'), { toast, copy: copyPlain, getLoadouts: readLoadouts });
+}
 $('#loSave').addEventListener('click', () => { S.settings.loadout = $('#loNotes').value.slice(0, 4000); Store.saveSettings(); toast('Notes saved in this browser'); });
 $('#loBrief').addEventListener('click', () => copyText(briefRun('Ground Loadout', $('#loNotes').value.split('\n').filter(Boolean)), $('#loBriefBox')));
 
