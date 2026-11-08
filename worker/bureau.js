@@ -2,6 +2,7 @@
 // Same Worker and the same static files as belpire.com; the hostname decides what is served.
 //   bureau.belpire.com/<path>  → site/bureau/<path>  (shared fonts and icons pass through)
 //   bureau.belpire.com/api/*   → the normal API (the Star Citizen division reads /api/star-citizen)
+//   bureau.belpire.com/auth/*  → the companion's Discord sign-in (its own cookie, separate from belpire.com's)
 //   belpire.com/bureau/...     → 301 to bureau.belpire.com, so the org has one address
 //   belpire.com/star-citizen/  → 301 to bureau.belpire.com/rsi1/ (Star Citizen now lives in DIV_RSI1)
 // Other hosts (local dev, preview URLs) serve /bureau/ as a normal folder so it can be checked before a deploy.
@@ -17,7 +18,7 @@ export function bureauRoute(url) {
   if (isBureauHost(hostname)) {
     if (SHARED.some((re) => re.test(pathname))) return { path: pathname };
     if (pathname.startsWith('/api/')) return null;
-    if (pathname.startsWith('/auth/')) return { redirect: `https://belpire.com${pathname}${search}`, status: 302 };
+    if (pathname.startsWith('/auth/')) return null; // the companion's own Discord sign-in (worker/companion.js)
     return { path: `/bureau${pathname}` };
   }
   if (pathname === '/star-citizen' || pathname.startsWith('/star-citizen/')) {
