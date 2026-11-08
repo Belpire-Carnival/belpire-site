@@ -151,7 +151,7 @@ test('the Prize Booth: needs enough tickets, notes the mods, refunds put tickets
   assert.equal((await post(`/api/tickets/orders/${q[0].id}/refund`, 'boss', { reason: 'That clip got removed' })).status, 200);
   assert.equal((await post(`/api/tickets/orders/${q[0].id}/done`, 'boss', {})).status, 404, 'handled once');
   assert.equal((await store.wallet(U.fan)).balance, 500);
-  assert.match(discord.dms.at(-1).content, /refunded \(200 tickets back\)[\s\S]*That clip got removed/);
+  assert.match(discord.dms.at(-1).content, /refunded \(200 Slivers back\)[\s\S]*That clip got removed/);
 
   const fav = await post('/api/tickets/redeem', 'fan', { prize: 'fan-favorite' });
   await post(`/api/tickets/orders/${fav.body.order.id}/done`, 'boss', {});
@@ -184,7 +184,7 @@ test('Ringleaders find members and hand out or take back tickets; balances never
   assert.equal((await post('/api/tickets/award', 'boss', { userId: U.fan, amount: 9999 })).status, 400);
   const a = await post('/api/tickets/award', 'boss', { userId: U.fan, amount: 50, note: 'Best scream of the night' });
   assert.equal(a.body.balance, 50);
-  assert.match(discord.dms.at(-1).content, /handed you 50 tickets: Best scream/);
+  assert.match(discord.dms.at(-1).content, /handed you 50 Slivers: Best scream/);
   const b = await post('/api/tickets/award', 'boss', { userId: U.fan, amount: -80 });
   assert.equal(b.body.balance, 0);
   assert.equal((await post('/api/tickets/award', 'fan', { userId: U.fan2, amount: 5 })).status, 403);
@@ -240,28 +240,28 @@ test('slash commands: signature checked, same bank as the website', async () => 
   assert.equal(await verifyDiscord(env, 'zz', '1', ''), false);
 
   const p = await signedInteraction(keys, slash('punch-card', U.fan));
-  assert.match(p.body.data.content, /\+10 tickets/);
+  assert.match(p.body.data.content, /\+10 Slivers/);
   assert.equal(p.body.data.flags, 64, 'only you see it');
   assert.deepEqual(p.body.data.allowed_mentions, { parse: [] });
   assert.match((await signedInteraction(keys, slash('punch-card', U.fan))).body.data.content, /already punched/);
   assert.equal((await call('/api/tickets', { as: 'fan' })).body.wallet.balance, 10, 'the website sees the Discord punch');
 
   await post('/api/tickets/award', 'boss', { userId: U.fan, amount: 200 });
-  assert.match((await signedInteraction(keys, slash('tickets', U.fan))).body.data.content, /\*\*210 tickets\*\*/);
+  assert.match((await signedInteraction(keys, slash('slivers', U.fan))).body.data.content, /\*\*210 Slivers\*\*/);
   const pea = await signedInteraction(keys, slash('find-the-pea', U.fan, [{ name: 'shell', value: 2 }]));
   assert.match((await signedInteraction(keys, slash('ring-toss', U.fan, [{ name: 'row', value: 'back' }]))).body.data.content, /back\*\* row… (\*clink!\*|it bounces)/);
   assert.match((await signedInteraction(keys, slash('high-striker', U.fan))).body.data.content, /WHAM!\* [▰▱]{10}/);
   assert.match(pea.body.data.content, /Found it|Not under that one/);
   assert.match((await signedInteraction(keys, slash('redeem', U.fan, [{ name: 'prize', value: 'ballot-pick' }]))).body.data.content, /belpire\.com\/me/);
   assert.match((await signedInteraction(keys, slash('redeem', U.fan, [{ name: 'prize', value: 'fan-favorite' }]))).body.data.content, /Fan Favorite badge\*\* ordered/);
-  assert.match((await signedInteraction(keys, slash('give-tickets', U.fan, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 5 }]))).body.data.content, /Only the Ringleaders/);
-  assert.match((await signedInteraction(keys, slash('give-tickets', U.boss, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 25 }], [MANAGER]))).body.data.content, /Gave \*\*Fan Two\*\* 25 tickets/);
+  assert.match((await signedInteraction(keys, slash('give-slivers', U.fan, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 5 }]))).body.data.content, /Only the Ringleaders/);
+  assert.match((await signedInteraction(keys, slash('give-slivers', U.boss, [{ name: 'member', value: U.fan2 }, { name: 'amount', value: 25 }], [MANAGER]))).body.data.content, /Gave \*\*Fan Two\*\* 25 Slivers/);
   assert.match((await signedInteraction(keys, slash('poll', U.fan))).body.data.content, /Only the Ringleaders can send out the poll/);
   assert.match((await signedInteraction(keys, slash('poll', U.boss, [], [MANAGER]))).body.data.content, /No poll is open right now/);
   const hs = await signedInteraction(keys, slash('high-scores', U.fan2));
   assert.equal(hs.body.data.flags, 0, 'High Scores are posted for everyone');
   assert.match(hs.body.data.content, /1\. Fan One: 2\d\d/);
-  assert.match((await signedInteraction(keys, { ...slash('tickets', U.fan), guild_id: '999999999999999999' })).body.data.content, /only opens inside the Belpire server/);
+  assert.match((await signedInteraction(keys, { ...slash('slivers', U.fan), guild_id: '999999999999999999' })).body.data.content, /only opens inside the Belpire server/);
 });
 
 test('command definitions are valid for Discord', () => {
@@ -301,20 +301,20 @@ test('the High Scores post every Sunday at noon Eastern, once, without hidden me
   assert.equal(sent.channel, ANN);
   assert.deepEqual(sent.allowed_mentions, { parse: [] });
   assert.match(sent.content, /Midway High Scores/);
-  assert.match(sent.content, /All-time leaders\*\*\n🥇 Fan Two · 90 tickets\n🥈 Fan One · 40 tickets/);
+  assert.match(sent.content, /All-time leaders\*\*\n🥇 Fan Two · 90 Slivers\n🥈 Fan One · 40 Slivers/);
   assert.doesNotMatch(sent.content, /Synister/, 'hidden members stay off');
 
   assert.equal((await post('/api/tickets/post-scores', 'fan', {})).status, 403);
   const now = await post('/api/tickets/post-scores', 'boss', {});
   assert.equal(now.status, 200);
-  assert.match(discord.posted.at(-1).content, /This week's top earners\*\*\n🥇 Fan Two · 90 tickets/);
+  assert.match(discord.posted.at(-1).content, /This week's top earners\*\*\n🥇 Fan Two · 90 Slivers/);
   assert.equal((await call('/api/tickets/staff', { as: 'boss' })).body.announcements, true);
 });
 
 test('the High Scores message stays tidy', () => {
   const msg = highScoresMessage([], [{ name: '@everyone **x**', lifetime: 5 }], Date.parse('2026-11-01T17:05:00Z'));
   assert.match(msg, /A quiet week/);
-  assert.match(msg, /🥇 everyone x · 5 tickets/);
+  assert.match(msg, /🥇 everyone x · 5 Slivers/);
   assert.ok(msg.length <= 2000);
 });
 
@@ -368,4 +368,26 @@ test('the games are fair over many plays (house odds match the posted odds)', as
     RULES.ringPlays = 5;
     RULES.strikerPlays = 3;
   }
+});
+
+test('the Concession Tent: snacks cost Slivers, curds are counted, something eats what you leave at night', async () => {
+  const { concession, RULES: R } = await import('../tickets.js');
+  await post('/api/tickets/award', 'boss', { userId: U.fan2, amount: 60 });
+  const before = (await call('/api/tickets', { as: 'fan2' })).body.wallet.balance;
+  const noon = Date.parse('2026-11-04T17:00:00Z'); // 12:00 Eastern
+  const a = await concession(env, U.fan2, 'Fan Two', 'curds', false, noon);
+  assert.equal(a.balance, before - R.snacks.curds.cost);
+  assert.equal(a.curdsAllTime, 1);
+  const b = await concession(env, U.fan2, 'Fan Two', 'curds', false, noon + 60e3);
+  assert.equal(b.curdsAllTime, 2);
+  const pop = await concession(env, U.fan2, 'Fan Two', 'popcorn', false, noon + 120e3);
+  assert.equal(pop.curdsAllTime, null);
+  const day = await concession(env, U.fan2, 'Fan Two', 'curds', true, noon + 180e3);
+  assert.ok(day.left && !day.eaten, 'left out in daylight, still there');
+  const late = await concession(env, U.fan2, 'Fan Two', 'curds', true, Date.parse('2026-11-05T07:30:00Z')); // 2:30 a.m. Eastern
+  assert.ok(late.eaten, 'left out at night: something ate it');
+  await assert.rejects(concession(env, U.fan2, 'Fan Two', 'funnel-cake', false, noon), /doesn't serve that/);
+  await assert.rejects(concession(env, U.stranger, 'Nobody', 'curds', false, noon), /costs 5 Slivers/);
+  const ledger = (await call('/api/tickets', { as: 'fan2' })).body;
+  assert.ok(ledger.history?.some?.((h) => /Concession Tent: Cheese Curds/.test(h.note)) ?? true);
 });

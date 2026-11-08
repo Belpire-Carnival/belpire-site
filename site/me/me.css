@@ -15,14 +15,24 @@
 .tb-card-body { display: grid; gap: 2px; }
 .tb-card-body span { color: var(--muted); font-size: 14px; }
 
-/* the big ticket */
-.tb-ticket { position: relative; display: grid; justify-items: center; gap: 2px; padding: 22px 28px; border-radius: 8px; background: linear-gradient(160deg, #E7C784, var(--gold) 55%, #B98E45); color: var(--ink);
-  -webkit-mask: radial-gradient(circle 14px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 14px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
-          mask: radial-gradient(circle 14px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 14px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat; }
-.tb-ticket::after { content: ''; position: absolute; inset: 8px 22px; border: 2px dashed rgba(20, 14, 18, .35); border-radius: 4px; pointer-events: none; }
-.tb-ticket-kicker { font: 700 12px var(--serif); letter-spacing: .3em; }
-.tb-ticket-num { font: 900 clamp(44px, 8vw, 64px)/1 var(--display); }
-.tb-ticket-label { font: 600 14px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+/* your Sliver coin */
+.tb-coin-card { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.tb-coin { width: clamp(112px, 26vw, 160px); height: auto; flex: none; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .55)); }
+.tb-coin-text { flex: 1; min-width: 180px; display: grid; gap: 6px; }
+.tb-coin-name { margin: 0; font: 700 13px var(--serif); letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
+.tb-coin-num { margin: 0; font-size: 15px; color: var(--muted); }
+.tb-coin-num strong { display: block; font: 900 clamp(40px, 7vw, 56px)/1 var(--display); color: var(--text, #F4EBDD); }
+
+/* the coin ladder */
+.tb-coins { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.tb-coins li { display: grid; justify-items: center; gap: 4px; padding: 12px 8px; border-radius: 8px; border: 1px solid var(--line-strong); text-align: center; }
+.tb-coins img { width: 64px; height: 64px; } /* shown exactly as painted, never tinted */
+.tb-coins li.mine { border-color: var(--gold); background: rgba(217, 178, 106, .1); box-shadow: 0 0 0 1px var(--gold) inset; }
+.tb-coins-tier { font: 700 11px var(--serif); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.tb-coins-name { font-weight: 700; font-size: 14px; }
+.tb-coins-min { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tb-coins-you { font: 700 11px var(--serif); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.tb-score-coin { width: 28px; height: 28px; flex: none; }
 
 /* punch card */
 .tb-holes { list-style: none; margin: 0; padding: 14px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: repeating-linear-gradient(0deg, #1D161B 0 22px, #201820 22px 23px); }

@@ -1,5 +1,5 @@
-// Your Ticket Booth (/me/): what's waiting for you, your tickets, the daily punch card, Find the Pea,
-// game-night check-in, the Prize Booth, High Scores and your ticket stubs. Every outcome is decided by the
+// Your Ticket Booth (/me/): what's waiting for you, your Slivers and Sliver coin, the daily punch card,
+// Find the Pea, game-night check-in, the Prize Booth, High Scores and your Sliver ledger. Every outcome is decided by the
 // server; this page only shows it.
 (() => {
   const gate = document.getElementById('tb-gate');
@@ -23,7 +23,7 @@
     for (const k of [].concat(kids)) if (k) n.append(k);
     return n;
   }
-  const tickets = (n) => `${Number(n).toLocaleString()} ticket${Math.abs(n) === 1 ? '' : 's'}`;
+  const tickets = (n) => `${Number(n).toLocaleString()} Sliver${Math.abs(n) === 1 ? '' : 's'}`;
   const when = (iso) => {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -42,7 +42,17 @@
     clearTimeout(flash.timer);
     flash.timer = setTimeout(() => box.replaceChildren(), 6000);
   }
-  const announce = () => document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance: t?.wallet.balance ?? 0 } }));
+  // The coin for lifetime Slivers won, from the ladder the API sends (worker/coins.js is the one source of truth).
+  const coinOf = (lifetime) => (t?.coins || []).reduce((got, c) => (lifetime >= c.min ? c : got), t?.coins?.[0] || null);
+  const announce = () => {
+    const w = t?.wallet;
+    document.dispatchEvent(new CustomEvent('belpire:tickets', { detail: { balance: w?.balance ?? 0, coin: coinOf(w?.lifetime ?? 0) } }));
+  };
+  // A win adds to both what you hold and what you've won all-time (the coin follows the second).
+  const won = (r) => {
+    t.wallet.balance = r.balance;
+    if (r.amount > 0) t.wallet.lifetime += r.amount;
+  };
 
   // ---------------------------------------------------------------- gate
 
@@ -52,14 +62,14 @@
     if (!me?.signedIn) {
       gate.replaceChildren(el('div', { class: 'panel' }, [
         el('h2', { text: 'Show your ticket at the gate' }),
-        el('p', { text: 'Sign in with Discord to see your tickets, play the carnival games and cash in at the Prize Booth.' }),
+        el('p', { text: 'Sign in with Discord to see your Slivers, play the carnival games and cash in at the Prize Booth.' }),
         el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/auth/login?return=/me/', text: 'Sign in with Discord' })]),
         el('p', { class: 'meta', text: 'We only check your Discord account and server membership; see the Privacy Policy.' })
       ]));
     } else {
       gate.replaceChildren(el('div', { class: 'panel' }, [
         el('h2', { text: `Almost in, ${me.name}` }),
-        el('p', { text: 'Tickets, games and prizes are for members of the Belpire Discord. Grab your ticket into the server, then come back here.' }),
+        el('p', { text: 'Slivers, games and prizes are for members of the Belpire Discord. Grab your ticket into the server, then come back here.' }),
         el('div', { class: 'btn-row' }, [el('a', { class: 'btn btn-gold', href: '/join/', text: 'Get your ticket' })])
       ]));
     }
@@ -75,7 +85,7 @@
     ])));
     if (!t.wallet.punchedToday) card('#punch', '🕳️', 'Punch card ready', `+${tickets(t.wallet.nextPunch)} waiting today`);
     for (const p of me.polls?.unvoted || []) card(`/big-tent/?poll=${encodeURIComponent(p.id)}`, '🗳️', `Vote: ${p.title}`, 'Rank your four, or dare the Wheel of Doom');
-    if (me.live?.live) card('/big-tent/', '🔴', 'Live on The Main Stage', me.live.canJoin ? 'A Ringleader is on. Hop in and check in for tickets' : 'A Ringleader is on stage right now');
+    if (me.live?.live) card('/big-tent/', '🔴', 'Live on The Main Stage', me.live.canJoin ? 'A Ringleader is on. Hop in and check in for Slivers' : 'A Ringleader is on stage right now');
     if (me.pass === 'none') card('/big-tent/#passes', '🎪', 'Get a Game Night pass', 'Your key to The Main Stage');
     else if (me.pass === 'pending') card('/big-tent/#passes', '⏳', 'Pass waiting for a stamp', 'A Ringleader will DM you', false);
     if (me.manager && me.staff) {
@@ -92,14 +102,38 @@
 
   function wallet() {
     const w = t.wallet;
+    const coin = coinOf(w.lifetime);
+    if (!coin) return; // the API always sends the coin ladder; without it there is nothing to draw
+    const i = t.coins.indexOf(coin);
+    const next = t.coins[i + 1] || null;
+    const meter = next ? el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': String(coin.min), 'aria-valuemax': String(next.min), 'aria-valuenow': String(w.lifetime), 'aria-label': `Progress to the ${next.name} coin` }, el('span', { class: 'tb-meter-fill' })) : null;
     $('tb-wallet').replaceChildren(
-      el('div', { class: 'tb-ticket', role: 'img', 'aria-label': `${tickets(w.balance)} to spend` }, [
-        el('span', { class: 'tb-ticket-kicker', text: 'ADMIT ONE · BELPIRE' }),
-        el('span', { class: 'tb-ticket-num', text: w.balance.toLocaleString() }),
-        el('span', { class: 'tb-ticket-label', text: 'tickets to spend' })
+      el('div', { class: 'tb-coin-card' }, [
+        el('img', { class: 'tb-coin', src: coin.image, width: '160', height: '160', alt: `${coin.name} Sliver coin: ${coin.look}` }),
+        el('div', { class: 'tb-coin-text' }, [
+          el('p', { class: 'tb-coin-name', text: `Tier ${coin.tier} · ${coin.name}` }),
+          el('p', { class: 'tb-coin-num' }, [el('strong', { text: w.balance.toLocaleString() }), ` Sliver${w.balance === 1 ? '' : 's'} to spend`]),
+          meter,
+          el('p', { class: 'meta', text: next ? `Win ${(next.min - w.lifetime).toLocaleString()} more to reach ${next.name}` : 'The rarest coin in Belpire.' })
+        ])
       ]),
       el('p', { class: 'meta', text: `${tickets(w.lifetime)} won all-time${w.rank ? ` · #${w.rank} on the High Scores` : w.hidden ? ' · hidden from the High Scores' : ''}` })
     );
+    if (meter) meter.firstChild.style.setProperty('--fill', `${Math.min(100, Math.round((100 * (w.lifetime - coin.min)) / (next.min - coin.min)))}%`);
+    coins(i);
+  }
+
+  // Every coin and what it takes, shown exactly as painted. Yours is outlined.
+  function coins(mine) {
+    const list = $('tb-coins');
+    if (!list) return;
+    list.replaceChildren(...t.coins.map((c, i) => el('li', { class: i === mine ? 'mine' : i < mine ? 'past' : 'ahead' }, [
+      el('img', { src: c.thumb, width: '64', height: '64', alt: '', loading: 'lazy', title: c.look }),
+      el('span', { class: 'tb-coins-tier', text: `Tier ${c.tier}` }),
+      el('span', { class: 'tb-coins-name', text: c.name }),
+      el('span', { class: 'tb-coins-min', text: c.min ? `${c.min.toLocaleString()} won` : 'Where everyone starts' }),
+      i === mine ? el('span', { class: 'tb-coins-you', text: 'Your coin' }) : null
+    ])));
   }
 
   function punchCard() {
@@ -123,7 +157,7 @@
     $('tb-punch').replaceChildren(
       holes,
       el('div', { class: 'btn-row' }, [btn]),
-      el('p', { class: 'meta', text: `${t.rules.punchBase} tickets a day, plus ${t.rules.punchStreakStep} more for every day in a row (up to +${t.rules.punchStreakStep * t.rules.punchStreakMax}). Miss a day and the streak starts over. Resets at midnight Eastern.` })
+      el('p', { class: 'meta', text: `${t.rules.punchBase} Slivers a day, plus ${t.rules.punchStreakStep} more for every day in a row (up to +${t.rules.punchStreakStep * t.rules.punchStreakMax}). Miss a day and the streak starts over. Resets at midnight Eastern.` })
     );
   }
 
@@ -135,9 +169,9 @@
     }
     box.hidden = false;
     const s = t.show;
-    const kids = [el('p', {}, [el('strong', { text: s.title }), document.createTextNode(` is on. Be in The Main Stage (not deafened) to earn ${t.rules.attendPerCheck} tickets every 10 minutes, up to ${s.cap} a show.`)])];
+    const kids = [el('p', {}, [el('strong', { text: s.title }), document.createTextNode(` is on. Be in The Main Stage (not deafened) to earn ${t.rules.attendPerCheck} Slivers every 10 minutes, up to ${s.cap} a show.`)])];
     if (s.checkedIn) {
-      kids.push(el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(s.cap), 'aria-valuenow': String(s.paid), 'aria-label': 'Attendance tickets this show' }, el('span', { class: 'tb-meter-fill' })));
+      kids.push(el('div', { class: 'tb-meter', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(s.cap), 'aria-valuenow': String(s.paid), 'aria-label': 'Attendance Slivers this show' }, el('span', { class: 'tb-meter-fill' })));
       kids.push(el('p', { class: 'meta', text: `Checked in ✓ ${s.paid} of ${s.cap} earned so far.` }));
     } else {
       const btn = el('button', { type: 'button', class: 'btn btn-gold', text: 'Check in to the show' });
@@ -197,7 +231,7 @@
       if (r.pea !== pick) shells[pick].classList.add('lifted');
       peaLast = r.win ? `Found it! +${tickets(r.amount)}.` : `Not under that one. It was shell ${r.pea + 1}.`;
       msg.textContent = peaLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.shell.left = r.playsLeft;
       wallet();
       announce();
@@ -228,7 +262,7 @@
     const buttons = ['front', 'middle', 'back'].map((row) => {
       const b = el('button', { type: 'button', class: 'btn btn-ghost btn-sm tb-row-btn', disabled: !left }, [
         el('strong', { text: `${row[0].toUpperCase()}${row.slice(1)} row` }),
-        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} tickets` })
+        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} Slivers` })
       ]);
       b.addEventListener('click', () => toss(row));
       return b;
@@ -252,7 +286,7 @@
       target.append(el('span', { class: `tb-ring ${r.win ? 'on' : 'off'}` }));
       ringsLast = r.win ? `Clink! A ringer on the ${r.row} row: +${tickets(r.amount)}.` : 'It bounced off the bottle necks.';
       msg.textContent = ringsLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.rings.left = r.playsLeft;
       wallet();
       announce();
@@ -277,7 +311,7 @@
     const tower = el('div', { class: 'tb-tower', 'aria-hidden': 'true' }, [bell, el('div', { class: 'tb-track' }, puck), scale]);
     const tiers = el('ul', { class: 'tb-tiers' }, t.rules.strikerTiers.slice().reverse().map((x) => el('li', {}, [
       el('strong', { text: x.label }),
-      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} tickets` : 'no prize'}` })
+      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} Slivers` : 'no prize'}` })
     ])));
     const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [strikerLast, left ? (strikerLast ? 'Swing again?' : 'Step up and swing.') : 'Your arms need a rest. Back at midnight Eastern.'].filter(Boolean).join(' ') });
     const btn = el('button', { type: 'button', class: 'btn btn-gold', text: '🔨 Swing the mallet', disabled: !left });
@@ -302,7 +336,7 @@
       if (r.bell) tower.classList.add('rung');
       strikerLast = r.bell ? `DING DING DING! You rang the bell: +${tickets(r.amount)}.` : `${r.label}! The puck reached ${r.height}.${r.amount ? ` +${tickets(r.amount)}.` : ''}`;
       msg.textContent = strikerLast;
-      t.wallet.balance = r.balance;
+      won(r);
       t.games.striker.left = r.playsLeft;
       wallet();
       announce();
@@ -392,6 +426,7 @@
     const list = $('tb-scores');
     list.replaceChildren(...(t.highScores.length ? t.highScores.map((r) => el('li', { class: r.me ? 'me' : '' }, [
       el('span', { class: 'tb-rank', text: `#${r.rank}` }),
+      r.coin ? el('img', { class: 'tb-score-coin', src: r.coin.thumb, width: '28', height: '28', alt: `${r.coin.name} coin`, title: `${r.coin.name} coin` }) : null,
       el('span', { class: 'tb-score-name', text: r.name }),
       r.badge ? el('span', { class: 'tb-badge', title: 'Fan Favorite', 'aria-label': 'Fan Favorite', text: '✦' }) : null,
       el('span', { class: 'tb-score', text: r.lifetime.toLocaleString() })
@@ -402,7 +437,7 @@
       hide.disabled = true;
       try {
         await api('/api/tickets/privacy', { hidden: hide.checked });
-        flash(hide.checked ? 'You\'re off the High Scores. Your tickets still count.' : 'You\'re back on the High Scores.');
+        flash(hide.checked ? 'You\'re off the High Scores. Your Slivers still count.' : 'You\'re back on the High Scores.');
         await load();
       } catch (err) {
         flash(err.message, 'error');
@@ -436,7 +471,7 @@
     if (!me.signedIn || !me.member || !t) return showGate();
     gate.hidden = true;
     app.hidden = false;
-    $('tb-greeting').textContent = `Welcome back, ${me.name}. Here's what's waiting, and the tickets you've won along the way.`;
+    $('tb-greeting').textContent = `Welcome back, ${me.name}. Here's what's waiting, and the Slivers you've won along the way.`;
     todo();
     wallet();
     punchCard();

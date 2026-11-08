@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Your Ticket Booth — Belpire Carnival</title>
-  <meta name="description" content="Your Belpire tickets, daily punch card, carnival games, Prize Booth and everything waiting for you.">
+  <meta name="description" content="Your Belpire Slivers, daily punch card, carnival games, Prize Booth and everything waiting for you.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Belpire Carnival">
   <meta property="og:title" content="Your Ticket Booth — Belpire Carnival">
@@ -52,7 +52,7 @@
     <header class="gn-head">
       <p class="eyebrow">ADMIT ONE</p>
       <h1 class="neon" data-text="Your Ticket Booth">Your Ticket Booth</h1>
-      <p class="lede" id="tb-greeting">Everything waiting for you at the carnival, and the tickets you've won along the way.</p>
+      <p class="lede" id="tb-greeting">Everything waiting for you at the carnival, and the Slivers you've won along the way.</p>
     </header>
 
     <div id="tb-gate" class="gn-app" aria-live="polite"><p class="gn-note">Finding your seat…</p></div>
@@ -66,7 +66,7 @@
 
       <div class="tb-grid">
         <section id="tickets" class="panel tb-wallet" aria-labelledby="tb-wallet-h">
-          <h2 id="tb-wallet-h">Your tickets</h2>
+          <h2 id="tb-wallet-h">Your Slivers</h2>
           <div id="tb-wallet"></div>
         </section>
         <section id="punch" class="panel tb-punch" aria-labelledby="tb-punch-h">
@@ -75,6 +75,12 @@
         </section>
       </div>
 
+      <section id="coins" class="panel tb-coins-panel" aria-labelledby="tb-coins-h">
+        <h2 id="tb-coins-h">Sliver coins</h2>
+        <p class="meta">Your coin shows every Sliver you've ever won. It starts as a shattered sliver at The Gate and restores, district by district, all the way to The Witching Hour. Spending never takes it back.</p>
+        <ol id="tb-coins" class="tb-coins"></ol>
+      </section>
+
       <section id="show" class="panel tb-show" aria-labelledby="tb-show-h" hidden>
         <h2 id="tb-show-h">Tonight's show</h2>
         <div id="tb-show"></div>
@@ -82,7 +88,7 @@
 
       <section id="games" class="panel tb-games" aria-labelledby="tb-games-h">
         <div class="panel-head"><h2 id="tb-games-h">Find the Pea</h2><span class="meta" id="tb-pea-left"></span></div>
-        <p class="meta">The barker hides a pea under one of three shells. Pick the right one and win tickets. The shells are shuffled on our side, fair and square.</p>
+        <p class="meta">The barker hides a pea under one of three shells. Pick the right one and win Slivers. The shells are shuffled on our side, fair and square.</p>
         <div id="tb-pea"></div>
       </section>
 
@@ -108,26 +114,26 @@
       <div class="tb-grid">
         <section id="scores" class="panel" aria-labelledby="tb-scores-h">
           <h2 id="tb-scores-h">Midway High Scores</h2>
-          <p class="meta">Most tickets won, all time. Spending never costs you a place.</p>
+          <p class="meta">Most Slivers won, all time. Spending never costs you a place or your coin.</p>
           <ol id="tb-scores" class="tb-scores"></ol>
           <label class="tb-check"><input type="checkbox" id="tb-hide"> Keep me off the High Scores</label>
         </section>
         <section id="history" class="panel" aria-labelledby="tb-history-h">
-          <h2 id="tb-history-h">Ticket stubs</h2>
+          <h2 id="tb-history-h">Sliver ledger</h2>
           <ul id="tb-history" class="tb-history"></ul>
         </section>
       </div>
 
       <section class="panel tb-discord" aria-labelledby="tb-discord-h">
-        <h2 id="tb-discord-h">Same tickets in Discord</h2>
+        <h2 id="tb-discord-h">Same Slivers in Discord</h2>
         <p>The Belpire Usher keeps the same booth open in the server. Your balance is shared, so play wherever you are.</p>
         <ul class="tb-commands">
-          <li><code>/tickets</code> your balance and rank</li>
+          <li><code>/slivers</code> your balance and rank</li>
           <li><code>/punch-card</code> the daily punch</li>
           <li><code>/find-the-pea</code> the shell game</li>
           <li><code>/ring-toss</code> pick a row and throw</li>
           <li><code>/high-striker</code> swing for the bell</li>
-          <li><code>/checkin</code> earn tickets at a show from The Main Stage</li>
+          <li><code>/checkin</code> earn Slivers at a show from The Main Stage</li>
           <li><code>/prizes</code> and <code>/redeem</code> the Prize Booth</li>
           <li><code>/high-scores</code> the board, posted for all to see</li>
         </ul>

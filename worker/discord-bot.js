@@ -98,15 +98,22 @@ export async function searchMembers(env, query, limit = 10, opts) {
 }
 
 // A direct message from the bot. Returns false when the person has DMs from server members turned off.
-export async function sendDm(env, userId, content, opts) {
+// `message` is the text, or a full message payload (embeds, buttons).
+export async function sendDm(env, userId, message, opts) {
   try {
     const ch = await call(env, 'POST', '/users/@me/channels', { recipient_id: userId }, opts);
-    await call(env, 'POST', `/channels/${ch.id}/messages`, { content, allowed_mentions: { parse: [] } }, opts);
+    const payload = typeof message === 'string' ? { content: message } : message;
+    await call(env, 'POST', `/channels/${ch.id}/messages`, { ...payload, allowed_mentions: { parse: [] } }, opts);
     return true;
   } catch (err) {
     if (err.code === 50007 || err.status === 403) return false;
     throw err;
   }
+}
+
+// The server itself (name, owner_id, …).
+export function getGuild(env, opts) {
+  return call(env, 'GET', `/guilds/${env.DISCORD_GUILD_ID}`, null, opts);
 }
 
 export function getChannel(env, channelId, opts) {
