@@ -8,6 +8,7 @@ import { syncCoinRoles } from './coin-roles.js';
 import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleMarket, handleShip, refreshMarket } from './sc-market.js';
 import { handleScan } from './sc-scan.js';
+import { handleBuilder, refreshBuilder } from './sc-builder.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
@@ -116,6 +117,10 @@ export default {
       const { status, body } = await handleShip(url, ctx);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
+    if (pathname === '/api/sc-builder') {
+      const body = await handleBuilder(env, ctx);
+      return json(body, 200, { 'Cache-Control': body.ready ? 'public, max-age=900' : 'no-store' });
+    }
     if (pathname === '/api/invite') {
       const { status, body } = await inviteFor(request, env);
       return json(body, status, { 'Cache-Control': 'private, no-store', Vary: 'Cookie' });
@@ -126,6 +131,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refresh(env, { notify: true }));
     ctx.waitUntil(refreshMarket(env).catch((err) => console.warn(`Market refresh failed: ${err.message}`)));
+    ctx.waitUntil(refreshBuilder(env).catch((err) => console.warn(`Ship builder refresh failed: ${err.message}`)));
     ctx.waitUntil(purgeOldBallots(env).catch((err) => console.warn(`Ballot purge failed: ${err.message}`)));
     ctx.waitUntil(syncPendingPasses(env).catch((err) => console.warn(`Pass sync failed: ${err.message}`)));
     ctx.waitUntil(weeklyHighScores(env).catch((err) => console.warn(`Weekly High Scores failed: ${err.message}`)));
