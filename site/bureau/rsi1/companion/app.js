@@ -797,8 +797,10 @@ async function imageToJpeg(file) {
 }
 async function framesFromClip(file, count) {
   const url = URL.createObjectURL(file);
-  const v = document.createElement('video');
-  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+  // Only ever play a blob: URL we just made from the visitor's own file; never a page-supplied string.
+  if (!url.startsWith('blob:')) throw { clip: 'This clip can’t be read here.' };
+  const v = el('video', { src: url, preload: 'auto' });
+  v.muted = true; v.playsInline = true;
   try {
     await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej({ clip: 'This clip’s format can’t be decoded here. Use MP4 (H.264) or WebM.' }); });
     const dur = v.duration;
