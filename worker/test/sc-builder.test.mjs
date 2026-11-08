@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   slimPrices, slimPart, slimShip, collectSlots, buildSnapshot, jobUrl, stepWork, refreshBuilder, handleBuilder, REBUILD_MS
 } from '../sc-builder.js';
-import { fits, partsFor, indexParts, resolve, totals, diff, cheapest, upgradeCost } from '../../site/bureau/rsi1/companion/builder-core.js';
+import { slotLabel, partLabel, deltaClass, signed, fits, partsFor, indexParts, resolve, totals, diff, cheapest, upgradeCost } from '../../site/bureau/rsi1/companion/builder-core.js';
 
 // Fixtures are trimmed copies of real api.star-citizen.wiki responses for game version 4.10.2-LIVE.12881860.
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8')).data;
@@ -45,6 +45,8 @@ test('stock totals agree with the game data\'s own ship totals', () => {
   // Known difference: the two Reliance plants give 2 × 23 = 46 segments, but the ship record reports 30.
   // The page shows the parts' own figure and does not claim it equals the ship record.
   assert.equal(t.powerGen, 46);
+  // Draw excludes the plants' own figure: shields 10 + coolers 10 + quantum drive 5 + radar 0 + 8 guns × 0.9.
+  assert.ok(t.powerDraw < 46, `draw ${t.powerDraw}`);
   assert.equal(ship.api.powerSeg, 30);
 });
 
@@ -212,21 +214,69 @@ test('stepWork stops at the page limit', async () => {
   }
 });
 
-test('handleBuilder reports not-ready, then serves the snapshot', async () => {
+test('handleBuilder never starts a rebuild; it reports progress and then serves the snapshot', async () => {
   const kv = fakeKv();
-  const waits = [];
-  const ctx = { waitUntil: (p) => waits.push(p.catch(() => {})) };
   const realFetch = globalThis.fetch;
+  let fetched = 0;
   try {
-    globalThis.fetch = async () => new Response('down', { status: 503 });
-    const first = await handleBuilder({ SC_DATA: kv }, ctx);
-    assert.equal(first.ready, false);
-    await Promise.all(waits);
+    globalThis.fetch = async () => { fetched++; return new Response('down', { status: 503 }); };
+    assert.deepEqual(await handleBuilder({ SC_DATA: kv }), { ready: false, progress: null });
+    kv.m.set('sc:builder:work', JSON.stringify({ pages: 4, jobs: [1, 2] }));
+    assert.deepEqual(await handleBuilder({ SC_DATA: kv }), { ready: false, progress: { pages: 4, remaining: 2 } });
+    assert.equal(fetched, 0);
   } finally {
     globalThis.fetch = realFetch;
   }
   kv.m.set('sc:builder', JSON.stringify(buildSnapshot('4.10.2-LIVE.1', [slimShip(carrack)], [])));
-  const ready = await handleBuilder({ SC_DATA: kv }, ctx);
+  const ready = await handleBuilder({ SC_DATA: kv });
   assert.equal(ready.ready, true);
   assert.equal(ready.ships[0].name, 'Carrack');
+});
+
+test('an overlapping cron run is skipped by the lock', async () => {
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  const kv = fakeKv();
+  const env = { SC_DATA: kv, SC_WIKI_API: 'https://wiki.test/api' };
+  try {
+    globalThis.fetch = fakeWiki(calls);
+    await refreshBuilder(env, { lock: true });
+    const used = calls.length;
+    assert.equal(await refreshBuilder(env, { lock: true }), null);
+    assert.equal(calls.length, used); // second run made no requests
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('a KV delete failure after publishing does not fail the rebuild, and duplicate ships collapse', async () => {
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  const kv = fakeKv();
+  kv.delete = async () => { throw new Error('KV DELETE failed: 429 Too Many Requests'); };
+  try {
+    globalThis.fetch = fakeWiki(calls, { shipPages: 1 });
+    const snap = await refreshBuilder({ SC_DATA: kv, SC_WIKI_API: 'https://wiki.test/api' });
+    assert.equal(snap.ships.length, 1);
+    assert.ok(kv.m.has('sc:builder'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  const dup = slimShip(carrack);
+  assert.equal(buildSnapshot('v', [dup, dup, dup], []).ships.length, 1);
+});
+
+test('slot and part labels are readable and tell turret guns apart', () => {
+  assert.equal(slotLabel({ id: 'hardpoint_shield_generator_l', type: 'Shield' }), 'shield generator l');
+  const a = slotLabel({ id: 'hardpoint_turret_back_rear/turret_left/hardpoint_class_2', type: 'WeaponGun' });
+  const b = slotLabel({ id: 'hardpoint_turret_back_rear/turret_right/hardpoint_class_2', type: 'WeaponGun' });
+  assert.equal(a, 'turret back rear · turret left');
+  assert.notEqual(a, b);
+  assert.equal(slotLabel({ id: 'hardpoint_class_2#2', type: 'WeaponGun' }), 'class 2');
+  assert.equal(partLabel(slimPart(weapons[1])), '11-Series Broadsword Cannon · A · 455.3 dps');
+  assert.equal(deltaClass(5, true), 'ok');
+  assert.equal(deltaClass(5, false), 'warn');
+  assert.equal(deltaClass(0, true), '');
+  assert.equal(signed(-1500), '−1,500');
+  assert.equal(signed(20), '+20');
 });

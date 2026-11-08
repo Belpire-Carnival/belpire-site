@@ -2,6 +2,7 @@
 // Live prices come from our own /api/sc-market; nothing here calls a third-party site.
 import C from './core.js';
 import { initSync } from './sync.js';
+import { initBuilder } from './builder.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -52,6 +53,7 @@ const Store = {
 // ---------------- routing ----------------
 const VIEWS = [['ops', 'Operations'], ['contracts', 'Contracts'], ['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid'],
   ['combat', 'Armory'], ['fleet', 'Fleet'], ['manual', 'Field Manual'], ['log', 'Ops Log']];
+const builder = initBuilder($('#builder'));
 const nav = $('#nav');
 for (const [id, label] of VIEWS) nav.append(el('a', { href: '#' + id, 'data-v': id, text: label }));
 function route() {
@@ -59,7 +61,7 @@ function route() {
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
   for (const a of $$('a', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
-  if (v === 'fleet') drawRadar();
+  if (v === 'fleet') { drawRadar(); builder.show(); }
 }
 window.addEventListener('hashchange', route);
 const P = C.PATCH;

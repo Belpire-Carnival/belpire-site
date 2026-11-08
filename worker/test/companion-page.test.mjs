@@ -9,6 +9,8 @@ const html = read('index.html');
 const app = read('app.js');
 const core = read('core.js');
 const sync = read('sync.js');
+const builder = read('builder.js');
+const builderCore = read('builder-core.js');
 
 test('the page has no inline scripts, styles or event handlers', () => {
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/i, 'inline <script>');
@@ -50,4 +52,15 @@ test('the sign-in and sync script only talks to our own profile API and sign-out
   assert.doesNotMatch(sync, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
   assert.doesNotMatch(sync, /https?:\/\//);
   assert.match(html, /id="acct"/);
+});
+
+test('the ship builder only reads our own /api/sc-builder, builds its page with text, and is credited', () => {
+  const urls = [...builder.matchAll(/fetch\(\s*(['"`])([^'"`]+)\1/g)].map((m) => m[2]);
+  assert.deepEqual(urls, []); // the endpoint is a named constant, checked below
+  assert.match(builder, /const API = '\/api\/sc-builder';/);
+  assert.match(builder, /fetch\(API,/);
+  assert.doesNotMatch(builder + builderCore, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
+  assert.doesNotMatch(builder + builderCore, /https?:\/\//);
+  assert.match(html, /id="builder"/);
+  assert.match(builder, /Star Citizen Wiki API/);
 });
