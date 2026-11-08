@@ -132,3 +132,70 @@ export function deltaClass(delta, higherBetter) {
 }
 
 export const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + fmtN(Math.abs(v));
+
+// ---------------------------------------------------------------- calculator additions
+
+// Damage taken is stored as a multiplier (0.75 = takes 75%); the page shows the reduction.
+export const reduction = (m) => (m == null ? null : Math.round((1 - m) * 100));
+
+// Cooling load: how much of the cooling these parts produce the same parts ask for, as a percentage.
+export function coolingLoad(t) {
+  return t.coolGen > 0 ? Math.round((t.coolDraw / t.coolGen) * 100) : null;
+}
+
+// Damage split the way the page shows it: guns on the pilot's controls vs guns on turrets.
+// A turret gun's slot group names its turret ('turret_left'); everything else is pilot-fixed.
+export function damageSplit(ship, partsById, overrides = {}) {
+  const out = { pilot: { alpha: 0, sustained: 0, burst: 0, guns: 0 }, turret: { alpha: 0, sustained: 0, burst: 0, guns: 0 } };
+  const fitted = resolve(ship, overrides);
+  for (const slot of ship.slots) {
+    if (slot.type !== 'WeaponGun') continue;
+    const w = partsById.get(fitted[slot.id])?.wpn;
+    if (!w) continue;
+    const bucket = /turret/i.test(slot.group || slot.id) ? out.turret : out.pilot;
+    bucket.alpha += w.alpha || 0; bucket.sustained += w.sustained || 0; bucket.burst += w.burst || 0; bucket.guns++;
+  }
+  for (const b of Object.values(out)) for (const k of ['alpha', 'sustained', 'burst']) b[k] = Math.round(b[k] * 10) / 10;
+  return out;
+}
+
+// Which slots differ from stock, as a short list for the page and for the share link.
+export const changedSlots = (ship, overrides = {}) => ship.slots.filter((s) => overrides[s.id] && overrides[s.id] !== s.stock);
+
+// ---------------------------------------------------------------- share links
+// A build travels as base64url JSON: { s: shipId, o: { slotId: partId } }. Decoding checks the ship, the slots and
+// that each part fits, so a mangled or hand-edited link can never put a part where it does not belong.
+const b64 = {
+  enc: (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: (s) => decodeURIComponent(escape(atob(String(s).replace(/-/g, '+').replace(/_/g, '/'))))
+};
+
+export function encodeBuild(ship, overrides = {}) {
+  const o = {};
+  for (const s of changedSlots(ship, overrides)) o[s.id] = overrides[s.id];
+  return b64.enc(JSON.stringify({ s: ship.id, o }));
+}
+
+export function decodeBuild(code, ships, partsById) {
+  try {
+    const j = JSON.parse(b64.dec(code));
+    const ship = (ships || []).find((x) => x.id === j.s);
+    if (!ship || typeof j.o !== 'object' || !j.o) return null;
+    const overrides = {};
+    for (const [slotId, partId] of Object.entries(j.o)) {
+      const slot = ship.slots.find((x) => x.id === slotId);
+      const part = partsById.get(partId);
+      if (slot && part && fits(slot, part) && partId !== slot.stock) overrides[slotId] = partId;
+    }
+    return { ship, overrides };
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------- formatting for the stat panels
+export const num = (v, d = 0) => (v == null || Number.isNaN(Number(v)) ? '—' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d }));
+export const dims = (a) => (Array.isArray(a) && a.every((x) => x != null) ? a.map((x) => num(x, 1)).join(' × ') + ' m' : '—');
+// Distances: the wiki gives metres; show Gm for jump distances and km/s for quantum speed.
+export const gm = (m) => (m == null ? '—' : `${num(m / 1e9, 1)} Gm`);
+export const kms = (ms) => (ms == null ? '—' : `${num(ms / 1000)} km/s`);

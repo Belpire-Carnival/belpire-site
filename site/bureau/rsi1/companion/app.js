@@ -3,6 +3,8 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
+import { icon, bars } from './viz.js';
+import { heroArt } from './art.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -51,19 +53,38 @@ const Store = {
 };
 
 // ---------------- routing ----------------
-const VIEWS = [['ops', 'Operations'], ['contracts', 'Contracts'], ['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid'],
-  ['combat', 'Armory'], ['fleet', 'Fleet'], ['manual', 'Field Manual'], ['log', 'Ops Log']];
+const NAV = [
+  ['Command', [['ops', 'Operations'], ['contracts', 'Contracts'], ['log', 'Ops Log']]],
+  ['Industry', [['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid']]],
+  ['Combat & fleet', [['calc', 'Calculator'], ['combat', 'Armory'], ['fleet', 'Fleet']]],
+  ['Reference', [['manual', 'Field Manual']]],
+];
+const VIEWS = NAV.flatMap(([, items]) => items);
 const builder = initBuilder($('#builder'));
 const nav = $('#nav');
-for (const [id, label] of VIEWS) nav.append(el('a', { href: '#' + id, 'data-v': id, text: label }));
+for (const [group, items] of NAV) {
+  nav.append(el('div', { class: 'grp', text: group }));
+  for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
+}
+for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
 function route() {
-  const id = (location.hash || '#ops').slice(1);
+  const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
-  for (const a of $$('a', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
-  if (v === 'fleet') { drawRadar(); builder.show(); }
+  for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+  if (v === 'fleet') drawRadar();
+  if (v === 'calc') builder.show();
+  window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
+// The calculator hands finished builds to the hangar through this event.
+window.addEventListener('arsenal:hangar-add', (e) => {
+  const d = e.detail || {}; const name = String(d.name || '').slice(0, 60); if (!name) return;
+  const ship = { name, role: String(d.role || '').slice(0, 40) };
+  for (const k of ['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel']) ship[k] = C.nOrNull(d[k]);
+  S.fleet = [...S.fleet.filter((x) => x.name !== ship.name), ship].slice(0, 60);
+  Store.saveFleet(); renderFleet(); toast('Added to your hangar');
+});
 const P = C.PATCH;
 function paintPatch(live) {
   for (const p of $$('[data-patch]')) {
@@ -158,6 +179,43 @@ function renderOps() {
   const rated = S.runs.filter((r) => C.n(r.minutes) > 0).map((r) => ({ r, h: C.n(r.net) / (C.n(r.minutes) / 60) })).sort((a, b) => b.h - a.h);
   $('#opsBest').textContent = rated.length ? `${C.fmt(rated[0].h)} /h` : '—';
   $('#opsBestSub').textContent = rated.length ? `${rated[0].r.activity} · ${new Date(rated[0].r.at).toLocaleDateString()}` : 'Log runs with a duration to see aUEC/hour';
+}
+
+// ---------------- banners and charts ----------------
+const ACTS = ['salvage', 'mining', 'trade', 'contract'];
+const ACT_CLS = { salvage: 'info', mining: '', trade: 'ok', contract: 'warn' };
+function renderHeroes() {
+  const set = (k, v) => { for (const n of $$(`[data-k="${k}"]`)) n.textContent = v; };
+  const rate = (rows) => { const t = rows.filter((r) => C.n(r.minutes) > 0); const m = t.reduce((a, r) => a + C.n(r.minutes), 0); return m > 0 ? `${C.fmt(t.reduce((a, r) => a + C.n(r.net), 0) / (m / 60))} /h` : '—'; };
+  const best = (rows) => { const t = rows.filter((r) => C.n(r.minutes) > 0).map((r) => C.n(r.net) / (C.n(r.minutes) / 60)); return t.length ? `${C.fmt(Math.max(...t))} /h` : '—'; };
+  const net = (rows) => rows.reduce((a, r) => a + C.n(r.net), 0);
+  set('ops.runs', C.fmt(S.runs.length)); set('ops.net', money(net(S.runs))); set('ops.rate', rate(S.runs));
+  for (const a of ['salvage', 'mining', 'trade']) {
+    const rows = S.runs.filter((r) => r.activity === a);
+    set(`${a}.runs`, C.fmt(rows.length)); set(`${a}.net`, money(net(rows))); set(`${a}.rate`, best(rows));
+  }
+  const open = S.contracts.filter((c) => c.status === 'new' || c.status === 'active');
+  set('contracts.open', String(open.length)); set('contracts.payout', money(open.reduce((t, c) => t + C.n(c.payout), 0)));
+  set('fleet.count', String(S.fleet.length));
+  const mins = S.runs.reduce((a, r) => a + C.n(r.minutes), 0);
+  set('log.runs', C.fmt(S.runs.length)); set('log.net', money(net(S.runs))); set('log.time', `${C.fmt(mins / 60, 1)} h`);
+
+  // last 14 days, one bar per day
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push(d); }
+  const items = days.map((d) => {
+    const t0 = d.getTime(), t1 = t0 + 864e5;
+    return { label: String(d.getDate()), value: Math.max(0, net(S.runs.filter((r) => r.at >= t0 && r.at < t1))) };
+  });
+  const chart = $('#opsChart'); if (chart) { chart.textContent = ''; chart.append(bars(items, { fmt: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), empty: 'Log a run to see your days here' })); }
+  const mix = ACTS.map((a) => ({ label: a, value: Math.max(0, net(S.runs.filter((r) => r.activity === a))), cls: ACT_CLS[a] }));
+  const m1 = $('#opsMix'); if (m1) { m1.textContent = ''; m1.append(bars(mix, { fmt: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), empty: 'No runs logged yet' })); }
+  const m2 = $('#lgMix'); if (m2) { m2.textContent = ''; m2.append(bars(mix, { h: 130, fmt: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), empty: 'No runs logged yet' })); }
+  const hrs = ACTS.map((a) => {
+    const rows = S.runs.filter((r) => r.activity === a && C.n(r.minutes) > 0), m = rows.reduce((t, r) => t + C.n(r.minutes), 0);
+    return { label: a, value: m > 0 ? Math.max(0, Math.round(net(rows) / (m / 60))) : 0, cls: ACT_CLS[a] };
+  });
+  const m3 = $('#lgRate'); if (m3) { m3.textContent = ''; m3.append(bars(hrs, { h: 130, fmt: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(v)), empty: 'Log runs with a duration' })); }
 }
 
 // ---------------- SALVAGE ----------------
@@ -1026,9 +1084,9 @@ scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any m
 
 // ---------------- boot ----------------
 Store.onChange(() => {
-  tickVT(); renderOps(); renderLog(); renderFleet(); renderContracts();
+  tickVT(); renderOps(); renderLog(); renderFleet(); renderContracts(); renderHeroes();
   const lo = $('#loNotes'); if (document.activeElement !== lo && S.settings.loadout != null && lo.value !== S.settings.loadout) lo.value = S.settings.loadout;
 });
-route(); tickVT(); renderOps(); renderLog(); renderFleet(); renderContracts();
+route(); tickVT(); renderOps(); renderLog(); renderFleet(); renderContracts(); renderHeroes();
 Store.init();
 initSync($('#acct'));
