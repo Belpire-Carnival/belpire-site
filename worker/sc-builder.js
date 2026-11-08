@@ -136,6 +136,31 @@ export function stockParts(ports, into = new Map()) {
 
 // One vehicle → the record the picker and totals need. `shipStats` are the API's own numbers for the stock
 // loadout, kept so the page can show that its totals agree with the game data.
+
+// Ship-level figures for the calculator's stat panels. Every field is optional: the wiki leaves some out for
+// some ships, and a missing value stays null rather than being guessed.
+const r2 = (x, d = 2) => { const n = num(x); return n == null ? null : Math.round(n * 10 ** d) / 10 ** d; };
+const side = (o) => ({ phys: r2(o?.physical?.maximum, 3), energy: r2(o?.energy?.maximum, 3), dist: r2(o?.distortion?.maximum, 3) });
+export function slimStats(v) {
+  const a = v?.armor || {}, ag = v?.agility || {}, sp = v?.speed || {}, fu = v?.fuel || {}, q = v?.quantum || {}, sg = v?.signature || {}, em = v?.emission || {};
+  const dim = v?.dimension || {};
+  return {
+    hull: r2(v?.health, 0),
+    mass: r2(v?.mass_total ?? v?.mass, 0),
+    dim: [r2(dim.length, 1), r2(dim.width, 1), r2(dim.height, 1)],
+    armor: { hp: r2(a.health, 0), phys: r2(a.damage_physical, 3), energy: r2(a.damage_energy, 3), dist: r2(a.damage_distortion, 3) },
+    shield: { face: str(v?.shield?.face_type, 20), resist: side(v?.shield?.resistance), absorb: side(v?.shield?.absorption), regenTime: r2(v?.shield?.regeneration_time, 1) },
+    agility: { pitch: r2(ag.pitch, 0), yaw: r2(ag.yaw, 0), roll: r2(ag.roll, 0), pitchB: r2(ag.pitch_boosted, 0), yawB: r2(ag.yaw_boosted, 0), rollB: r2(ag.roll_boosted, 0) },
+    speed: { boostF: r2(sp.boost_forward, 0), boostB: r2(sp.boost_backward, 0), toScm: r2(sp.zero_to_scm, 2) },
+    fuel: { h2: r2(fu.capacity, 1), intake: r2(fu.intake_rate, 2), qt: r2(q.quantum_fuel_capacity, 1) },
+    quantum: { speed: r2(q.quantum_speed, 0), spool: r2(q.quantum_spool_time, 1), range: r2(q.quantum_range, 0) },
+    sig: { ir: r2(sg.ir_shields ?? em.ir, 0), em: r2(sg.em_shields ?? em.em_idle, 0), emMax: r2(em.em_max, 0), cs: r2(v?.cross_section_max, 1) },
+    missiles: { count: r2(v?.weaponry?.missiles?.count, 0), damage: r2(v?.weaponry?.total_missile_damage ?? v?.weaponry?.missiles?.damage, 0) },
+    insure: { claim: r2(v?.insurance?.claim_time, 1), expedite: r2(v?.insurance?.expedite_time, 1), cost: r2(v?.insurance?.expedite_cost, 0) },
+    seats: r2(v?.crew?.weapon, 0)
+  };
+}
+
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
@@ -154,6 +179,7 @@ export function slimShip(v) {
     msrp: num(v.msrp),
     buy: slimPrices(v.uex_prices),
     slots,
+    stats: slimStats(v),
     api: {
       shieldHp: num(v.shield?.hp),
       shieldRegen: num(v.shield?.regeneration),

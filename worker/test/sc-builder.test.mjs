@@ -280,3 +280,93 @@ test('slot and part labels are readable and tell turret guns apart', () => {
   assert.equal(signed(-1500), '−1,500');
   assert.equal(signed(20), '+20');
 });
+
+// ---------------------------------------------------------------- calculator additions
+import { slimStats } from '../sc-builder.js';
+import { reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, dims, gm, kms, num } from '../../site/bureau/rsi1/companion/builder-core.js';
+import { shipKind } from '../../site/bureau/rsi1/companion/art.js';
+
+const fullShip = {
+  health: 29760, mass_total: 242177, dimension: { length: 37.5, width: 26.5, height: 11.5 }, cross_section_max: 40.2,
+  armor: { health: 7290, damage_physical: 0.75, damage_energy: 0.6, damage_distortion: 1 },
+  shield: { face_type: 'Bubble', regeneration_time: 5.5, resistance: { physical: { maximum: 0.25 }, energy: { maximum: 0 }, distortion: { maximum: 0.95 } }, absorption: { physical: { maximum: 0.45 }, energy: { maximum: 1 }, distortion: { maximum: 1 } } },
+  agility: { pitch: 39, yaw: 35, roll: 110, pitch_boosted: 39, yaw_boosted: 35, roll_boosted: 110 },
+  speed: { boost_forward: 465, boost_backward: 230, zero_to_scm: 2.1 },
+  fuel: { capacity: 7.8, intake_rate: 0 }, quantum: { quantum_speed: 238314000, quantum_spool_time: 6.9, quantum_fuel_capacity: 4.6, quantum_range: 209.1e9 },
+  signature: { ir_shields: 4200, em_shields: 11600 }, emission: { em_max: 20000 },
+  weaponry: { total_missile_damage: 39200, missiles: { count: 12 } }, insurance: { claim_time: 4.8, expedite_time: 1.6, expedite_cost: 2600 }
+};
+
+test('slimStats keeps ship figures, rounds them, and leaves missing ones null', () => {
+  const st = slimStats(fullShip);
+  assert.equal(st.hull, 29760);
+  assert.equal(st.armor.hp, 7290);
+  assert.equal(st.shield.face, 'Bubble');
+  assert.equal(st.shield.resist.dist, 0.95);
+  assert.equal(st.agility.roll, 110);
+  assert.equal(st.quantum.range, 209100000000);
+  assert.equal(st.missiles.damage, 39200);
+  assert.deepEqual(st.dim, [37.5, 26.5, 11.5]);
+  const empty = slimStats({});
+  assert.equal(empty.hull, null);
+  assert.equal(empty.armor.hp, null);
+  assert.deepEqual(empty.dim, [null, null, null]);
+  assert.equal(slimStats(null).hull, null);
+});
+
+test('slimShip carries the stats object', () => {
+  assert.equal(typeof slimShip(carrack).stats, 'object');
+  assert.equal(slimShip(carrack).stats.shield.resist.phys, 0.25);
+});
+
+test('damage reduction and cooling load read the way the page shows them', () => {
+  assert.equal(reduction(0.75), 25);
+  assert.equal(reduction(1), 0);
+  assert.equal(reduction(null), null);
+  assert.equal(coolingLoad({ coolGen: 50, coolDraw: 38 }), 76);
+  assert.equal(coolingLoad({ coolGen: 0, coolDraw: 5 }), null);
+});
+
+test('guns on turrets and guns on the pilot are totalled apart', () => {
+  const ship = slimShip(carrack);
+  const parts = indexParts([slimPart(weapons[0]), slimPart(weapons[1])].filter(Boolean));
+  const split = damageSplit(ship, parts, {});
+  assert.equal(split.pilot.guns + split.turret.guns <= 8, true);
+  for (const b of Object.values(split)) assert.ok(b.burst >= 0);
+});
+
+test('a share link round-trips, and a mangled or foreign link is refused', () => {
+  const ship = slimShip(carrack);
+  const slot = ship.slots.find((s) => s.type === 'WeaponGun');
+  const gun = { ...slimPart(weapons[1]), id: 'g1', size: slot.max };
+  const parts = indexParts([gun]);
+  const code = encodeBuild(ship, { [slot.id]: gun.id });
+  assert.match(code, /^[\w-]+$/);
+  const back = decodeBuild(code, [ship], parts);
+  assert.equal(back.ship.id, ship.id);
+  assert.deepEqual(back.overrides, { [slot.id]: gun.id });
+  assert.equal(decodeBuild('not a code', [ship], parts), null);
+  assert.equal(decodeBuild(encodeBuild({ ...ship, id: 'nope' }, {}), [ship], parts), null);
+  // A part that does not fit the slot is dropped, not applied.
+  const shield = { ...gun, id: 'x', type: 'Shield' };
+  const forged = encodeBuild(ship, { [slot.id]: 'x' });
+  assert.deepEqual(decodeBuild(forged, [ship], indexParts([shield])).overrides, {});
+  assert.deepEqual(changedSlots(ship, { [slot.id]: slot.stock }), []);
+});
+
+test('number helpers do not invent values', () => {
+  assert.equal(num(null), '—');
+  assert.equal(num(1234.5, 1), '1,234.5');
+  assert.equal(dims([37.5, 26.5, 11.5]), '37.5 × 26.5 × 11.5 m');
+  assert.equal(dims([null, 1, 2]), '—');
+  assert.equal(gm(209.1e9), '209.1 Gm');
+  assert.equal(kms(238314000), '238,314 km/s');
+});
+
+test('ship silhouettes follow the ship\'s role', () => {
+  assert.equal(shipKind({ role: 'Light Fighter', career: 'Combat' }), 'fighter');
+  assert.equal(shipKind({ role: 'Medium Freight', career: 'Industrial', size: 3 }), 'hauler');
+  assert.equal(shipKind({ role: 'Pathfinder', career: 'Exploration' }), 'explorer');
+  assert.equal(shipKind({ role: 'Heavy Salvage', career: 'Industrial' }), 'tool');
+  assert.equal(shipKind({}), 'fighter');
+});

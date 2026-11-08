@@ -11,6 +11,8 @@ const core = read('core.js');
 const sync = read('sync.js');
 const builder = read('builder.js');
 const builderCore = read('builder-core.js');
+const viz = read('viz.js');
+const art = read('art.js');
 
 test('the page has no inline scripts, styles or event handlers', () => {
   assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/i, 'inline <script>');
@@ -63,4 +65,26 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
   assert.doesNotMatch(builder + builderCore, /https?:\/\//);
   assert.match(html, /id="builder"/);
   assert.match(builder, /Star Citizen Wiki API/);
+});
+
+test('the drawing helpers build SVG with attributes only and reach no other origin', () => {
+  assert.doesNotMatch(viz + art, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\.|fetch\(/);
+  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg)/);
+  assert.doesNotMatch(builder, /\bhref\s*=|<img|src\s*=/);
+});
+
+test('the page has a left rail, a calculator view, and a banner for every view', () => {
+  assert.match(html, /<header class="top">[\s\S]*<nav id="nav"/);
+  assert.match(html, /id="v-calc"/);
+  const views = [...html.matchAll(/<section class="view" id="v-([a-z]+)"/g)].map((m) => m[1]);
+  assert.ok(views.includes('calc'));
+  for (const v of views) assert.match(html, new RegExp(`id="h-${v}"`), v);
+  assert.equal((html.match(/class="hero"/g) || []).length, views.length);
+});
+
+test('every navigation item has an icon and a view', () => {
+  const nav = [...app.matchAll(/\['([a-z]+)', '[^']+'\]/g)].map((m) => m[1]);
+  const icons = [...viz.matchAll(/^\s{2}([a-z]+):\s*\[/gm)].map((m) => m[1]);
+  const views = [...html.matchAll(/<section class="view" id="v-([a-z]+)"/g)].map((m) => m[1]);
+  for (const v of views) { assert.ok(icons.includes(v), `icon for ${v}`); assert.ok(nav.includes(v), `nav for ${v}`); }
 });
