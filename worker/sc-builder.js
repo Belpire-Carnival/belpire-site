@@ -25,10 +25,31 @@ const PART_PAGE = 100;
 const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
+// Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
+export const SCHEMA = 3;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
 export const SLOT_TYPES = new Set([...PART_TYPES, WEAPON_TYPE]);
+
+// Picture of a wiki record: the path (after the host) of its first usable image on the wiki's media server, or ''.
+// Only that one host is accepted, and the path is kept short and plain so it can be requested through /api/sc-img.
+export const MEDIA_HOST = 'media.starcitizen.tools';
+export const IMG_PATH = /^(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/[A-Za-z0-9._%()~'+-]{1,160}(?:\/[0-9]{2,4}px-[A-Za-z0-9._%()~'+-]{1,160})?$/;
+export function imgPath(it) {
+  const list = Array.isArray(it?.images) ? it.images : it?.image ? [it.image] : [];
+  for (const im of list) {
+    for (const u of [im?.thumbnail_url, im?.original_url, typeof im === 'string' ? im : null]) {
+      try {
+        const url = new URL(String(u));
+        if (url.protocol !== 'https:' || url.hostname !== MEDIA_HOST) continue;
+        const path = url.pathname.replace(/^\//, '');
+        if (IMG_PATH.test(path)) return path;
+      } catch { /* not a URL */ }
+    }
+  }
+  return '';
+}
 
 const num = (v) => {
   const n = typeof v === 'string' ? Number(v.trim()) : v;
@@ -73,6 +94,8 @@ export function slimPart(it) {
     mfr: str(it.manufacturer?.name, 40),
     mass: num(it.mass)
   };
+  const img = imgPath(it);
+  if (img) part.img = img;
   if (num(use?.power?.max) != null) part.pw = round(use.power.max, 2);
   if (num(use?.coolant?.max) != null) part.cw = round(use.coolant.max, 2);
   if (it.shield) part.shield = { hp: num(it.shield.max_health), regen: num(it.shield.regen_rate) };
@@ -237,6 +260,7 @@ export function slimShip(v) {
     scm: num(v.speed?.scm),
     max: num(v.speed?.max),
     msrp: num(v.msrp),
+    img: imgPath(v),
     buy: slimPrices(v.uex_prices),
     slots,
     stats: slimStats(v),
@@ -270,7 +294,7 @@ export function buildSnapshot(version, ships, catalogue, stock = []) {
     byId.set(s.id, { ...s, slots });
   }
   const list = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { version, updatedAt: new Date().toISOString(), source: 'Star Citizen Wiki API', ships: list, parts: [...parts.values()] };
+  return { schema: SCHEMA, version, updatedAt: new Date().toISOString(), source: 'Star Citizen Wiki API', ships: list, parts: [...parts.values()] };
 }
 
 // ------------------------------------------------------------------ fetching (resumable)
@@ -355,7 +379,7 @@ export async function refreshBuilder(env, { force = false, lock = false } = {}) 
     const snap = await readJson(kv, SNAP_KEY);
     const version = await currentVersion(env);
     const age = snap?.updatedAt ? Date.now() - Date.parse(snap.updatedAt) : Infinity;
-    if (!force && snap && snap.version === version && age < REBUILD_MS) return snap;
+    if (!force && snap && snap.version === version && snap.schema === SCHEMA && age < REBUILD_MS) return snap;
     work = { version, startedAt: new Date().toISOString(), pages: 0, jobs: freshJobs(), ships: [], parts: [], stock: [] };
   }
   work = await stepWork(env, work);

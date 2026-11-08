@@ -2,6 +2,7 @@
 // a style tag, three colour picks and an optional link to a saved ground loadout. One outfit can be marked "Wearing".
 // Saved in this browser and, when signed in, on the player's profile (everything under "arsenal.*").
 import { svgEl } from './viz.js';
+import { attachPicker, cleanImg, thumbStrip } from './items.js';
 
 const KEY = 'arsenal.outfits';
 const MAX = 40;
@@ -27,12 +28,14 @@ const el = (tag, attrs = {}, ...kids) => {
 export function normalize(o) {
   const pieces = {};
   for (const [k] of PIECES) pieces[k] = clean(o?.pieces?.[k]);
+  const imgs = {};
+  for (const [k] of PIECES) imgs[k] = pieces[k] ? cleanImg(o?.imgs?.[k]) : '';
   const colors = [0, 1, 2].map((i) => (HEX.has(o?.colors?.[i]) ? o.colors[i] : SWATCHES[[0, 3, 10][i]][1]));
   return {
     id: clean(o?.id, 30) || `o${Date.now().toString(36)}${Math.floor(Math.random() * 1e3)}`,
     name: clean(o?.name, 50) || 'Untitled outfit',
     style: STYLES.includes(o?.style) ? o.style : 'Other',
-    pieces, colors,
+    pieces, imgs, colors,
     loadout: clean(o?.loadout, 30),
     notes: String(o?.notes ?? '').slice(0, 400),
     fav: !!o?.fav, worn: !!o?.worn,
@@ -81,9 +84,12 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
     lo.value = o.loadout;
     const ins = {};
     const fields = PIECES.map(([k, label]) => {
-      ins[k] = el('input', { type: 'text', maxlength: '80', value: o.pieces[k], 'aria-label': label });
-      ins[k].addEventListener('input', () => { o.pieces[k] = clean(ins[k].value); preview(); });
-      return el('label', { class: 'f' }, label, ins[k]);
+      ins[k] = el('input', { type: 'text', maxlength: '80', value: o.pieces[k], 'aria-label': label, autocomplete: 'off' });
+      let picked = o.pieces[k];
+      ins[k].addEventListener('input', () => { o.pieces[k] = clean(ins[k].value); if (ins[k].value !== picked) o.imgs[k] = ''; preview(); });
+      const f = el('label', { class: 'f' }, label, ins[k]);
+      attachPicker(ins[k], ({ name, img }) => { picked = name; o.pieces[k] = name; o.imgs[k] = img; preview(); });
+      return f;
     });
     const notes = el('textarea', { rows: '2', maxlength: '400', 'aria-label': 'Notes', placeholder: 'Where you got it, dye, what it goes with' });
     notes.value = o.notes;
@@ -95,7 +101,7 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
       ['Base', 'Armor', 'Accent'].forEach((label, i) => pickers.append(el('div', { class: 'mt6' }, el('span', { class: 'small muted', text: label }), swatchPicker(o, i, () => { drawPickers(); preview(); }))));
     };
     drawPickers(); preview();
-    const grab = () => normalize({ ...o, name: name.value, style: style.value, loadout: lo.value, notes: notes.value });
+    const grab = () => normalize({ ...o, imgs: o.imgs, pieces: o.pieces, name: name.value, style: style.value, loadout: lo.value, notes: notes.value });
     const save = el('button', { type: 'button', class: 'primary', text: 'Save outfit', onclick: () => {
       const n = grab(); n.at = Date.now();
       list = [n, ...list.filter((x) => x.id !== n.id)].slice(0, MAX); persist(); editing = null; toast('Outfit saved'); paint();
@@ -119,6 +125,7 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
     });
     return el('div', { class: `outfit${o.worn ? ' worn' : ''}` }, mannequin(o),
       el('div', { class: 'row between' }, el('b', { text: o.name }), el('button', { type: 'button', class: 'ghost star', 'aria-pressed': String(o.fav), 'aria-label': 'Favourite', text: o.fav ? '★' : '☆', onclick: () => { o.fav = !o.fav; persist(); paint(); } })),
+      thumbStrip(PIECES.filter(([k]) => o.imgs[k]).map(([k, l]) => [l, o.pieces[k], o.imgs[k]])),
       el('p', { class: 'small muted m0', text: `${o.style} · ${n} of ${PIECES.length} pieces${loName ? ` · ${loName}` : ''}` }),
       el('div', { class: 'row mt6' },
         el('button', { type: 'button', class: o.worn ? 'primary' : '', text: o.worn ? 'Wearing' : 'Wear', onclick: () => { const was = o.worn; list.forEach((x) => { x.worn = false; }); o.worn = !was; persist(); paint(); } }),

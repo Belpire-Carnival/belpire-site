@@ -6,7 +6,7 @@ import {
   reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms
 } from './builder-core.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
-import { shipArt, partArt } from './art.js';
+import { shipArt, partArt, photo } from './art.js';
 
 const API = '/api/sc-builder';
 const KEY = 'arsenal.builder';
@@ -112,6 +112,7 @@ export function initBuilder(host) {
     const unit = p ? (p.shield?.hp != null ? 'shield HP' : p.gen != null ? 'power segments' : p.cool != null ? 'cooling' : '') : '';
     const c = el('div', { class: `part ${current !== slot.stock ? 'changed' : ''}`.trim() },
       el('span', { class: 'sz', text: size }),
+      photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
       el('div', {}, el('div', { class: 'nm', text: p?.name || 'Unknown part' }), el('div', { class: 'mk', text: [p?.mfr, p?.grade && `grade ${p.grade}`, p?.cls].filter(Boolean).join(' · ') })),
       el('div', {}, el('div', { class: 'big', text: big }), el('div', { class: 'mk', text: unit })));
     if (p?.shield?.regen != null) c.append(el('div', { class: 'wide mk', text: `${fmt1(p.shield.regen)} HP/s regen` }));
@@ -124,6 +125,7 @@ export function initBuilder(host) {
     const p = partsById.get(current);
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
+      photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
       el('div', {}, el('div', { class: 'nm', text: `S${slot.max} ${p?.name || 'Unknown'}` }),
         el('div', { class: 'mk', text: `${slotLabel(slot)}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
@@ -340,7 +342,7 @@ export function initBuilder(host) {
     const hp = delta(base.shieldHp, mine.shieldHp), bu = delta(base.burstDps, mine.burstDps);
     const bits = [s.role, s.career, s.size != null ? `size ${s.size}` : '', s.crew?.max ? `crew ${s.crew.min ?? 1}–${s.crew.max}` : '', s.cargo ? `${s.cargo} SCU` : ''].filter(Boolean);
     const n = changedSlots(s, ov).length;
-    return el('div', { class: 'card accent shipcard' }, shipArt(s),
+    return el('div', { class: 'card accent shipcard' }, photo(s.img, s.name, shipArt(s), 'photo ship'),
       el('div', {}, el('div', { class: 'lbl', text: s.mfr }), el('h3', { class: 'big', text: s.name }),
         el('div', { class: 'tagrow' }, ...bits.map((b) => el('span', { class: 'tag2', text: b })), n ? el('span', { class: 'tag2', text: `${n} swap${n === 1 ? '' : 's'}` }) : null),
         s.msrp ? el('p', { class: 'small muted mt8', text: `Pledge price from ${num(s.msrp)} USD. In-game prices are not in the wiki data for most ships.` }) : null));

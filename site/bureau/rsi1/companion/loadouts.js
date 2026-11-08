@@ -3,6 +3,8 @@
 // Saved in this browser (and to the player's profile when signed in, like everything under "arsenal.*").
 // The page is built with text nodes only.
 
+import { attachPicker, cleanImg, thumbStrip } from './items.js';
+
 const KEY = 'arsenal.loadouts';
 const MAX = 60;
 
@@ -40,6 +42,8 @@ const count = (v) => { const n = Math.floor(Number(v)); return Number.isFinite(n
 export function normalize(o) {
   const slots = {};
   for (const [, list] of GROUPS) for (const [k] of list) slots[k] = clean(o?.slots?.[k]);
+  const imgs = {};
+  for (const [, list] of GROUPS) for (const [k] of list) imgs[k] = slots[k] ? cleanImg(o?.imgs?.[k]) : '';
   const supplies = {};
   for (const [k] of SUPPLIES) supplies[k] = count(o?.supplies?.[k]);
   return {
@@ -47,7 +51,7 @@ export function normalize(o) {
     name: clean(o?.name, 50) || 'Untitled loadout',
     mission: MISSIONS.includes(o?.mission) ? o.mission : 'Other',
     threat: THREATS.includes(o?.threat) ? o.threat : 'Medium',
-    slots, supplies,
+    slots, imgs, supplies,
     notes: String(o?.notes ?? '').slice(0, 600),
     at: Number(o?.at) || Date.now()
   };
@@ -94,8 +98,12 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
     const inputs = {};
     const groupsEl = GROUPS.map(([group, slots]) => el('div', {}, el('h3', { class: 'mt10', text: group }),
       el('div', { class: 'fields' }, ...slots.map(([k, label]) => {
-        inputs[k] = el('input', { type: 'text', value: l.slots[k], maxlength: '80', 'aria-label': label });
-        return field(label, inputs[k]);
+        inputs[k] = el('input', { type: 'text', value: l.slots[k], maxlength: '80', 'aria-label': label, autocomplete: 'off' });
+        let picked = l.slots[k];
+        inputs[k].addEventListener('input', () => { if (inputs[k].value !== picked) l.imgs[k] = ''; });
+        const f = field(label, inputs[k]);
+        attachPicker(inputs[k], ({ name, img }) => { picked = name; l.imgs[k] = img; });
+        return f;
       }))));
     const sup = {};
     const supEl = el('div', {}, el('h3', { class: 'mt10', text: 'Supplies' }), el('div', { class: 'fields' }, ...SUPPLIES.map(([k, label]) => {
@@ -104,7 +112,7 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
     })));
     const notes = el('textarea', { rows: '3', maxlength: '600', placeholder: 'Plan, callouts, who carries what', 'aria-label': 'Notes' });
     notes.value = l.notes;
-    const read = () => normalize({ ...l, name: name.value, mission: mission.value, threat: threat.value, notes: notes.value,
+    const read = () => normalize({ ...l, imgs: l.imgs, name: name.value, mission: mission.value, threat: threat.value, notes: notes.value,
       slots: Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value])), supplies: Object.fromEntries(Object.entries(sup).map(([k, i]) => [k, i.value])) });
     const save = el('button', { type: 'button', class: 'primary', text: 'Save loadout', onclick: () => {
       const next = read();
@@ -124,6 +132,7 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
     const guns = ['primary', 'secondary', 'sidearm'].map((k) => l.slots[k]).filter(Boolean);
     return el('div', { class: `lo-item threat-${l.threat.toLowerCase()}` },
       el('div', { class: 'row between' }, el('b', { text: l.name }), el('span', { class: 'row' }, el('span', { class: 'chip', text: l.mission }), el('span', { class: `chip ${l.threat === 'High' ? 'warn' : l.threat === 'Low' ? 'ok' : ''}`.trim(), text: l.threat }))),
+      thumbStrip(GROUPS.flatMap(([, list]) => list).filter(([k]) => l.imgs[k]).map(([k, label]) => [label, l.slots[k], l.imgs[k]])),
       el('p', { class: 'small muted m0', text: `${armor} of 6 armor pieces${guns.length ? ` · ${guns.join(', ')}` : ' · no weapons set'}` }),
       flags.length ? el('p', { class: 'small warn m0', text: flags.slice(0, 3).join(' · ') + (flags.length > 3 ? ` · +${flags.length - 3} more` : '') }) : el('p', { class: 'small ok m0', text: 'Ready to go' }),
       el('div', { class: 'row mt6' },

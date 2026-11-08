@@ -80,3 +80,18 @@ export function partArt(type) {
   (PART[type] || PART.WeaponGun)(s);
   return s;
 }
+
+// A picture served through this site's own image route (/api/sc-img), with the drawn art as the fallback
+// when there is no picture or it fails to load.
+export function photo(path, alt, fallback, cls = 'photo') {
+  if (!path || typeof path !== 'string' || path.length > 220) return fallback;
+  const img = document.createElement('img');
+  img.className = cls;
+  img.alt = alt || '';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+  img.src = `/api/sc-img?p=${encodeURIComponent(path)}`;
+  img.addEventListener('error', () => { if (fallback && img.parentNode) img.replaceWith(fallback); else img.remove(); }, { once: true });
+  return img;
+}

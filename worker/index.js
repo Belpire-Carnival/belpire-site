@@ -9,6 +9,7 @@ import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleMarket, handleShip, refreshMarket } from './sc-market.js';
 import { handleScan } from './sc-scan.js';
 import { handleBuilder, refreshBuilder } from './sc-builder.js';
+import { handleImg, handleItem } from './sc-img.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
@@ -115,6 +116,11 @@ export default {
     }
     if (pathname === '/api/sc-ship') {
       const { status, body } = await handleShip(url, ctx);
+      return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+    }
+    if (pathname === '/api/sc-img') return handleImg(url, ctx);
+    if (pathname === '/api/sc-item') {
+      const { status, body } = await handleItem(url, env, ctx);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-builder') {
