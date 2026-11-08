@@ -67,7 +67,7 @@ test('the site only ships .js modules (browsers refuse scripts served with the w
 });
 
 test('every public page has a link-preview image that exists', async () => {
-  const pages = ['index.html', 'oddities/index.html', 'big-tent/index.html', 'backstage/index.html', 'me/index.html', 'jackbox/index.html', 'bureau/index.html', 'bureau/rsi1/index.html', 'bureau/se1/index.html', 'bureau/bf1/index.html', 'bureau/sq1/index.html', 'bureau/tc1/index.html', 'bureau/ds1/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
+  const pages = ['index.html', 'oddities/index.html', 'big-tent/index.html', 'backstage/index.html', 'me/index.html', 'jackbox/index.html', 'bureau/index.html', 'bureau/rsi1/index.html', 'bureau/rsi1/companion/index.html', 'bureau/se1/index.html', 'bureau/bf1/index.html', 'bureau/sq1/index.html', 'bureau/tc1/index.html', 'bureau/ds1/index.html', 'join/index.html', 'privacy/index.html', 'terms/index.html'];
   for (const page of pages) {
     const html = await readFile(join(ROOT, 'site', page), 'utf8');
     const img = html.match(/<meta property="og:image" content="https:\/\/belpire\.com\/([^"]+)">/);

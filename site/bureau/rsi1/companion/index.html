@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Citizen Arsenal — Star Citizen Companion — Bureau of Finality</title>
+  <meta name="description" content="The Bureau of Finality's Star Citizen companion: live commodity prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime. Unofficial fan tool.">
+  <link rel="canonical" href="https://bureau.belpire.com/rsi1/companion/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bureau of Finality">
+  <meta property="og:title" content="Citizen Arsenal — Star Citizen Companion">
+  <meta property="og:description" content="Live prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime for Star Citizen pilots.">
+  <meta property="og:url" content="https://bureau.belpire.com/rsi1/companion/">
+  <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Bureau of Finality crest over the division's battle scene">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#08111E">
+  <link rel="icon" href="../../crest.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="companion.css">
+  <script src="app.js" type="module"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="brand">
+    <div><h1 class="inl">CITIZEN ARSENAL</h1><span class="sub">Bureau of Finality · DIV_RSI1 Companion</span></div>
+    <div class="motto"><a href="../">Back to the division</a> · <b>Finem Ultimum Nos Afferimus.</b></div>
+  </div>
+  <div class="vt" aria-label="VerseTime">
+    <div><div class="lbl">Body</div>
+      <select id="vtBody" aria-label="Celestial body" class="vt-sel"></select></div>
+    <div><div class="lbl">Local time <span id="vtCal" class="chip warn" title="Phase not calibrated">UNCAL</span></div><div class="val" id="vtClock">—</div></div>
+    <div><div class="lbl">Cycle</div><div class="val" id="vtPhase">—</div></div>
+    <div><div class="lbl">Next</div><div class="val" id="vtNext">—</div></div>
+    <div><div class="lbl">Day length</div><div class="val" id="vtLen">—</div></div>
+    <div class="vt-wide"><div class="lbl">Calibrate</div>
+      <div class="row mt2"><button id="vtMark" title="Press when you see sunrise in game at your location">Sunrise now</button><button id="vtReset" class="ghost">Reset</button></div></div>
+  </div>
+  <nav id="nav" aria-label="Modules"></nav>
+</header>
+
+<main id="main" class="app">
+
+<!-- ================= OPS ================= -->
+<section class="view" id="v-ops" aria-labelledby="h-ops">
+  <div class="vhead"><h2 id="h-ops">Operations</h2><span class="patch" data-patch></span></div>
+  <div class="grid g3">
+    <div class="card accent"><h3>Today</h3><div class="stat-big" id="opsToday">0 aUEC</div><div class="muted small" id="opsTodaySub">No runs logged today</div></div>
+    <div class="card accent"><h3>Last 7 days</h3><div class="stat-big" id="opsWeek">0 aUEC</div><div class="muted small" id="opsWeekSub">—</div></div>
+    <div class="card accent"><h3>Best rate</h3><div class="stat-big" id="opsBest">—</div><div class="muted small" id="opsBestSub">Log runs with a duration to see aUEC/hour</div></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Before you launch</h3>
+      <ul class="check" id="preflight"></ul>
+    </div>
+    <div class="card"><h3>Live status &amp; data</h3>
+      <p class="small"><span id="rsiState" class="chip">RSI services: checking</span></p>
+      <p class="small muted" id="mkLine">Checking live prices…</p>
+      <h3 class="mt12">Latest Comm-Links</h3>
+      <ul class="tight small" id="newsList"></ul>
+      <table class="mt8"><tbody id="opsLinks"></tbody></table>
+    </div>
+  </div>
+  <div class="note info mt12">Prices marked <span class="chip ok">LIVE</span> come from UEX, which is community-submitted: a number can be hours old or wrong. Check it in game before you spend. Anything marked <span class="chip">SNAPSHOT</span> is a dated reference. Everything you enter here is saved in this browser only.</div>
+  
+</section>
+
+<!-- ================= CONTRACTS ================= -->
+<section class="view" id="v-contracts" aria-labelledby="h-contracts">
+  <div class="vhead"><h2 id="h-contracts">Contracts Board</h2><span class="patch" data-patch></span></div>
+  <div class="card">
+    <p class="small muted mt0">Screenshot any contract in your mobiGlas (hauling, salvage, mining, bounty, mercenary, delivery, investigation, anything) and scan it. An AI model reads the payout, cargo, routes, deadline and requirements; you check them, then add the contract to your board. A list screen with several contracts works too.</p>
+    <div id="scan-contracts"></div>
+    <div class="out" id="ctTotals"></div>
+    <div class="row mt10">
+      <label class="f inline">Show <select id="ctFilter"><option value="open">Open</option><option value="all">All</option><option value="done">Done</option></select></label>
+      <button class="primary" id="ctManual">Add contract</button>
+    </div>
+    <div class="grid g2 mt12" id="ctList"></div>
+  </div>
+</section>
+
+<!-- ================= SALVAGE ================= -->
+<section class="view" id="v-salvage" aria-labelledby="h-salvage">
+  <div class="vhead"><h2 id="h-salvage">Salvage Companion</h2><span class="patch" data-patch></span></div>
+  <div class="card accent mb12">
+    <p><b>The loop:</b> hull-scrape wrecks into <b>Recycled Material Composite (RMC)</b>, then optionally fracture and disintegrate the hull into raw construction material. Since Alpha 4.3.2 that raw material must be <b>refined</b> into <b>Construction Materials</b> before it sells. The grade you get depends on ship class: <b>Rubble</b> (light salvage: fastest refining, lowest yield), <b>Pieces</b>, then <b>Salvage</b>.</p>
+    <p class="small muted m0">Sources: RSI Salvage &amp; Repair guide (Comm-Link 19070), starcitizen.tools Salvage, timesaver.gg 4.10 guide.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>1 · Platform</h3>
+      <div class="pick" id="svShips"></div>
+      <div id="svShipNote" class="note" hidden></div>
+      <h3 class="mt14">Scraper head</h3>
+      <div class="pick" id="svHeads"></div>
+      <p class="small muted mt8">Hold capacities and beam stats are not listed here because they change per patch. Check them on <a href="https://www.spviewer.eu/" target="_blank" rel="noopener">SPViewer</a> or <a href="https://www.erkul.games/" target="_blank" rel="noopener">Erkul</a>.</p>
+    </div>
+
+    <div class="card">
+      <h3>2 · Run checklist</h3>
+      <ul class="check" id="svChecklist"></ul>
+      <div class="row mt8"><button class="ghost" id="svCheckReset">Reset checklist</button></div>
+    </div>
+  </div>
+
+  <div class="card mt12">
+    <h3>3 · Run calculator</h3>
+    <p class="small muted">Enter what you hauled and the prices your terminal shows. Get the refinery yield from the refinery terminal's job estimate.</p>
+    <div id="scan-salvage"></div>
+    <div class="fields" id="svFields"></div>
+    <div class="out" id="svOut"></div>
+    <div class="row mt12">
+      <input id="svNotes" placeholder="Notes (wreck, location, shard…)" class="grow">
+      <button class="primary" id="svLog">Log run</button>
+      <button id="svBrief">Adjutant briefing</button>
+    </div>
+    <textarea class="copybox" id="svBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+
+  <div class="grid g2 mt12">
+    <div class="card">
+      <h3>4 · Live sell prices <span class="chip ok">UEX</span></h3>
+      <p class="small muted">Top places that pay for each material right now. "Use" fills the price in the run calculator.</p>
+      <h3 class="mt8">Recycled Material Composite</h3><div id="svLiveRmc"></div>
+      <h3 class="mt12">Construction Materials</h3><div id="svLiveCm"></div>
+    </div>
+    <div class="card">
+      <h3>Older reference <span class="chip">SNAPSHOT 4.10.0</span></h3>
+      <table>
+        <thead><tr><th>RMC sell point</th><th>System</th><th class="num">aUEC / SCU</th><th>Stamped</th></tr></thead>
+        <tbody id="svPrices"></tbody>
+      </table>
+      <div class="note warn"><b>Don't misread Admin offices:</b> many only <i>sell</i> RMC to you (seen at 7,587). That's a buy price, not a payout.</div>
+      <ul class="tight small">
+        <li><b>RMC:</b> Trade &amp; Development Division (TDD) offices and scrapyards; some commodity terminals.</li>
+        <li><b>Construction Materials:</b> in demand at admin offices (refine first).</li>
+        <li>Prices drift by shard and stock. Check <a href="https://uexcorp.space/commodities" target="_blank" rel="noopener">UEX commodities</a> before the trip.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Contracts &amp; mitigations</h3>
+      <ul class="tight small">
+        <li><b>Salvager Needed</b> orders (Adagio Holdings) ask for RMC, unrefined construction material (Rubble, Pieces or Salvage) and components, delivered to a freight elevator (e.g. Levski). Any class or size of salvage ship qualifies. <span class="muted">Seen on 4.10.2.</span></li>
+        <li>Contract bonuses can pay out if a wreck is "sufficiently salvaged" or towed far enough from its spawn. A timer eventually brings security forces.</li>
+        <li><b>Scan before you scrape.</b> Owner "Gamerules" means abandoned. Scraping a ship that still shows a player name can flag you for a crime.</li>
+        <li><b>Shields or power still on?</b> They block scraping. Knock the ship down with distortion damage first.</li>
+        <li><b>Eject RMC before structural salvage.</b> Construction material uses the same filler buffer.</li>
+        <li><b>Sell before you log off.</b> Loose cargo and refinery jobs can be lost to a crash or version change. LTP protects aUEC and in-game-earned ships, not loose RMC in your grid.</li>
+        <li><b>Error 30000:</b> fully close the client before reconnecting.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MINING ================= -->
+<section class="view" id="v-mining" aria-labelledby="h-mining">
+  <div class="vhead"><h2 id="h-mining">Mining &amp; Refining</h2><span class="patch" data-patch></span></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Refinery job calculator</h3>
+      <p class="small muted">One line per ore. Yield % and fee come from the refinery terminal's estimate for the method you pick. Type an ore name from the list, then "Fill sell prices" uses the best live sell price. Edit any number.</p>
+      <div id="scan-mining"></div>
+      <table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table>
+      <div class="row mt8"><button id="mnAdd">Add ore</button><button id="mnLive" class="ghost">Fill sell prices (live)</button><datalist id="oreList"></datalist></div>
+      <div class="fields mt12" id="mnFields"></div>
+      <div class="out" id="mnOut"></div>
+      <div class="row mt12">
+        <input id="mnNotes" placeholder="Notes (ship, rock, refinery station…)" class="grow">
+        <button class="primary" id="mnLog">Log run</button><button id="mnBrief">Adjutant briefing</button>
+      </div>
+      <textarea class="copybox" id="mnBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+    </div>
+    <div class="card">
+      <h3>Picking the platform</h3>
+      <ul class="tight small">
+        <li><b>Prospector:</b> solo ship mining. Choose laser head and modules for the rock's resistance and instability.</li>
+        <li><b>MOLE:</b> crewed ship mining with three heads that can work one rock together.</li>
+        <li><b>ROC / Golem / hand mining:</b> small surface gems, often in caves.</li>
+        <li>Modules stack. Active modules trade charge-window stability for power, so plan the stack per rock rather than one fit for all.</li>
+      </ul>
+      <div class="note">Best ore and refinery yield bonuses rotate. Before a session, check <a href="https://regolith.rocks/" target="_blank" rel="noopener">Regolith</a> for rock and refinery data and <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX</a> for refined prices.</div>
+      <h3 class="mt12">Mitigations</h3>
+      <ul class="tight small">
+        <li>Refinery jobs can be lost to version changes. Collect and sell finished jobs before a patch lands.</li>
+        <li>Fracture on a stable charge window; if the bar runs away, cut power rather than riding the overcharge.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRADE ================= -->
+<section class="view" id="v-trade" aria-labelledby="h-trade">
+  <div class="vhead"><h2 id="h-trade">Trade &amp; Hauling</h2><span class="patch" data-patch></span></div>
+  <div class="card accent mb12">
+    <h3>Live market <span id="mkChip" class="chip warn">MANUAL</span></h3>
+    <p class="small muted">Best buy-to-sell pairs across all terminals, from recent UEX reports (older than two weeks is ignored). "Buy" is what you pay, "Sell" is what you get. Margins this good deserve a second look: check in game before you commit a hold.</p>
+    <label class="f grow">Search a commodity<input id="mkSearch" type="search" list="commList" placeholder="e.g. Agricium"></label>
+    <div id="mkRoutes" class="mt8"></div>
+    <datalist id="commList"></datalist>
+  </div>
+  <div class="card">
+    <h3>Route planner (A → B → C …)</h3>
+    <p class="small muted">Enter each leg's buy and sell prices from UEX or the terminal. Each leg buys as much as the hold, your capital and the terminal's stock allow; the profit carries into the next leg.</p>
+    <div id="scan-trade"></div>
+    <div class="fields" id="trFields"></div>
+    <div class="scrollx mt12"><table>
+      <thead><tr><th>Commodity</th><th>Buy at</th><th class="num">Buy / SCU</th><th>Sell at</th><th class="num">Sell / SCU</th><th class="num">Stock SCU</th><th class="num">Leg min</th><th class="num">SCU</th><th class="num">Profit</th><th></th></tr></thead>
+      <tbody id="trLegs"></tbody>
+    </table></div>
+    <div class="row mt8"><button id="trAdd">Add leg</button></div>
+    <div class="out" id="trOut"></div>
+    <div class="row mt12">
+      <input id="trNotes" placeholder="Notes" class="grow">
+      <button class="primary" id="trLog">Log route</button><button id="trBrief">Adjutant briefing</button>
+    </div>
+    <textarea class="copybox" id="trBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Hauling contract check</h3>
+      <p class="small muted m0">Full contract details live on the <a href="#contracts">Contracts</a> tab.</p>
+      <div class="fields mt8" id="hlFields"></div>
+      <div class="out" id="hlOut"></div>
+    </div>
+    <div class="card"><h3>Mitigations</h3>
+      <ul class="tight small">
+        <li>Use the <b>Cargo Grid</b> tab to plan boxes before you hit the freight elevator.</li>
+        <li>Freight elevator stuck or empty: re-open the terminal, switch tabs, and wait for the elevator to cycle before re-requesting. Don't spam the request.</li>
+        <li>Store cargo you mean to keep. Don't log off with a full hold you haven't sold or stored.</li>
+        <li>Check <a href="https://sc-trade.tools/" target="_blank" rel="noopener">SC Trade Tools</a> for current route ideas, then price-check them here.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CARGO ================= -->
+<section class="view" id="v-cargo" aria-labelledby="h-cargo">
+  <div class="vhead"><h2 id="h-cargo">Cargo Grid</h2><span class="patch" data-patch></span></div>
+  <div class="card">
+    <p class="small muted">Set the grid size in 1-SCU cells for your ship's hold (width × length × height). Check the real grid in game or on SPViewer; the starting size is only an example. Box footprints are the standard 1–32 SCU containers.</p>
+    <div class="fields" id="cgFields"></div>
+    <h3 class="mt12">Boxes to load</h3>
+    <div id="scan-cargo"></div>
+    <div class="fields" id="cgCounts"></div>
+    <div class="row mt10">
+      <button class="primary" id="cgPack">Auto-pack</button>
+      <button id="cgClear" class="ghost">Clear grid</button>
+      <span class="small muted">Manual: pick a box, click a cell on a layer to place it, click a placed box to remove it.</span>
+    </div>
+    <div class="row mt10"><div class="palette" id="cgPalette"></div><button id="cgRot" aria-pressed="false">Rotate 90°</button></div>
+    <div class="out" id="cgOut"></div>
+    <div class="legend mt10" id="cgLegend"></div>
+    <div class="layers" id="cgLayers"></div>
+    <h3 class="mt14">Loading sequence</h3>
+    <p class="small muted">Far end first, bottom up. The door is at the bottom row of each layer.</p>
+    <ol class="small mono cols2" id="cgSeq"></ol>
+    <div class="row"><button id="cgBrief">Adjutant manifest</button></div>
+    <textarea class="copybox" id="cgBriefBox" readonly aria-label="Manifest text" hidden></textarea>
+  </div>
+</section>
+
+<!-- ================= COMBAT ================= -->
+<section class="view" id="v-combat" aria-labelledby="h-combat">
+  <div class="vhead"><h2 id="h-combat">Tactical Armory</h2><span class="patch" data-patch></span></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>TTK matrix</h3>
+      <p class="small muted">Enter weapon and armor numbers from <a href="https://finder.cstone.space/" target="_blank" rel="noopener">CStone</a> or <a href="https://www.erkul.games/" target="_blank" rel="noopener">Erkul</a>. Armor values are damage-taken multipliers (1.00 = no reduction, 0.70 = 30% reduction).</p>
+      <div id="scan-weapon"></div>
+      <div class="fields" id="tkFields"></div>
+      <h3 class="mt12">Armor multipliers</h3>
+      <table><thead><tr><th>Class</th><th class="num">Physical</th><th class="num">Energy</th></tr></thead><tbody id="tkArmor"></tbody></table>
+      <div class="scrollx mt12"><table>
+        <thead><tr><th>Armor</th><th class="num">Dmg / shot</th><th class="num">Shots</th><th class="num">Reloads</th><th class="num">TTK (s)</th></tr></thead>
+        <tbody id="tkOut"></tbody>
+      </table></div>
+      <p class="small muted" id="tkFoot"></p>
+    </div>
+    <div class="card">
+      <h3>Blood Drug Level tracker</h3>
+      <p class="small muted">Enter BDL per dose and decay rate for your medpen (from the item's stats). Log each injection; the gauge decays live.</p>
+      <div class="fields" id="bdFields"></div>
+      <div class="row mt10"><button class="primary" id="bdDose">Inject</button><button class="ghost" id="bdReset">Reset</button></div>
+      <div class="out" id="bdOut"></div>
+      <h3 class="mt14">Loadout notes</h3>
+      <textarea id="loNotes" rows="6" placeholder="Undersuit · Helmet · Core · Arms · Legs · Backpack · Primary · Secondary · Sidearm · Utility. Saved in this browser."></textarea>
+      <div class="row mt6"><button id="loSave">Save notes</button><button id="loBrief">Adjutant briefing</button></div>
+      <textarea class="copybox" id="loBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FLEET ================= -->
+<section class="view" id="v-fleet" aria-labelledby="h-fleet">
+  <div class="vhead"><h2 id="h-fleet">Fleet Command</h2><span class="patch" data-patch></span></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Your hangar</h3>
+      <p class="small muted">Type a ship name and press Look up (Star Citizen Wiki data), or add stats from <a href="https://www.spviewer.eu/" target="_blank" rel="noopener">SPViewer</a> (SCM and NAV in m/s, rotation in °/s, forward acceleration in m/s²).</p>
+      <div id="scan-ship"></div>
+      <div class="fields" id="flFields"></div>
+      <div class="row mt8"><button class="primary" id="flAdd">Save ship</button><button class="ghost" id="flLookup">Look up SCM / NAV / rotation</button></div>
+      <div class="scrollx mt12"><table>
+        <thead><tr><th>Ship</th><th class="num">SCM</th><th class="num">NAV</th><th class="num">P/Y/R</th><th class="num">Accel</th><th>Role</th><th></th></tr></thead>
+        <tbody id="flList"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>Flight envelope comparison</h3>
+      <div class="row"><select id="flA" aria-label="Ship A"></select><span class="muted">vs</span><select id="flB" aria-label="Ship B"></select></div>
+      <div class="svgwrap"><svg id="flRadar" class="radar svgmax" viewBox="0 0 360 330" width="100%" role="img" aria-label="Radar chart comparing two ships"></svg></div>
+      <p class="small muted">Each axis is scaled to the better of the two ships. Atmospheric handling isn't modelled here: SPViewer shows atmospheric figures where they're known.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= MANUAL ================= -->
+<section class="view" id="v-manual" aria-labelledby="h-manual">
+  <div class="vhead"><h2 id="h-manual">Field Manual</h2><span class="patch" data-patch></span></div>
+  <div class="grid g2">
+    <div class="card"><h3>Bug mitigations</h3><table><tbody id="bugTable"></tbody></table>
+      <p class="small muted mt8">For bug reports, add a screenshot with <span class="mono">r_displaySessionInfo 1</span> and file it on the <a href="https://issue-council.robertsspaceindustries.com/" target="_blank" rel="noopener">Issue Council</a>.</p></div>
+    <div class="card"><h3>Reference tools</h3><table><tbody id="refTable"></tbody></table></div>
+  </div>
+</section>
+
+
+<!-- ================= LOG ================= -->
+<section class="view" id="v-log" aria-labelledby="h-log">
+  <div class="vhead"><h2 id="h-log">Ops Log</h2><span class="patch" data-patch></span></div>
+  <div class="card">
+    <div class="row between"><div class="row"><label class="f inline">Activity <select id="lgFilter"><option value="">All</option><option>salvage</option><option>mining</option><option>trade</option><option>contract</option></select></label></div><span class="small muted" id="lgStore"></span></div>
+    <div class="out" id="lgTotals"></div>
+    <div class="scrollx mt12"><table>
+      <thead><tr><th>When</th><th>Activity</th><th class="num">Net aUEC</th><th class="num">Minutes</th><th class="num">aUEC / h</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="lgRows"></tbody>
+    </table></div>
+    <textarea class="copybox" id="lgBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<footer class="foot">
+  <p class="fine">This is an unofficial Star Citizen fan tool, not affiliated with the Cloud Imperium group of companies. Commodity prices come from <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX Corp</a> (community data; UEX is a fictional in-game entity). Ship data credits <a href="https://api.star-citizen.wiki/" target="_blank" rel="noopener">api.star-citizen.wiki</a>. Status and Comm-Link information comes from robertsspaceindustries.com. What you enter on this page is saved in your browser only. <a href="https://belpire.com/privacy/">Privacy Policy</a> · <a href="https://belpire.com/terms/">Terms of Use</a></p>
+</footer>
+</body>
+</html>
