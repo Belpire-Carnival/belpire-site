@@ -15,11 +15,41 @@ const h = (tag, attrs = {}, ...kids) => {
   return e;
 };
 
+// The pop-ups grow out of the card or button that opened them and settle slightly off-axis (the tilt itself is in the CSS).
+// The element is remembered at pointer-down, because a clickable card is not focusable and so is never document.activeElement.
+let lastHit = null;
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => { lastHit = e.target instanceof Element ? e.target.closest('.part, .gun, button') : null; }, true);
+  document.addEventListener('keydown', () => { lastHit = null; }, true);
+}
+const calm = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const TILT = 'perspective(1400px) rotateY(-2deg) rotateX(1deg)';
+
+// Keyframes that map the settled dialog onto the source element: shrunk, shifted onto it and turned further off-axis.
+function fromSource(dlg, src) {
+  const d = dlg.getBoundingClientRect();
+  const s = src?.isConnected ? src.getBoundingClientRect() : null;
+  if (!s || !s.width || !d.width) return { shift: 'translateY(14px) scale(.96)', turn: '' };
+  const dx = s.left + s.width / 2 - (d.left + d.width / 2);
+  const dy = s.top + s.height / 2 - (d.top + d.height / 2);
+  const k = Math.min(0.5, Math.max(0.08, s.width / d.width));
+  return { shift: `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(${k.toFixed(3)})`, turn: 'perspective(1400px) rotateY(-16deg) rotateX(7deg)' };
+}
+
 // A dialog with a title bar. Closing it (button, Esc, a click outside) removes it and gives focus back.
 function frame(kicker, title, wide) {
   const back = document.activeElement;
   const dlg = h('dialog', { class: `holo${wide ? ' wide' : ''}`, 'aria-label': title });
-  const shut = () => { try { dlg.close(); } catch { dlg.remove(); } };
+  dlg.holoSrc = lastHit?.isConnected ? lastHit : back;
+  let closing = false;
+  const end = () => { try { dlg.close(); } catch { dlg.remove(); } };
+  const shut = () => {
+    if (closing) return;
+    closing = true;
+    if (calm() || !dlg.animate) return end();
+    const { shift, turn } = fromSource(dlg, dlg.holoSrc);
+    dlg.animate([{ opacity: 1, transform: TILT }, { opacity: 0, transform: `${shift} ${turn}`.trim() }], { duration: 180, easing: 'ease-in', fill: 'forwards' }).finished.then(end, end);
+  };
   dlg.append(h('div', { class: 'holo-head' },
     h('div', {}, h('div', { class: 'lbl', text: kicker }), h('h3', { class: 'holo-title', text: title })),
     h('button', { type: 'button', class: 'ghost holo-x', text: 'Close ✕', 'aria-label': 'Close', onclick: shut })));
@@ -31,6 +61,9 @@ function frame(kicker, title, wide) {
 function mount(dlg) {
   document.body.append(dlg);
   try { dlg.showModal(); } catch { dlg.setAttribute('open', ''); }
+  if (calm() || !dlg.animate) return;
+  const { shift, turn } = fromSource(dlg, dlg.holoSrc);
+  dlg.animate([{ opacity: 0, transform: `${shift} ${turn}`.trim() }, { opacity: 1, transform: TILT }], { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
 
 const grid = (rows) => {

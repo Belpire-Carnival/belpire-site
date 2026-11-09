@@ -159,6 +159,17 @@ export function initBuilder(host) {
       el('button', { type: 'button', class: 'ghost', text: 'Details', 'aria-label': `Details of the fitted ${slotLabel(slot)}`, onclick: () => openDetail(partsById.get(current)) }));
   }
 
+  // Clicking the part itself (photo, name, numbers) opens its data sheet; the name is a real button so the keyboard can too.
+  function nameBtn(text, part) {
+    return el('button', { type: 'button', class: 'nmbtn', text, 'aria-label': `Data sheet: ${text}`, onclick: (e) => { e.stopPropagation(); if (part) openDetail(part); } });
+  }
+  function openable(row, part) {
+    if (!part) return row;
+    row.classList.add('clickable');
+    row.addEventListener('click', (e) => { if (!e.target.closest('button, select, a')) openDetail(part); });
+    return row;
+  }
+
   function partCard(s, slot, ov) {
     const current = ov[slot.id] ?? slot.stock;
     const p = partsById.get(current);
@@ -168,11 +179,11 @@ export function initBuilder(host) {
     const c = el('div', { class: `part ${current !== slot.stock ? 'changed' : ''}`.trim() },
       el('span', { class: 'sz', text: size }),
       photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
-      el('div', {}, el('div', { class: 'nm', text: p?.name || 'Unknown part' }), el('div', { class: 'mk', text: [p?.mfr, p?.grade && `grade ${p.grade}`, p?.cls].filter(Boolean).join(' · ') })),
+      el('div', {}, el('div', { class: 'nm' }, nameBtn(p?.name || 'Unknown part', p)), el('div', { class: 'mk', text: [p?.mfr, p?.grade && `grade ${p.grade}`, p?.cls].filter(Boolean).join(' · ') })),
       el('div', {}, el('div', { class: 'big', text: big }), el('div', { class: 'mk', text: unit })));
     if (p?.shield?.regen != null) c.append(el('div', { class: 'wide mk', text: `${fmt1(p.shield.regen)} HP/s regen` }));
     c.append(swapSelect(s, slot, current));
-    return c;
+    return openable(c, p);
   }
 
   function gunRow(s, slot, ov) {
@@ -181,11 +192,11 @@ export function initBuilder(host) {
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
       photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
-      el('div', {}, el('div', { class: 'nm', text: `S${slot.max} ${p?.name || 'Unknown'}` }),
+      el('div', {}, el('div', { class: 'nm' }, nameBtn(`S${slot.max} ${p?.name || 'Unknown'}`, p)),
         el('div', { class: 'mk', text: `${slotLabel(slot)}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
     row.append(swapSelect(s, slot, current));
-    return row;
+    return openable(row, p);
   }
 
   // ------------------------------------------------------------ panels
@@ -263,14 +274,14 @@ export function initBuilder(host) {
         options: partsFor(r.pseudo, data.parts).sort((a, b) => (b.msl?.dmg ?? 0) - (a.msl?.dmg ?? 0) || a.name.localeCompare(b.name)),
         currentId: m?.id || '', stockId: null, allowClear: true, onPick: (id) => { setOverride(s, r.key, id); paint(); }
       });
-      c.append(el('div', { class: `gun ordn ${m ? 'changed' : ''}`.trim() },
+      c.append(openable(el('div', { class: `gun ordn ${m ? 'changed' : ''}`.trim() },
         photo(r.rack?.img, r.rack?.name || '', partArt('MissileLauncher'), 'photo thumb'),
-        el('div', {}, el('div', { class: 'nm', text: `${r.tubes ?? '?'} × S${r.size ?? '?'} ${r.rack?.name || 'rack'}` }),
+        el('div', {}, el('div', { class: 'nm' }, nameBtn(`${r.tubes ?? '?'} × S${r.size ?? '?'} ${r.rack?.name || 'rack'}`, r.rack)),
           el('div', { class: 'mk', text: m ? `${m.name} · ${fmt1(m.msl?.dmg)} dmg each · lock ${fmt1(m.msl?.lock)} s · ${fmt1(m.msl?.speed)} m/s` : `${slotLabel(r.slot)}${r.slot.locked ? ' · rack is fixed' : ''} · stock missiles` })),
         el('div', { class: 'big', text: m && r.tubes && m.msl?.dmg != null ? fmt1(r.tubes * m.msl.dmg) : '—' }),
         el('div', { class: 'swaprow2' },
           el('button', { type: 'button', class: 'swapbtn', text: m ? 'Change missile…' : 'Choose missile…', onclick: choose }),
-          el('button', { type: 'button', class: 'ghost', text: 'Rack details', onclick: () => openDetail(r.rack) }))));
+          el('button', { type: 'button', class: 'ghost', text: 'Rack details', onclick: () => openDetail(r.rack) }))), r.rack));
     }
     c.append(el('p', { class: 'small muted mt8', text: `${ms?.count ? `Stock: ${num(ms.count)} missiles${ms.damage ? `, ${num(ms.damage)} total damage` : ''}. ` : ''}${t.chosen ? `Your load: ${num(t.chosen)} of ${num(t.tubes)} tubes set, ${num(t.damage)} damage.` : 'The game data does not say which missile each rack holds, so choose one to model a load.'}` }));
     return c;
