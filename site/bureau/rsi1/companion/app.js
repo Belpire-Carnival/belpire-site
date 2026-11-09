@@ -3,6 +3,7 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
+import { initRankings } from './rank-ui.js';
 import { icon, bars, duo } from './viz.js';
 import { heroArt, photo } from './art.js';
 import { STAT_GROUPS, STAT_KEYS } from './builder-core.js';
@@ -60,25 +61,38 @@ const Store = {
 };
 
 // ---------------- routing ----------------
-const NAV = [
-  ['Command', [['ops', 'OmniOps'], ['contracts', 'TacBoard'], ['log', 'OmniLog']]],
-  ['Industry', [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']]],
-  ['Hangar & combat', [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix'], ['fleet', 'Hangar Command']]],
-  ['Reference', [['manual', 'Field Manual']]],
+// Six hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
+// belong together and shows them as sub-tabs. A hub id as the address (#earn) opens the view last used in that hub.
+const HUBS = [
+  { id: 'ops', label: 'OmniOps', icon: 'ops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
+  { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
+  { id: 'armory', label: 'Armory', icon: 'calc', blurb: 'Build loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
+  { id: 'earn', label: 'Earn', icon: 'trade', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
+  { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
+  { id: 'help', label: 'Help', icon: 'manual', blurb: 'What each tab does and what the data means.', panes: [['guide', 'Guide'], ['manual', 'Field Manual']] },
 ];
-const VIEWS = NAV.flatMap(([, items]) => items);
+const VIEWS = HUBS.flatMap((h) => h.panes);
+const HUB_OF = Object.fromEntries(HUBS.flatMap((h) => h.panes.map(([id]) => [id, h])));
+const HUB_BY = Object.fromEntries(HUBS.map((h) => [h.id, h]));
+const lastPane = {};
 const builder = initBuilder($('#builder'));
+const rankings = initRankings($('#rankings'));
 const nav = $('#nav');
-for (const [group, items] of NAV) {
-  nav.append(el('div', { class: 'grp', text: group }));
-  for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
+for (const h of HUBS) {
+  const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));
+  if (h.panes.length > 1) {
+    const subs = el('div', { class: 'subs' });
+    for (const [id, label] of h.panes) subs.append(el('a', { href: '#' + id, 'data-v': id }, label));
+    box.append(subs);
+  }
+  nav.append(box);
 }
 for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
 // Bottom bar: every module as an icon tab, the signed-in user pinned at the right end.
 {
   const dock = $('#dock');
   const tabs = el('div', { class: 'dock-tabs', role: 'presentation' });
-  for (const [id, label] of VIEWS) tabs.append(el('a', { href: '#' + id, 'data-d': id }, icon(id), el('span', { text: label })));
+  for (const h of HUBS) tabs.append(el('a', { href: '#' + h.panes[0][0], 'data-d': h.id }, icon(h.icon), el('span', { text: h.label })));
   dock.append(tabs, $('#acct'));
 }
 // Honest status line: what the page can actually tell about itself.
@@ -102,18 +116,52 @@ function setMenu(open) {
 $('#menuBtn').addEventListener('click', () => setMenu(!$('header.top').classList.contains('open')));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 function route() {
-  const id = (location.hash || '#ops').slice(1).split('?')[0];
-  const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
-  document.body.dataset.v = v;
-  for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
-  for (const d of $$('#dock a')) { if (d.dataset.d === v) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current'); }
-  for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
-  { const cur = $('a[data-v="' + v + '"]', nav); $('#menuNow').textContent = cur ? cur.textContent : 'Menu'; setMenu(false); }
-  if (v === 'fleet') drawRadar();
-  if (v === 'calc') builder.show();
+  const raw = (location.hash || '#ops').slice(1).split('?')[0];
+  let hub, pane;
+  if (HUB_OF[raw]) { hub = HUB_OF[raw]; pane = raw; }
+  else if (HUB_BY[raw]) { hub = HUB_BY[raw]; pane = lastPane[hub.id] || hub.panes[0][0]; }
+  else { hub = HUBS[0]; pane = 'ops'; }
+  lastPane[hub.id] = pane;
+  document.body.dataset.v = pane; document.body.dataset.hub = hub.id;
+  for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + pane);
+  for (const d of $$('#dock .dock-tabs a')) {
+    const h = HUB_BY[d.dataset.d]; d.setAttribute('href', '#' + (lastPane[h.id] || h.panes[0][0]));
+    if (h === hub) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current');
+  }
+  for (const b of $$('.hub', nav)) {
+    const on = b.dataset.h === hub.id; b.classList.toggle('on', on);
+    const a = $('a[data-hub]', b); a.setAttribute('href', '#' + (lastPane[b.dataset.h] || HUB_BY[b.dataset.h].panes[0][0]));
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  }
+  for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === pane) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); }
+  const bar = $('#subtabs'); bar.replaceChildren();
+  if (hub.panes.length > 1) {
+    for (const [id, label] of hub.panes) { const a = el('a', { href: '#' + id, text: label }); if (id === pane) a.setAttribute('aria-current', 'page'); bar.append(a); }
+    bar.hidden = false;
+  } else bar.hidden = true;
+  $('#menuNow').textContent = hub.label; setMenu(false);
+  if (pane === 'fleet') drawRadar();
+  if (pane === 'calc') { builder.show(); rankings.show(); }
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
+// OmniOps as the home hub: a map of where everything lives, and a short look at the hangar.
+function paintOpsHub() {
+  const map = $('#opsMap'); if (!map) return;
+  map.replaceChildren();
+  for (const h of HUBS) {
+    map.append(el('a', { class: 'hubtile', href: '#' + h.panes[0][0] }, icon(h.icon), el('b', { text: h.label }), el('span', { class: 'small muted', text: h.blurb }), el('span', { class: 'small', text: h.panes.map((p) => p[1]).join(' · ') })));
+  }
+}
+function paintOpsHangar() {
+  const box = $('#opsHangar'); if (!box) return;
+  box.replaceChildren();
+  const n = S.fleet.length;
+  box.append(el('div', { class: 'stat-big', text: String(n) }), el('div', { class: 'muted small', text: n === 1 ? 'ship in your hangar' : 'ships in your hangar' }));
+  if (n) box.append(el('p', { class: 'small mt8', text: S.fleet.slice(-4).reverse().map((x) => x.name).join(' · ') }));
+  box.append(el('p', { class: 'small mt8' }, el('a', { href: '#fleet', text: 'Open Hangar Command' }), ' · ', el('a', { href: '#calc', text: 'Build a loadout' })));
+}
+paintOpsHub(); Store.onChange(paintOpsHangar); paintOpsHangar();
 // The calculator hands finished builds to the hangar through this event.
 window.addEventListener('arsenal:hangar-add', (e) => {
   const d = e.detail || {}; const name = String(d.name || '').slice(0, 60); if (!name) return;
@@ -1152,7 +1200,7 @@ function scanner(hostSel, cfg) {
 document.addEventListener('paste', (e) => {
   const list = [...((e.clipboardData && e.clipboardData.files) || [])].filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'));
   if (!list.length) return;
-  const v = (location.hash || '#ops').slice(1);
+  const v = document.body.dataset.v;
   const s = scanners.find((x) => x.view === v && x.box.contains(document.activeElement)) || scanners.find((x) => x.view === v);
   if (!s) return;
   e.preventDefault(); s.add(list); s.box.scrollIntoView({ block: 'nearest' });

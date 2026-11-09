@@ -53,6 +53,7 @@
 </header>
 
 <main id="main" class="app">
+<div id="subtabs" class="subtabs" role="navigation" aria-label="Sections" hidden></div>
 
 <!-- ================= OPS ================= -->
 <section class="view" id="v-ops" aria-labelledby="h-ops">
@@ -61,6 +62,10 @@
     <div class="card accent"><h3>Today</h3><div class="stat-big" id="opsToday">0 aUEC</div><div class="muted small" id="opsTodaySub">No runs logged today</div></div>
     <div class="card accent"><h3>Last 7 days</h3><div class="stat-big" id="opsWeek">0 aUEC</div><div class="muted small" id="opsWeekSub">—</div></div>
     <div class="card accent"><h3>Best rate</h3><div class="stat-big" id="opsBest">—</div><div class="muted small" id="opsBestSub">Log runs with a duration to see aUEC/hour</div></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Where things live</h3><div class="hubmap" id="opsMap"></div></div>
+    <div class="card accent"><h3>Your hangar</h3><div id="opsHangar"></div></div>
   </div>
   <div class="grid g2 mt12">
     <div class="card"><h3>Last 14 days <span class="muted small">net aUEC per day</span></h3><div id="opsChart"></div></div>
@@ -323,6 +328,7 @@
   <div class="hero"><div><h2 id="h-calc">Avionics Lab</h2><span class="daemon">sys://avionics.flight</span><p class="tag">Build a ship loadout and see its damage, defense, power and flight stats. Compare against stock, save builds and price the upgrade.</p>
     <div class="chips"><span class="chip">Swap any hardpoint</span><span class="chip">Stock vs build</span><span class="chip">Upgrade cost</span><span class="chip">Share link</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="calc"></div></div>
   <div id="builder" class="calc"></div>
+  <div id="rankings" class="mt14"></div>
 </section>
 
 <!-- ================= FLEET ================= -->
@@ -352,6 +358,61 @@
 
 
 <!-- ================= MANUAL ================= -->
+<section class="view" id="v-guide" aria-labelledby="h-guide">
+  <div class="hero"><div><h2 id="h-guide">Guide</h2><span class="daemon">sys://ref.guide</span><p class="tag">What each tab is for, what the numbers mean, and how current the data is.</p><div class="chips"><span class="chip">Tab by tab</span><span class="chip">Data sources</span><span class="chip">Glossary</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="guide"></div></div>
+  <div class="note info">Star Citizen changes every patch. Everything here is a planning aid: check a price, a location or a stat in game before you spend or fly on it. Each tab says where its numbers come from.</div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>OmniOps <span class="muted small">home</span></h3>
+      <p class="small">Today and last-7-day earnings, your best aUEC per hour, a pre-launch checklist and the state of RSI services. It also maps every other tab. <b>Overview</b> totals what you logged. <b>TacBoard</b> keeps the contracts you scanned or typed in, with a check against your hold and your routes.</p>
+      <p class="small muted">Data: your own logs (this browser, or your profile if you sign in with Discord), UEX prices, RSI status and Comm-Links.</p></div>
+    <div class="card"><h3>Hangar</h3>
+      <p class="small"><b>Hangar Command</b> is the ships you own or follow, with a radar that compares two of them. Ships saved from the Avionics Lab bring their damage, shields, hull and range with them; ships you type in by hand only carry the flight figures you enter.</p>
+      <p class="small muted">Data: Star Citizen Wiki ship records plus what you enter. Stored in this browser, or your profile when signed in.</p></div>
+    <div class="card"><h3>Armory</h3>
+      <p class="small"><b>Avionics Lab</b> builds a loadout: pick a ship, click any part to see every figure the wiki has for it, swap it from a sortable table (green is better than what is fitted, red is worse), and see damage, defence, power and flight totals against stock. Under the builder, <b>Weapon rankings</b> orders FPS weapons and ship guns by time to kill. <b>Ballistics Matrix</b> holds the FPS time-to-kill calculator, medpen tracking, ground loadouts and the wardrobe.</p>
+      <p class="small muted">Data: Star Citizen Wiki item database through our own snapshot. It is only as current as the wiki and the last snapshot rebuild.</p></div>
+    <div class="card"><h3>Earn</h3>
+      <p class="small"><b>Slag &amp; Scrape</b> is hull scraping, structural salvage and refining. <b>Extraction OS</b> plans a refinery job, prices the ore and logs the haul. <b>OmniRoute</b> lists live buy and sell pairs and plans a route. <b>GridMaster</b> packs 1 to 32 SCU boxes into your hold and gives a loading order.</p>
+      <p class="small muted">Data: UEX commodity prices. A chip marked LIVE is community-submitted and can be hours old or wrong; SNAPSHOT is a dated reference.</p></div>
+    <div class="card"><h3>Log</h3>
+      <p class="small"><b>OmniLog</b> is every run you logged, totalled and sorted by activity. Logging a run from any Earn tab feeds the OmniOps totals and best rate.</p>
+      <p class="small muted">Data: only what you logged. Nothing here comes from the game.</p></div>
+    <div class="card"><h3>Help</h3>
+      <p class="small"><b>Guide</b> is this page. <b>Field Manual</b> has bug workarounds for the usual alpha problems (stuck ships, elevator failures, disconnects) and the reference sites worth bookmarking.</p></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Reading the weapon rankings</h3>
+      <ul class="tight small">
+        <li><b>TTK</b> is the time from first shot to kill, assuming every shot lands in the chosen zone and the first shot fires at time zero. Bullet drop, damage falloff and range are not modelled for FPS weapons.</li>
+        <li><b>Burst TTK</b> is straight cyclic fire with no burst cooldown and no reload. <b>TTK</b> adds burst cooldowns and the reload time you set. The game data has no reload time, so one value applies to every weapon (0 ignores reloads).</li>
+        <li><b>Shotguns</b> look unbeatable because every pellet is assumed to hit. Treat them as close-range figures.</li>
+        <li><b>Ship guns</b> are scored against a reference ship: its hull plus the shields it carries from the factory, divided by the gun's damage per second. Armor, shield absorption, hit location and gun convergence are not modelled.</li>
+        <li><b>Damage type</b> is Physical, Energy or Mixed from the per-hit figures; ship guns can also be Distortion. Guns with no range in the data drop out when you set a minimum range, and the table says how many.</li>
+      </ul></div>
+    <div class="card"><h3>Where the data comes from</h3>
+      <table><tbody>
+        <tr><td><b>Star Citizen Wiki</b></td><td class="small">Ships, parts, weapons and armor classes. Community-maintained; can lag behind a patch.</td></tr>
+        <tr><td><b>UEX</b></td><td class="small">Commodity buy and sell prices and refinery data. Community-submitted.</td></tr>
+        <tr><td><b>RSI</b></td><td class="small">Service status and Comm-Links.</td></tr>
+        <tr><td><b>Your logs</b></td><td class="small">Runs, contracts and hangar. Saved in this browser; also in your profile if you sign in with Discord, so they follow you between devices.</td></tr>
+        <tr><td><b>Scans</b></td><td class="small">Screenshots you paste are read by AI and shown for review before anything is applied. Check the values.</td></tr>
+      </tbody></table>
+      <p class="small muted mt8">Nothing here reads the game itself. There is no game API, so inventory and progress are only as current as what you enter.</p></div>
+  </div>
+  <div class="card mt12"><h3>Glossary</h3>
+    <dl class="gloss small">
+      <dt>aUEC</dt><dd>The in-game currency, alpha United Earth Credits.</dd>
+      <dt>SCU</dt><dd>Standard cargo unit; boxes come in 1, 2, 4, 8, 16 and 32 SCU.</dd>
+      <dt>TTK</dt><dd>Time to kill.</dd>
+      <dt>DPS</dt><dd>Damage per second. <i>Sustained</i> counts cooldowns or heat over a longer window; <i>burst</i> is the peak.</dd>
+      <dt>Hardpoint</dt><dd>A slot on a ship that holds a weapon, turret, missile rack or other component.</dd>
+      <dt>Ordnance</dt><dd>Missiles and torpedoes, held in racks that are locked to a size.</dd>
+      <dt>Hull / shield</dt><dd>Hull is the ship's structure; shield is the regenerating layer in front of it.</dd>
+      <dt>RMC</dt><dd>Recycled material composite, what hull scraping produces.</dd>
+      <dt>LIVE / SNAPSHOT</dt><dd>LIVE figures were fetched just now; SNAPSHOT figures are a dated reference.</dd>
+    </dl></div>
+</section>
+
 <section class="view" id="v-manual" aria-labelledby="h-manual">
   <div class="hero"><div><h2 id="h-manual">Field Manual</h2><span class="daemon">sys://ref.manual</span><p class="tag">Bug workarounds and the reference sites worth bookmarking.</p><div class="chips"><span class="chip">Bug mitigations</span><span class="chip">Reference tools</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="manual"></div></div>
   <div class="grid g2">
