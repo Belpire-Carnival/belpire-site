@@ -35,6 +35,7 @@ const hash = (str) => [...String(str || '')].reduce((h, ch) => (h * 31 + ch.char
 
 // Which silhouette suits a ship, from the role and career words the wiki gives it.
 export function shipKind(ship) {
+  if (ship?.kind === 'ground' || ship?.kind === 'gravlev') return ship.kind;
   const t = `${ship?.role || ''} ${ship?.career || ''} ${ship?.name || ''}`.toLowerCase();
   if (/mining|miner/.test(t)) return 'tool';
   if (/salvage/.test(t)) return 'tool';
@@ -47,6 +48,8 @@ export function shipKind(ship) {
 }
 
 const KINDS = {
+  ground: (k) => [R(26, 50, 124, 22, 'f1'), P(`M58 50 ${70 + k % 4} 32h44l16 18`, 'f2'), C(54, 78, 10, 'l1'), C(102, 78, 10, 'l1'), C(146, 78, 10, 'l1'), L(100, 32, 100, 20, 'l2'), L(100, 20, 128, 20, 'l1'), L(150, 58, 180, 58, 'l2')],
+  gravlev: (k) => [P('M22 62 70 50h70l38 12-38 10H70Z', 'f1'), P(`M70 50 ${84 + k % 4} 36h30l14 14`, 'f2'), R(34, 76, 130, 4, 'l2'), L(28, 88, 172, 88, 'l2'), C(176, 62, 3, 'dot')],
   fighter: (k) => [P('M24 55 78 47 170 55 78 63Z', 'f1'), P(`M70 47 ${46 - k} 20 ${96 - k} 44Z`, 'f2'), P(`M70 63 ${46 - k} 90 ${96 - k} 66Z`, 'f2'), P('M120 51l30 4-30 4', 'l1'), R(14, 50, 12, 10, 'l1'), L(150, 55, 178, 55, 'l2')],
   hauler: (k) => [R(34, 36, 100, 38, 'f1'), P('M134 42 176 50v10l-42 8Z', 'f1'), R(18, 44, 18, 22, 'l1'), L(60, 36, 60, 74, 'l2'), L(86, 36, 86, 74, 'l2'), L(112, 36, 112, 74, 'l2'), P(`M50 36 ${40 + k} 18H78L84 36`, 'f2'), P(`M50 74 ${40 + k} 92H78L84 74`, 'f2')],
   wide: (k) => [P('M20 55 60 46 160 55 60 64Z', 'f1'), P(`M110 49 ${70 - k} 12 ${54 - k} 14 74 49Z`, 'f2'), P(`M110 61 ${70 - k} 98 ${54 - k} 96 74 61Z`, 'f2'), R(10, 46, 12, 18, 'l1'), P('M160 55 184 55', 'l2'), C(130, 55, 5, 'l1')],

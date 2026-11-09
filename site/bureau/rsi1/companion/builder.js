@@ -3,8 +3,10 @@
 // art.js. The page is built with text nodes and SVG attributes only.
 import {
   indexParts, partsFor, totals, diff, upgradeCost, slotLabel, partLabel, TYPE_LABEL, TOTAL_ROWS, deltaClass, signed,
-  reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms, statSheet, STAT_GROUPS
+  reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms, statSheet, STAT_GROUPS,
+  viewOf, racksOf, ordnanceTotals
 } from './builder-core.js';
+import { openSwap, openDetail } from './builder-holo.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
 import { riskOf } from './risk.js';
@@ -40,6 +42,7 @@ const nrm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 export function armamentGaps(ships) {
   const out = { placed: [], listed: [], none: [] };
   for (const x of ships) {
+    if (viewOf(x) === 'vehicle') continue; // ground and grav vehicles are listed on their own view
     if (x.slots.some((g) => g.type === 'WeaponGun')) { out.placed.push(x.name); continue; }
     const a = x.arm;
     (a && ((a.pilot?.length || 0) + (a.turrets?.length || 0) > 0 || a.pilotDps > 0 || a.turretDps > 0 || a.missiles > 0 || x.stats?.missiles?.count > 0) ? out.listed : out.none).push(x.name);
@@ -48,7 +51,7 @@ export function armamentGaps(ships) {
 }
 
 export function tidyShips(ships) {
-  const has = (x) => (x.scm > 0 || x.stats?.hull > 0 || x.api?.shieldHp > 0 || x.cargo > 0) && x.slots?.length;
+  const has = (x) => (x.scm > 0 || x.stats?.hull > 0 || x.api?.shieldHp > 0 || x.cargo > 0) && (x.slots?.length || viewOf(x) === 'vehicle');
   const score = (x) => (x.img ? 4 : 0) + (x.stats?.hull > 0 ? 2 : 0) + (x.api?.shieldHp > 0 ? 1 : 0) + (x.scm > 0 ? 1 : 0) + Math.min(x.slots?.length || 0, 60) * 0.01 + (x.buy?.length ? 0.5 : 0);
   const best = new Map(), alias = new Map(), dropped = [];
   for (const x of ships) {
@@ -95,6 +98,8 @@ export function initBuilder(host) {
 
   function setShip(id) {
     saved.ship = id;
+    const picked = data?.ships.find((x) => x.id === id);
+    if (picked) saved.view = viewOf(picked);
     saved.recent = [id, ...(saved.recent || []).filter((x) => x !== id)].slice(0, MAX_RECENT);
     persist();
   }
@@ -143,12 +148,15 @@ export function initBuilder(host) {
     return options;
   }
 
+  // Swap opens the sortable table (Erkul-style); Details opens the part's full data sheet. Both are in builder-holo.js.
   function swapSelect(s, slot, current) {
-    const sel = el('select', { 'aria-label': `${slotLabel(slot)} part` });
-    for (const p of optionsFor(slot, s)) sel.append(el('option', { value: p.id, text: `${partLabel(p)}${p.id === slot.stock ? ' · stock' : ''}` }));
-    sel.value = current || '';
-    sel.addEventListener('change', () => { setOverride(s, slot.id, sel.value); paint(); });
-    return sel;
+    const swap = () => openSwap({
+      title: slotLabel(slot), kicker: TYPE_LABEL[slot.type], type: slot.type, options: optionsFor(slot, s), currentId: current, stockId: slot.stock,
+      onPick: (id) => { setOverride(s, slot.id, id); paint(); }
+    });
+    return el('div', { class: 'swaprow2' },
+      el('button', { type: 'button', class: 'swapbtn', text: 'Swap…', 'aria-label': `Swap ${slotLabel(slot)}`, onclick: swap }),
+      el('button', { type: 'button', class: 'ghost', text: 'Details', 'aria-label': `Details of the fitted ${slotLabel(slot)}`, onclick: () => openDetail(partsById.get(current)) }));
   }
 
   function partCard(s, slot, ov) {
@@ -192,7 +200,7 @@ export function initBuilder(host) {
         ['Turret guns', `${fmt1(split.turret.burst)}`, `${split.turret.guns} gun${split.turret.guns === 1 ? '' : 's'}`],
         ['Stock burst (pilot / turret)', `${fmt1(stock.pilot.burst)} / ${fmt1(stock.turret.burst)}`, '']
       ]),
-      s.stats?.missiles?.damage ? el('p', { class: 'small muted mt8', text: `Missiles: ${num(s.stats.missiles.damage)} total damage across ${num(s.stats.missiles.count)} (stock; missiles are not swappable here yet).` }) : null);
+      s.stats?.missiles?.damage ? el('p', { class: 'small muted mt8', text: `Missiles: ${num(s.stats.missiles.damage)} total damage across ${num(s.stats.missiles.count)} (stock; choose missiles in Ordnance below the guns).` }) : null);
   }
 
   function defensePanel(s, base, mine) {
@@ -237,6 +245,34 @@ export function initBuilder(host) {
           el('ul', { class: 'small armlist' }, ...lines.map((t) => el('li', { text: t }))));
       } else c.append(el('p', { class: 'small muted', text: 'No weapons are recorded for this ship in the game data.' }));
     }
+    return c;
+  }
+
+  // Missile racks and the missiles in them, under the guns. Racks are locked on most ships; what a player can change is
+  // the missile in each rack, which is kept in the build next to the part swaps (key 'm:<rack slot>').
+  function ordnancePanel(s, ov) {
+    const racks = racksOf(s, partsById, ov);
+    const ms = s.stats?.missiles;
+    if (!racks.length && !ms?.count) return null;
+    const t = ordnanceTotals(s, partsById, ov);
+    const c = card('', title('combat', `Ordnance (${racks.length} rack${racks.length === 1 ? '' : 's'})`));
+    for (const r of racks) {
+      const m = r.missile;
+      const choose = () => openSwap({
+        title: `${r.tubes ?? '?'} × S${r.size ?? '?'} rack · ${slotLabel(r.slot)}`, kicker: 'Missiles', type: 'Missile',
+        options: partsFor(r.pseudo, data.parts).sort((a, b) => (b.msl?.dmg ?? 0) - (a.msl?.dmg ?? 0) || a.name.localeCompare(b.name)),
+        currentId: m?.id || '', stockId: null, allowClear: true, onPick: (id) => { setOverride(s, r.key, id); paint(); }
+      });
+      c.append(el('div', { class: `gun ordn ${m ? 'changed' : ''}`.trim() },
+        photo(r.rack?.img, r.rack?.name || '', partArt('MissileLauncher'), 'photo thumb'),
+        el('div', {}, el('div', { class: 'nm', text: `${r.tubes ?? '?'} × S${r.size ?? '?'} ${r.rack?.name || 'rack'}` }),
+          el('div', { class: 'mk', text: m ? `${m.name} · ${fmt1(m.msl?.dmg)} dmg each · lock ${fmt1(m.msl?.lock)} s · ${fmt1(m.msl?.speed)} m/s` : `${slotLabel(r.slot)}${r.slot.locked ? ' · rack is fixed' : ''} · stock missiles` })),
+        el('div', { class: 'big', text: m && r.tubes && m.msl?.dmg != null ? fmt1(r.tubes * m.msl.dmg) : '—' }),
+        el('div', { class: 'swaprow2' },
+          el('button', { type: 'button', class: 'swapbtn', text: m ? 'Change missile…' : 'Choose missile…', onclick: choose }),
+          el('button', { type: 'button', class: 'ghost', text: 'Rack details', onclick: () => openDetail(r.rack) }))));
+    }
+    c.append(el('p', { class: 'small muted mt8', text: `${ms?.count ? `Stock: ${num(ms.count)} missiles${ms.damage ? `, ${num(ms.damage)} total damage` : ''}. ` : ''}${t.chosen ? `Your load: ${num(t.chosen)} of ${num(t.tubes)} tubes set, ${num(t.damage)} damage.` : 'The game data does not say which missile each rack holds, so choose one to model a load.'}` }));
     return c;
   }
 
@@ -374,10 +410,11 @@ export function initBuilder(host) {
   function topBar(s) {
     const search = el('input', { type: 'search', placeholder: 'Find a ship or maker', 'aria-label': 'Find a ship', value: filter });
     const pick = el('select', { 'aria-label': 'Ship' });
+    const view = viewOf(s);
     const fillPick = () => {
       const q = filter.trim().toLowerCase();
       pick.textContent = '';
-      for (const x of data.ships.filter((y) => !q || `${y.name} ${y.mfr} ${y.role}`.toLowerCase().includes(q) || y.id === saved.ship)) pick.append(el('option', { value: x.id, text: `${x.name} — ${x.mfr}` }));
+      for (const x of data.ships.filter((y) => viewOf(y) === view && (!q || `${y.name} ${y.mfr} ${y.role}`.toLowerCase().includes(q) || y.id === saved.ship))) pick.append(el('option', { value: x.id, text: `${x.name} — ${x.mfr}` }));
       pick.value = saved.ship || '';
     };
     fillPick();
@@ -395,8 +432,18 @@ export function initBuilder(host) {
     const tabs = el('div', { class: 'tabs' });
     for (const id of saved.recent || []) {
       const x = data.ships.find((y) => y.id === id);
-      if (x) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
+      if (x && viewOf(x) === view) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
     }
+    // Ships and vehicles (ground and hover) are separate lists; the switch only appears once the data has vehicles.
+    const counts = { ship: data.ships.filter((x) => viewOf(x) === 'ship').length, vehicle: data.ships.filter((x) => viewOf(x) === 'vehicle').length };
+    const seg = counts.vehicle ? el('div', { class: 'tabs seg', role: 'group', 'aria-label': 'Ships or vehicles' }, ...['ship', 'vehicle'].map((v) => el('button', {
+      type: 'button', 'aria-pressed': String(v === view), text: `${v === 'ship' ? 'Ships' : 'Vehicles'} (${counts[v]})`,
+      onclick: () => {
+        const back = (saved.recent || []).map((id) => data.ships.find((x) => x.id === id)).find((x) => x && viewOf(x) === v);
+        const next = back || data.ships.find((x) => viewOf(x) === v);
+        if (next) { setShip(next.id); status = ''; paint(); }
+      }
+    }))) : null;
     const names = (a) => a.slice().sort((x, y) => x.localeCompare(y)).join(', ');
     const why = hiddenShips.length || armGaps.listed.length || armGaps.none.length ? el('details', { class: 'hiddenships' },
       el('summary', { class: 'small muted', text: `${data.ships.length} ships listed. Missing one, or a weapon? ${hiddenShips.length} left out, ${armGaps.listed.length + armGaps.none.length} without swappable guns: see why.` }),
@@ -406,7 +453,7 @@ export function initBuilder(host) {
       armGaps.listed.length ? el('p', { class: 'small muted', text: names(armGaps.listed) }) : null,
       armGaps.none.length ? el('p', { class: 'small m0 mt8', text: `No weapons recorded at all (${armGaps.none.length}). Unarmed ships, or a data gap:` }) : null,
       armGaps.none.length ? el('p', { class: 'small muted', text: names(armGaps.none) }) : null) : null;
-    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
+    return el('div', { class: 'card' }, seg, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
 
@@ -465,7 +512,7 @@ export function initBuilder(host) {
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
     host.append(el('div', { class: 'calc-cols' },
       el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
-      el('div', { class: 'calc' }, armamentPanel(s, ov)),
+      el('div', { class: 'calc' }, armamentPanel(s, ov), ordnancePanel(s, ov)),
       el('div', { class: 'calc' }, systemsPanel(s, ov))));
     host.append(el('div', { class: 'grid g2' }, totalsPanel(s, base, mine), costPanel(s, ov)));
     host.append(el('div', { class: 'grid g2' }, comparePanel(s, mine), savedPanel(s)));
