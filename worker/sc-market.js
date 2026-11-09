@@ -71,7 +71,8 @@ export function parseTerminals(data) {
     if (!t || typeof t !== 'object') continue;
     const loc = {
       system: str(first(t, ['star_system_name', 'system_name']), 40),
-      place: str(first(t, ['city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60)
+      // displayname is the name players use ("Grim HEX", "Area18", "CRU-L4 Shallow Fields Station"); UEX's own station field can differ.
+      place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60)
     };
     if (!loc.system && !loc.place) continue;
     if (t.id != null) map.set(`id:${t.id}`, loc);

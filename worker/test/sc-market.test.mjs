@@ -125,15 +125,15 @@ test('ship names are validated before anything is fetched', async () => {
 test('rows without a system or place are filled from the terminals list, by id or by name', async () => {
   const terms = parseTerminals([
     { id: 7, name: 'Admin - Endgame', star_system_name: 'Pyro', outpost_name: 'Endgame' },
-    { id: 9, name: 'TDD - Area 18', nickname: 'Area18 TDD', star_system_name: 'Stanton', city_name: 'Area 18', planet_name: 'ArcCorp' }
+    { id: 9, name: 'TDD - Trade and Development Division - Area 18', nickname: 'TDD Area 18', displayname: 'Area18', star_system_name: 'Stanton', city_name: 'Area 18', planet_name: 'ArcCorp' }
   ]);
   const rows = parsePrices([
     { commodity_name: 'Gold', terminal_name: 'Whatever', id_terminal: 7, price_buy: 10 },
-    { commodity_name: 'Gold', terminal_name: 'tdd - area 18', price_sell: 12 },
+    { commodity_name: 'Gold', terminal_name: 'TDD Area 18', price_sell: 12 },
     { commodity_name: 'Gold', terminal_name: 'Unlisted', star_system_name: 'Nyx', price_sell: 12 },
     { commodity_name: 'Gold', terminal_name: 'Also unlisted', price_sell: 12 }
   ], terms);
-  assert.deepEqual(rows.map((r) => [r.system, r.place]), [['Pyro', 'Endgame'], ['Stanton', 'Area 18'], ['Nyx', ''], ['', '']]);
+  assert.deepEqual(rows.map((r) => [r.system, r.place]), [['Pyro', 'Endgame'], ['Stanton', 'Area18'], ['Nyx', ''], ['', '']]);
   assert.equal(parseTerminals(null).size, 0);
 });
 
