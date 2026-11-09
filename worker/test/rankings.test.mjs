@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { damageClass, weaponType, fpsRow, rankFps, shipEhp, shipDamageClass, shipGunRow, rankShipGuns, topOverall, topByGroup, topByClass } from '../../site/bureau/rsi1/companion/rank-core.js';
+import { damageClass, weaponType, weaponTypes, fpsRow, rankFps, shipEhp, shipDamageClass, shipGunRow, rankShipGuns, topOverall, topByGroup, topByClass } from '../../site/bureau/rsi1/companion/rank-core.js';
 import { slimWeapons, handleWeapons } from '../sc-weapons.js';
 import { indexParts } from '../../site/bureau/rsi1/companion/builder-core.js';
 
@@ -134,4 +134,16 @@ test('the rankings page script only reads our own /api paths and builds with tex
   for (const u of urls) assert.match(u, /^\/api\//, u);
   assert.doesNotMatch(ui, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
   assert.doesNotMatch(ui, /https?:\/\//);
+});
+
+test('weapon type is the name a player would use, even when the wiki only says Small, Medium or Large', () => {
+  assert.equal(weaponType({ name: 'Scourge "Desert Shadow" Railgun', sub: 'Large' }), 'Railgun');
+  assert.equal(weaponType({ name: 'Boomtube Rocket Launcher', sub: 'Large' }), 'Rocket Launcher');
+  assert.equal(weaponType({ name: 'Arrowhead Grenade Launcher', sub: 'Medium' }), 'Grenade Launcher');
+  assert.equal(weaponType({ name: 'Mystery Launcher', sub: 'Large' }), 'Launcher');
+  assert.equal(weaponType({ name: 'Coda', sub: 'Pistol' }), 'Pistol');
+  assert.equal(weaponType({ name: 'Salvo Shotgun', sub: 'Small' }), 'Shotgun');
+  assert.equal(weaponType({ name: 'Zenith', sub: 'Large' }), 'Other');
+  assert.equal(weaponType({ name: 'Zenith' }), 'Other');
+  assert.deepEqual(weaponTypes([{ name: 'a', sub: 'Rifle' }, { name: 'b', sub: 'Large' }, { name: 'c Railgun', sub: 'Large' }, { name: 'd', sub: 'Pistol' }, { name: 'e', sub: 'Rifle' }]), ['Pistol', 'Railgun', 'Rifle', 'Other']);
 });
