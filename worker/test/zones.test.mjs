@@ -73,3 +73,14 @@ test('every place in Pyro is PvP risk (High), even when the wiki says armistice'
   assert.equal(riskOf('Pyro', 'Checkmate Station').level, 'high');
   assert.equal(riskOf('Pyro', 'Some Safe Place').level, 'high');
 });
+
+test('fresh=1 skips the stored result and says so', async () => {
+  const store = new Map([['zone:v1:washout', { z: 'armistice', ev: 'old', page: 'Washout' }]]); const env = { SC_DATA: { get: async (k) => store.get(k) ?? null, put: async (k, v) => { store.set(k, JSON.parse(v)); } } };
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ parse: { title: 'Washout', text: '<tr><td>Armistice zone</td><td>✗</td></tr>' } }) });
+  try {
+    assert.equal((await handleZones(new URL('https://x/api/sc-zones?n=Washout'), env)).body.zones.washout.z, 'armistice');
+    const r = await handleZones(new URL('https://x/api/sc-zones?n=Washout&fresh=1'), env);
+    assert.equal(r.body.zones.washout.z, 'open'); assert.equal(r.body.fresh, true); assert.equal(store.get('zone:v1:washout').z, 'open');
+  } finally { globalThis.fetch = real; }
+});

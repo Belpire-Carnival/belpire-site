@@ -132,7 +132,7 @@ export default {
     }
     if (pathname === '/api/sc-zones') {
       const { status, body } = await handleZones(url, env);
-      return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+      return json(body, status, { 'Cache-Control': status === 200 && !body.fresh ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-shop') {
       const { status, body } = await handleShop(ctx);

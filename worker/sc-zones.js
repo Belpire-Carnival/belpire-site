@@ -55,10 +55,11 @@ async function lookup(name) {
 export async function handleZones(url, env) {
   const names = [...new Set(url.searchParams.getAll('n').map((s) => s.trim().slice(0, 80)).filter(Boolean))].slice(0, MAX_NAMES);
   if (!names.length) return { status: 400, body: { error: 'give one or more n= place names' } };
+  const fresh = url.searchParams.get('fresh') === '1'; // skip the stored result and read the wiki again
   const zones = {};
   await Promise.all(names.map(async (n) => {
     const k = `zone:v1:${norm(n)}`;
-    try { const c = await env.SC_DATA?.get(k, 'json'); if (c) { zones[norm(n)] = c; return; } } catch { /* cache is optional */ }
+    if (!fresh) try { const c = await env.SC_DATA?.get(k, 'json'); if (c) { zones[norm(n)] = c; return; } } catch { /* cache is optional */ }
     try {
       const v = await lookup(n);
       zones[norm(n)] = v;
@@ -66,5 +67,5 @@ export async function handleZones(url, env) {
       try { await env.SC_DATA?.put(k, JSON.stringify(v), { expirationTtl: v.z === 'unknown' ? 86400 : TTL }); } catch { /* ignore */ }
     } catch { zones[norm(n)] = { z: 'unknown', ev: '', page: '' }; }
   }));
-  return { status: 200, body: { zones } };
+  return { status: 200, body: { zones, fresh } };
 }

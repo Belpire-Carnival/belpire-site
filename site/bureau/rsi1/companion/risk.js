@@ -43,7 +43,8 @@ function wikiZone(names) {
 }
 
 // Fetch the wiki's armistice status for the places in these market rows (terminal and place). True when something new arrived.
-export async function learnZones(rows, { fetcher = fetch, cap = 90 } = {}) {
+// Open the page with ?zones=fresh to make the Worker re-read the wiki instead of using what it stored.
+export async function learnZones(rows, { fetcher = fetch, cap = 90, fresh = typeof location !== 'undefined' && /[?&]zones=fresh\b/.test(location.search) } = {}) {
   const want = [];
   for (const r of rows || []) for (const c of nameCandidates(r.terminal, r.place)) if (!asked.has(norm(c)) && !want.includes(c)) want.push(c);
   const todo = want.slice(0, cap);
@@ -52,7 +53,7 @@ export async function learnZones(rows, { fetcher = fetch, cap = 90 } = {}) {
     const chunk = todo.slice(i, i + 15);
     for (const c of chunk) asked.add(norm(c));
     try {
-      const r = await fetcher(`/api/sc-zones?${chunk.map((c) => `n=${encodeURIComponent(c)}`).join('&')}`, { headers: { Accept: 'application/json' } });
+      const r = await fetcher(`/api/sc-zones?${chunk.map((c) => `n=${encodeURIComponent(c)}`).join('&')}${fresh ? '&fresh=1' : ''}`, { headers: { Accept: 'application/json' } });
       if (!r.ok) continue;
       const j = await r.json();
       setZones(j.zones); got = got || Object.keys(j.zones || {}).length > 0;
