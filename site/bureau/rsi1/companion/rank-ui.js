@@ -1,7 +1,7 @@
 // Weapon rankings for the Avionics Lab page: FPS weapons by time to kill against an armor class, and ship guns by
 // time to destroy a reference ship. Data comes only from our own /api/sc-weapons, /api/sc-armor and /api/sc-builder; the
 // maths is in rank-core.js. The page is built with text nodes only, and the choices live in this browser's localStorage.
-import { ARMOR, rankFps, rankShipGuns, shipEhp, topOverall, topByGroup, topByClass } from './rank-core.js';
+import { ARMOR, rankFps, rankShipGuns, shipEhp, topOverall, topByGroup, topByClass, weaponType, weaponTypes } from './rank-core.js';
 import { indexParts, viewOf } from './builder-core.js';
 
 const API_WEAPONS = '/api/sc-weapons';
@@ -40,7 +40,7 @@ const CLASS_NOTE = { Physical: 'Ballistic rounds', Energy: 'Lasers and plasma', 
 export function initRankings(host, opts = {}) {
   const kind = opts.kind === 'fps' || opts.kind === 'ship' ? opts.kind : null;
   const store = storeFor(kind ? `${KEY}.${kind}` : KEY);
-  let st = { tab: 'fps', list: kind === 'fps' ? 'type' : 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', ...store.read() };
+  let st = { tab: 'fps', list: kind === 'fps' ? 'type' : 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', type: '', ...store.read() };
   if (kind) st.tab = kind;
   let weapons = null; // null = not loaded, false = unavailable, else [..]
   let armor = null; // { Light: { phys, energy }, ... } | false
@@ -130,15 +130,18 @@ export function initRankings(host, opts = {}) {
     if (weapons === false) return el('p', { class: 'small muted', text: 'The weapon list is unavailable right now. Try again in a minute.' });
     const cls = armor && st.armor !== 'NONE' ? armor[st.armor[0] + st.armor.slice(1).toLowerCase()] : null;
     const mult = st.armor === 'NONE' ? { phys: 1, energy: 1 } : cls ? { phys: cls.phys, energy: cls.energy } : null;
+    const types = weaponTypes(weapons);
+    const pick = types.includes(st.type) ? st.type : '';
     const ctl = el('div', { class: 'fields' },
+      field('Weapon type', select('type', [['', 'All weapon types'], ...types.map((t) => [t, t])])),
       field('Target armor', select('armor', ARMOR.map((a) => [a, ARMOR_NAME[a]]))),
       field('Target health', numInput('hp', { label: 'Target health', min: '1' })),
       field('Hit-zone multiplier', numInput('zone', { label: 'Hit-zone multiplier', min: '0.1' })),
       field('Reload time (s)', numInput('reload', { label: 'Reload time in seconds' })));
     if (!mult) return el('div', {}, ctl, el('p', { class: 'small muted mt8', text: 'Armor multipliers are unavailable right now, so only "No armor" can be ranked. Pick it above, or try again in a minute.' }));
-    const { rows, skipped } = rankFps(weapons, { hp: st.hp, armor: mult }, { zone: st.zone, reload: st.reload });
+    const { rows, skipped } = rankFps(pick ? weapons.filter((w) => weaponType(w) === pick) : weapons, { hp: st.hp, armor: mult }, { zone: st.zone, reload: st.reload });
     return el('div', {}, ctl,
-      el('p', { class: 'small muted mt8', text: `Target: ${ARMOR_NAME[st.armor].toLowerCase()} (physical ×${fmt(mult.phys, 2)}, energy ×${fmt(mult.energy, 2)}), ${fmt(st.hp)} health, hit zone ×${fmt(st.zone, 2)}.` }),
+      el('p', { class: 'small muted mt8', text: `${pick ? `${pick}s only. ` : ''}Target: ${ARMOR_NAME[st.armor].toLowerCase()} (physical ×${fmt(mult.phys, 2)}, energy ×${fmt(mult.energy, 2)}), ${fmt(st.hp)} health, hit zone ×${fmt(st.zone, 2)}.` }),
       lists(rows, fpsTable, (r) => r.type, 'Best by time to kill'),
       el('p', { class: 'small muted mt8', text: `Assumes every shot lands in the chosen zone and the first shot fires at t = 0. TTK includes burst cooldowns and the reload time above; burst TTK is straight cyclic fire. The game data has no reload time, so one value applies to every weapon (0 ignores reloads). Damage falloff and bullet drag are not modelled.${skipped ? ` ${skipped} weapon${skipped === 1 ? ' has' : 's have'} no damage or rate of fire in the data and ${skipped === 1 ? 'is' : 'are'} not ranked.` : ''}` }));
   }

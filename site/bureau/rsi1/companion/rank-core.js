@@ -17,8 +17,30 @@ export function damageClass(phys, energy) {
   return share >= 0.65 ? 'Energy' : share <= 0.35 ? 'Physical' : 'Mixed';
 }
 
-// The wiki's own sub-type ("Rifle", "Pistol", ...) names the weapon type; anything without one is "Other".
-export const weaponType = (w) => String(w?.sub || w?.kind || '').trim() || 'Other';
+// The weapon type a player would name: Rifle, SMG, Pistol, Shotgun, Sniper, LMG, Railgun, Rocket Launcher, Grenade Launcher...
+// The wiki's sub-type is often a size word (Small, Medium, Large) for the heavy weapons, so the weapon's own name decides
+// for those; otherwise the wiki's sub-type is used, then a word in the name, then "Other".
+const SIZE_WORDS = new Set(['small', 'medium', 'large', 'unknown', 'none', '']);
+const NAME_TYPES = [
+  [/rail\s*gun/i, 'Railgun'], [/grenade\s*launcher/i, 'Grenade Launcher'], [/(rocket|missile)\s*launcher|boomtube/i, 'Rocket Launcher'],
+  [/launcher/i, 'Launcher'], [/shotgun/i, 'Shotgun'], [/sniper/i, 'Sniper'], [/\blmg\b|light machine/i, 'LMG'], [/\bsmg\b|submachine/i, 'SMG'],
+  [/pistol|sidearm/i, 'Pistol'], [/rifle/i, 'Rifle']
+];
+export function weaponType(w) {
+  const name = String(w?.name || '');
+  const heavy = NAME_TYPES.slice(0, 4).find(([re]) => re.test(name));
+  if (heavy) return heavy[1];
+  const sub = String(w?.sub || w?.kind || '').trim();
+  if (!SIZE_WORDS.has(sub.toLowerCase())) return sub;
+  const hit = NAME_TYPES.find(([re]) => re.test(name));
+  return hit ? hit[1] : 'Other';
+}
+
+// The distinct weapon types in a list, for the drop-down, alphabetical with "Other" last.
+export function weaponTypes(weapons) {
+  const set = new Set((Array.isArray(weapons) ? weapons : []).map(weaponType));
+  return [...set].sort((a, b) => (a === 'Other') - (b === 'Other') || a.localeCompare(b));
+}
 
 // ------------------------------------------------------------------ FPS weapons
 // One weapon against one target { hp, armor: { phys, energy } }. `sustained` counts burst cooldowns and the reload time
