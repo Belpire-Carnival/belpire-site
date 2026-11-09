@@ -26,11 +26,12 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 5;
-export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher'];
+export const SCHEMA = 6;
+export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
-export const SLOT_TYPES = new Set([...PART_TYPES, WEAPON_TYPE]);
+// Missiles are catalogue parts only: they load into a rack, which is the slot.
+export const SLOT_TYPES = new Set([...PART_TYPES.filter((t) => t !== 'Missile'), WEAPON_TYPE]);
 
 // Picture of a wiki record: the path (after the host) of its first usable image on the wiki's media server, or ''.
 // Only that one host is accepted, and the path is kept short and plain so it can be requested through /api/sc-img.
@@ -80,6 +81,29 @@ export function slimPrices(uex) {
   return out.sort((a, b) => a.p - b.p).slice(0, MAX_PRICES);
 }
 
+// Every figure the wiki records for a part, flattened to { 'group.field': number } for the detail pop-up. Only the
+// groups below are read, repeated min/max aliases and pre-formatted strings are dropped, and a few short text fields
+// (signal type, weapon type) are kept. Capped so one odd record cannot bloat the snapshot.
+const DETAIL_ROOTS = ['vehicle_weapon', 'missile', 'shield', 'cooler', 'power_plant', 'quantum_drive', 'jump_drive', 'radar', 'missile_rack', 'durability', 'distortion', 'temperature', 'emission', 'resource_network'];
+const DETAIL_TEXT = new Set(['signal_type', 'type', 'class', 'sub_type', 'face_type']);
+const DETAIL_SKIP = new Set(['modes', 'damages', 'states', 'uuid', 'minimum', 'maximum', 'unit', 'images', 'impact_damage', 'impact_damage_map']);
+const MAX_DETAIL = 90;
+export function detailOf(it) {
+  const out = {};
+  const walk = (v, path, depth) => {
+    if (Object.keys(out).length >= MAX_DETAIL) return;
+    if (num(v) != null) { out[path] = Number(Number(v).toPrecision(6)); return; }
+    if (typeof v === 'string') { if (DETAIL_TEXT.has(path.split('.').pop()) && v.length <= 30) out[path] = str(v, 30); return; }
+    if (!v || typeof v !== 'object' || Array.isArray(v) || depth > 4) return;
+    for (const [k, x] of Object.entries(v)) {
+      if (DETAIL_SKIP.has(k) || k.endsWith('_formatted')) continue;
+      walk(x, path ? `${path}.${k}` : k, depth + 1);
+    }
+  };
+  for (const root of DETAIL_ROOTS) if (it?.[root] != null) walk(it[root], root, 1);
+  return out;
+}
+
 // One item (from /vehicle-items, /vehicle-weapons or a ship's equipped_item) → the fields the builder uses.
 export function slimPart(it) {
   if (!it || typeof it !== 'object' || !it.uuid || !it.type) return null;
@@ -110,6 +134,12 @@ export function slimPart(it) {
       range: num(it.vehicle_weapon.range)
     };
   }
+  if (it.missile_rack) part.rack = { count: num(it.missile_rack.missile_count) ?? num(it.max_missiles), size: num(it.missile_rack.missile_size) };
+  if (it.missile) part.msl = { sig: str(it.missile.signal_type, 20), dmg: round(it.missile.damage_total, 1), lock: round(it.missile.lock_time, 2), speed: round(it.missile.speed, 0), rmin: round(it.missile.lock_range_min, 0), rmax: round(it.missile.lock_range_max, 0), ang: round(it.missile.lock_angle, 0) };
+  const x = detailOf(it);
+  if (Object.keys(x).length) part.x = x;
+  const hp = num(it.durability?.health);
+  if (hp != null) part.hp = hp;
   const prices = slimPrices(it.uex_prices);
   if (prices.length) part.buy = prices;
   return part;
@@ -124,7 +154,8 @@ export function collectSlots(ports) {
     for (const p of Array.isArray(list) ? list : []) {
       if (!p || typeof p !== 'object') continue;
       const here = [...trail, str(p.name, 60)];
-      if (p.editable && SLOT_TYPES.has(p.type)) {
+      const rack = p.type === 'MissileLauncher' && !p.editable; // racks are fixed on most ships, but their missiles are not
+      if ((p.editable || rack) && SLOT_TYPES.has(p.type)) {
         let id = here.join('/');
         const n = (seen.get(id) || 0) + 1;
         seen.set(id, n);
@@ -135,7 +166,8 @@ export function collectSlots(ports) {
           min: num(p.sizes?.min) ?? 0,
           max: num(p.sizes?.max) ?? 0,
           stock: p.equipped_item_uuid || p.equipped_item?.uuid || null,
-          group: trail.length ? trail[trail.length - 1] : ''
+          group: trail.length ? trail[trail.length - 1] : '',
+          ...(rack ? { locked: true } : {})
         });
       }
       walk(p.ports, here);
@@ -237,7 +269,7 @@ export function turretGunSlots(turrets, have = []) {
 // Stock parts that sit in the ship's slots, so parts the catalogue lacks can still be shown.
 export function stockParts(ports, into = new Map()) {
   for (const p of Array.isArray(ports) ? ports : []) {
-    if (p?.editable && SLOT_TYPES.has(p.type) && p.equipped_item) {
+    if ((p?.editable || p?.type === 'MissileLauncher') && SLOT_TYPES.has(p.type) && p.equipped_item) {
       const part = slimPart(p.equipped_item);
       if (part && !into.has(part.id)) into.set(part.id, part);
     }

@@ -464,3 +464,35 @@ test('turret bases with no child ports get gun slots from the leftover stock gun
   const ship = slimShipBase({ uuid: 'u', name: 'X', ports, weaponry: { fixed_weapons: { weapons: guns } } });
   assert.equal(ship.slots.filter((s) => s.type === 'WeaponGun').length, 6);
 });
+
+import { detailOf, slimPart as slimPartX, collectSlots as collectSlotsX, PART_TYPES as PT, SLOT_TYPES as ST } from '../sc-builder.js';
+test('detail pop-up data: every wiki figure of a part is kept, flattened, without aliases or formatted strings', () => {
+  const d = detailOf({
+    vehicle_weapon: { type: 'Ballistic Cannon', capacity: 369, range: 5004, rpm: 100, damage: { alpha_total: 950, dps: { physical: 1583.3, energy: 0 } }, heat: { per_shot: 6, overheat_max_time: 9.6 }, spread: { min: 0.4, minimum: 0.4, maximum: 0.4 }, ammunition: { speed: 1112, penetration: { base_distance: 1.7 } }, modes: [{ x: 1 }], damages: [{ a: 1 }] },
+    durability: { health: 550, resistance: { physical: 0.6 } },
+    distortion: { max: 500000, maximum: 500000 },
+    quantum_drive: { jump_range_formatted: 'Unlimited', fuel_rate: 6.1e-9 },
+    name: 'ignored'
+  });
+  assert.equal(d['vehicle_weapon.type'], 'Ballistic Cannon');
+  assert.equal(d['vehicle_weapon.damage.dps.physical'], 1583.3);
+  assert.equal(d['vehicle_weapon.ammunition.penetration.base_distance'], 1.7);
+  assert.equal(d['durability.resistance.physical'], 0.6);
+  assert.equal(d['distortion.max'], 500000);
+  assert.equal(d['quantum_drive.fuel_rate'], 6.1e-9);
+  assert.ok(!('distortion.maximum' in d) && !('vehicle_weapon.spread.minimum' in d) && !Object.keys(d).some((k) => k.includes('formatted') || k.includes('modes') || k === 'name'));
+  const big = detailOf({ resource_network: Object.fromEntries(Array.from({ length: 300 }, (_, i) => [`f${i}`, i])) });
+  assert.ok(Object.keys(big).length <= 90);
+});
+test('missiles are catalogue parts, racks are locked slots, and a missile and a rack carry their own figures', () => {
+  assert.ok(PT.includes('Missile') && !ST.has('Missile'));
+  const slots = collectSlotsX([{ name: 'hardpoint_missiles_left', type: 'MissileLauncher', editable: false, sizes: { min: 6, max: 6 }, equipped_item_uuid: 'rack-1' }, { name: 'gun', type: 'WeaponGun', editable: false, sizes: { min: 3, max: 3 } }]);
+  assert.equal(slots.length, 1);
+  assert.deepEqual([slots[0].type, slots[0].locked, slots[0].stock], ['MissileLauncher', true, 'rack-1']);
+  const rack = slimPartX({ uuid: 'r', type: 'MissileLauncher', name: 'Rack', missile_rack: { missile_count: 16, missile_size: 2 }, durability: { health: 200 } });
+  assert.deepEqual(rack.rack, { count: 16, size: 2 });
+  assert.equal(rack.hp, 200);
+  const m = slimPartX({ uuid: 'm', type: 'Missile', name: 'Dominator II Missile', size: 2, missile: { signal_type: 'Electromagnetic', damage_total: 1500, lock_time: 0.84, speed: 1029, lock_range_min: 1800, lock_range_max: 10000, lock_angle: 45 } });
+  assert.deepEqual(m.msl, { sig: 'Electromagnetic', dmg: 1500, lock: 0.84, speed: 1029, rmin: 1800, rmax: 10000, ang: 45 });
+  assert.equal(m.x['missile.lock_angle'], 45);
+});
