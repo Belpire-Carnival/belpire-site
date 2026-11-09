@@ -17,7 +17,9 @@ test('risk rules: armistice cities low, Pyro lawless high, Levski and Nyx medium
   assert.equal(riskOf('Pyro', 'Rustville').level, 'high');
   assert.equal(riskOf('Pyro', 'Checkmate Station').level, 'high');
   assert.equal(riskOf('Nyx', 'Levski').level, 'med');
-  assert.equal(riskOf('Stanton', 'ARC-L1 Wide Forest Station').level, 'low');
+  assert.equal(riskOf('Stanton', 'ARC-L1 Wide Forest Station').level, 'safe');
+  assert.equal(riskOf('Stanton', 'Port Olisar').level, 'safe');
+  assert.equal(riskOf('Stanton', 'Everus Harbor').level, 'low');
   assert.equal(riskOf('Terra', 'Somewhere').level, 'unknown');
   assert.equal(worst(riskOf('Stanton', 'Lorville'), riskOf('Pyro', 'x')).level, 'high');
 });

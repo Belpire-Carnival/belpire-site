@@ -13,7 +13,8 @@ const RULES = [
   [/grim ?hex|\byela\b/, 'high', 'Armistice inside the station, but the approach through Yela is a known pirate and ambush spot.'],
   [/levski|delamar/, 'med', 'Armistice inside Levski. Nyx is outside UEE law, and the approach and the jump gate can be camped.'],
   [/lorville|teasa|area ?18|\btdd\b|new babbage|orison/, 'safe', 'City landing zone: an armistice zone, so combat is blocked inside it. The approach and quantum travel are not covered.'],
-  [/everus|seraphim|baijini|tressler|port olisar|\b(?:arc|cru|hur|mic)-l\d/, 'low', 'Station: armistice at the station itself in most cases, but the exterior and the approach are open.'],
+  [/rest ?stop|port olisar|\b(?:arc|cru|hur|mic)-l\d/, 'safe', 'Rest stop: treated as safe inside. The wiki says the armistice zone around the exterior was removed, so landing pads and the approach are open to attack.'],
+  [/everus|seraphim|baijini|tressler/, 'low', 'Station: armistice at the station itself in most cases, but the exterior and the approach are open.'],
   [/gateway|jump point/, 'med', 'Jump gateway: ships arrive and leave in a line here, so it can be camped.']
 ];
 const SYSTEM = {
