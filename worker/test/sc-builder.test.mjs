@@ -447,3 +447,20 @@ test('slimArmament keeps the stock armament summary, and a hardware-locked gimba
   const slots = pilotGunSlots([{ name: 'hp_gun_1', type: 'Turret', editable: false, sizes: { min: 5, max: 5 }, compatible_types: [{ type: 'WeaponGun' }], ports: [] }], [{ name: 'Panther' }]);
   assert.equal(slots.length, 1); assert.equal(slots[0].stockName, 'Panther');
 });
+
+import { baseTurretSlots, slimShip as slimShipBase } from '../sc-builder.js';
+test('turret bases with no child ports get gun slots from the leftover stock guns', () => {
+  const gimbal = (n) => ({ type: 'Turret', name: n, sizes: { min: 5, max: 5 }, editable: false, compatible_types: [{ type: 'Turret' }, { type: 'WeaponGun' }] });
+  const base = (n) => ({ type: 'Turret', name: n, sizes: { min: 3, max: 3 }, editable: false, compatible_types: [{ type: 'Turret' }] });
+  const ports = [base('hardpoint_turret_upper'), base('hardpoint_turret_lower'), gimbal('g1'), gimbal('g2')];
+  const guns = [...Array(4).fill({ name: 'Panther' }), { name: 'Galdereen' }, { name: 'Galdereen' }];
+  const out = baseTurretSlots(ports, guns, 2);
+  assert.equal(out.length, 4);
+  assert.deepEqual(out.map((s) => s.group), ['hardpoint_turret_upper', 'hardpoint_turret_upper', 'hardpoint_turret_lower', 'hardpoint_turret_lower']);
+  assert.ok(out.every((s) => s.max === 3 && s.stockName === 'Panther'));
+  assert.deepEqual(baseTurretSlots(ports, guns, 3), []); // 3 leftover do not split across 2 bases
+  assert.deepEqual(baseTurretSlots(ports, guns.slice(0, 2), 2), []); // nothing left over
+  assert.equal(baseTurretSlots(ports, [{ name: 'A' }, { name: 'B' }, { name: 'C' }, { name: 'D' }, { name: 'E' }, { name: 'F' }], 2)[0].stockName, undefined);
+  const ship = slimShipBase({ uuid: 'u', name: 'X', ports, weaponry: { fixed_weapons: { weapons: guns } } });
+  assert.equal(ship.slots.filter((s) => s.type === 'WeaponGun').length, 6);
+});
