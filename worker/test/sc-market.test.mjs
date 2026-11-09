@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../index.js';
-import { parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
+import { parseTerminals, parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
 
 // These fixtures follow the field names UEX documents for commodities_prices_all; they are examples, not
 // captured responses. The parser is tolerant, and a real response with different names fails loudly (see below).
@@ -27,7 +27,8 @@ beforeEach(() => {
   calls = [];
   responses = {
     commodities_prices_all: { status: 'ok', data: ROWS },
-    game_versions: { status: 'ok', data: { live: '4.11.0', ptu: '4.12.0-ptu' } }
+    game_versions: { status: 'ok', data: { live: '4.11.0', ptu: '4.12.0-ptu' } },
+    terminals: { status: 'ok', data: [{ id: 7, name: 'Admin - Endgame', star_system_name: 'Pyro', outpost_name: 'Endgame' }] }
   };
   globalThis.fetch = async (url, init = {}) => {
     const u = String(url);
@@ -76,14 +77,14 @@ test('refresh stores a snapshot, sends the token, and does not hit UEX again wit
   assert.equal(m.prices.length, 3);
   assert.equal(m.version, '4.11.0');
   assert.ok(calls.every((c) => c.auth === 'Bearer secret-token'));
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 3);
   await refreshMarket(env);
-  assert.equal(calls.length, 2, 'second run inside the window must not call UEX');
+  assert.equal(calls.length, 3, 'second run inside the window must not call UEX');
   const stored = JSON.parse(env.SC_DATA.store.get('sc:market'));
   stored.checkedAt = new Date(Date.now() - MARKET_EVERY_MS - 1000).toISOString();
   env.SC_DATA.store.set('sc:market', JSON.stringify(stored));
   await refreshMarket(env);
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 6);
 });
 
 test('a failed prices call keeps the last good prices and flags the page as partial', async () => {
@@ -119,4 +120,27 @@ test('ship names are validated before anything is fetched', async () => {
   const res = await worker.fetch(new Request('https://bureau.belpire.com/api/sc-ship?name=%3Cscript%3E'), {}, { waitUntil() {} });
   assert.equal(res.status, 400);
   assert.equal(calls.length, 0);
+});
+
+test('rows without a system or place are filled from the terminals list, by id or by name', async () => {
+  const terms = parseTerminals([
+    { id: 7, name: 'Admin - Endgame', star_system_name: 'Pyro', outpost_name: 'Endgame' },
+    { id: 9, name: 'TDD - Area 18', nickname: 'Area18 TDD', star_system_name: 'Stanton', city_name: 'Area 18', planet_name: 'ArcCorp' }
+  ]);
+  const rows = parsePrices([
+    { commodity_name: 'Gold', terminal_name: 'Whatever', id_terminal: 7, price_buy: 10 },
+    { commodity_name: 'Gold', terminal_name: 'tdd - area 18', price_sell: 12 },
+    { commodity_name: 'Gold', terminal_name: 'Unlisted', star_system_name: 'Nyx', price_sell: 12 },
+    { commodity_name: 'Gold', terminal_name: 'Also unlisted', price_sell: 12 }
+  ], terms);
+  assert.deepEqual(rows.map((r) => [r.system, r.place]), [['Pyro', 'Endgame'], ['Stanton', 'Area 18'], ['Nyx', ''], ['', '']]);
+  assert.equal(parseTerminals(null).size, 0);
+});
+
+test('an old snapshot without the schema is rebuilt on the next request, once', async () => {
+  const env = { SC_DATA: memoryKV(), UEX_API_TOKEN: 't' };
+  env.SC_DATA.store.set('sc:market', JSON.stringify({ updatedAt: 'x', checkedAt: new Date().toISOString(), version: '4.0', prices: [{ commodity: 'Old', terminal: 'T', system: '', place: '' }], errors: [] }));
+  const body = await handleMarket(env, { waitUntil() {} });
+  assert.equal(body.prices.length, 3); assert.equal(body.prices[1].system, 'Pyro');
+  const n = calls.length; await handleMarket(env, { waitUntil() {} }); assert.equal(calls.length, n);
 });
