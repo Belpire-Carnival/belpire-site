@@ -243,7 +243,6 @@ export function slimStats(v) {
   };
 }
 
-<<<<<<< HEAD
 // The ship's stock armament as the game data summarises it, kept apart from the swappable slots. It lets the page
 // show what a ship carries even when its hardpoints could not be turned into gun slots.
 export function slimArmament(v) {
@@ -267,8 +266,6 @@ export function slimArmament(v) {
   };
 }
 
-=======
->>>>>>> origin/main
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
@@ -291,10 +288,7 @@ export function slimShip(v) {
     buy: slimPrices(v.uex_prices),
     slots,
     stats: slimStats(v),
-<<<<<<< HEAD
     arm: slimArmament(v),
-=======
->>>>>>> origin/main
     api: {
       shieldHp: num(v.shield?.hp),
       shieldRegen: num(v.shield?.regeneration),
