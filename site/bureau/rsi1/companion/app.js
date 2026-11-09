@@ -76,7 +76,8 @@ const HUB_OF = Object.fromEntries(HUBS.flatMap((h) => h.panes.map(([id]) => [id,
 const HUB_BY = Object.fromEntries(HUBS.map((h) => [h.id, h]));
 const lastPane = {};
 const builder = initBuilder($('#builder'));
-const rankings = initRankings($('#rankings'));
+const rankingsShip = initRankings($('#rankingsShip'), { kind: 'ship' });
+const rankingsFps = initRankings($('#rankingsFps'), { kind: 'fps' });
 const nav = $('#nav');
 for (const h of HUBS) {
   const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));
@@ -141,7 +142,8 @@ function route() {
   } else bar.hidden = true;
   $('#menuNow').textContent = hub.label; setMenu(false);
   if (pane === 'fleet') drawRadar();
-  if (pane === 'calc') { builder.show(); rankings.show(); }
+  if (pane === 'calc') { builder.show(); rankingsShip.show(); }
+  if (pane === 'combat') rankingsFps.show();
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
