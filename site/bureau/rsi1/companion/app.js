@@ -102,6 +102,7 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(fa
 function route() {
   const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
+  document.body.dataset.v = v;
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
   for (const d of $$('#dock a')) { if (d.dataset.d === v) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current'); }
   for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
@@ -603,10 +604,10 @@ function drawRadar() {
   const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); svg.append(e); return e; };
   const cx = 180, cy = 160, R = 110, N = AX.length;
   const pt = (i, r) => [cx + r * Math.sin((2 * Math.PI * i) / N), cy - r * Math.cos((2 * Math.PI * i) / N)];
-  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#12435a' });
-  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#12435a' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
+  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#3a4658' });
+  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#3a4658' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
   const A = S.fleet.find((s) => s.name === $('#flA').value), B = S.fleet.find((s) => s.name === $('#flB').value);
-  const ships = [[A, '#00f0ff'], [B, '#e5a93c']].filter(([s]) => s);
+  const ships = [[A, '#ffa94d'], [B, '#8fb4d8']].filter(([s]) => s);
   renderStatTable(ships.map(([s]) => s));
   if (!ships.length) { const t = mk('text', { x: cx, y: cy, 'text-anchor': 'middle' }); t.textContent = 'Add ships to compare'; return; }
   const max = AX.map(([k]) => Math.max(...ships.map(([s]) => C.n(stat(s, k))), 1e-9));
