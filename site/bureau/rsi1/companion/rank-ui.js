@@ -9,10 +9,11 @@ const API_ARMOR = '/api/sc-armor';
 const API_BUILDER = '/api/sc-builder';
 const KEY = 'arsenal.rankings';
 
-const store = {
-  read() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } },
-  write(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage full or blocked */ } }
-};
+// One store per panel, so the FPS and ship panels keep their own choices.
+const storeFor = (key) => ({
+  read() { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } },
+  write(v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* storage full or blocked */ } }
+});
 
 const el = (tag, attrs = {}, ...kids) => {
   const e = document.createElement(tag);
@@ -35,8 +36,12 @@ const secs = (v) => fmt(v, v != null && v < 10 ? 2 : 1);
 const ARMOR_NAME = { NONE: 'No armor', LIGHT: 'Light armor', MEDIUM: 'Medium armor', HEAVY: 'Heavy armor' };
 const CLASS_NOTE = { Physical: 'Ballistic rounds', Energy: 'Lasers and plasma', Mixed: 'Both damage types', Distortion: 'Disables rather than kills', Unknown: 'Damage type not in the data' };
 
-export function initRankings(host) {
-  let st = { tab: 'fps', list: 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', ...store.read() };
+// kind 'fps' or 'ship' makes a panel for that one kind of weapon; with no kind it shows both with a switch.
+export function initRankings(host, opts = {}) {
+  const kind = opts.kind === 'fps' || opts.kind === 'ship' ? opts.kind : null;
+  const store = storeFor(kind ? `${KEY}.${kind}` : KEY);
+  let st = { tab: 'fps', list: kind === 'fps' ? 'type' : 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', ...store.read() };
+  if (kind) st.tab = kind;
   let weapons = null; // null = not loaded, false = unavailable, else [..]
   let armor = null; // { Light: { phys, energy }, ... } | false
   let build = null; // { ships, parts, byId } | false | 'wait'
@@ -161,10 +166,11 @@ export function initRankings(host) {
   function paint() {
     host.textContent = '';
     const isShip = st.tab === 'ship';
+    const title = kind === 'fps' ? 'FPS weapon rankings' : kind === 'ship' ? 'Ship weapon rankings' : 'Weapon rankings';
     host.append(el('div', { class: 'card' },
-      el('h3', { text: 'Weapon rankings' }),
+      el('h3', { text: title }),
       el('p', { class: 'small muted', text: 'Fastest time to kill first. Weapon data comes from the Star Citizen Wiki item database and is only as current as its last update.' }),
-      tabs('Weapon kind', [['fps', 'FPS weapons'], ['ship', 'Ship armaments']], st.tab, (tab) => set({ tab, list: st.list })),
+      kind ? null : tabs('Weapon kind', [['fps', 'FPS weapons'], ['ship', 'Ship armaments']], st.tab, (tab) => set({ tab, list: st.list })),
       el('div', { class: 'mt8' }, tabs('List', [['top', 'Top 20 overall'], ['type', isShip ? 'Top 10 by size' : 'Top 10 by type'], ['class', 'Physical vs Energy'], ['best', 'Best in class']], st.list, (list) => set({ list }))),
       el('div', { class: 'mt10' }, isShip ? shipBody() : fpsBody())));
   }
