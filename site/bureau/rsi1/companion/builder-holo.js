@@ -1,7 +1,7 @@
 // Holographic pop-ups for the ship calculator: a part's full data sheet, and a sortable swap table that shares it.
 // Built with text nodes and SVG attributes only, like the rest of the page. The maths and the data layout are in
 // builder-core.js; this file only draws.
-import { columnsFor, sortParts, detailGroups, cheapest, TYPE_LABEL, num, fmtVal } from './builder-core.js';
+import { columnsFor, sortParts, detailGroupsVs, compareCol, isBuyable, cheapest, TYPE_LABEL, num, fmtVal } from './builder-core.js';
 import { meter } from './viz.js';
 import { partArt, photo } from './art.js';
 
@@ -22,6 +22,11 @@ if (typeof document !== 'undefined') {
   document.addEventListener('pointerdown', (e) => { lastHit = e.target instanceof Element ? e.target.closest('.part, .gun, button') : null; }, true);
   document.addEventListener('keydown', () => { lastHit = null; }, true);
 }
+// While a pop-up is open the page behind it does not scroll (the lists inside the pop-up still do). Counted, so two stacked pop-ups
+// (the data sheet opened from the swap table) release it only when the last one closes.
+let locks = 0;
+const lockPage = () => { locks += 1; document.documentElement.classList.add('holo-open'); };
+const unlockPage = () => { locks = Math.max(0, locks - 1); if (!locks) document.documentElement.classList.remove('holo-open'); };
 const calm = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const TILT = 'perspective(1400px) rotateY(-2deg) rotateX(1deg)';
 
@@ -54,26 +59,29 @@ function frame(kicker, title, wide) {
     h('div', {}, h('div', { class: 'lbl', text: kicker }), h('h3', { class: 'holo-title', text: title })),
     h('button', { type: 'button', class: 'ghost holo-x', text: 'Close ✕', 'aria-label': 'Close', onclick: shut })));
   dlg.addEventListener('click', (e) => { if (e.target === dlg) shut(); });
-  dlg.addEventListener('close', () => { dlg.remove(); try { back?.focus?.(); } catch { /* element is gone */ } });
+  dlg.addEventListener('close', () => { if (dlg.holoLocked) { dlg.holoLocked = false; unlockPage(); } dlg.remove(); try { back?.focus?.(); } catch { /* element is gone */ } });
   return { dlg, shut };
 }
 
 function mount(dlg) {
   document.body.append(dlg);
   try { dlg.showModal(); } catch { dlg.setAttribute('open', ''); }
+  dlg.holoLocked = true;
+  lockPage();
   if (calm() || !dlg.animate) return;
   const { shift, turn } = fromSource(dlg, dlg.holoSrc);
   dlg.animate([{ opacity: 0, transform: `${shift} ${turn}`.trim() }, { opacity: 1, transform: TILT }], { duration: 340, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
 
+// rows are [label, value, difference?, class?]; a difference is drawn small beside the value, green or red when it has a direction.
 const grid = (rows) => {
   const g = h('dl', { class: 'dgrid' });
-  for (const [k, v] of rows) g.append(h('dt', { text: k }), h('dd', { text: v }));
+  for (const [k, v, d, cls] of rows) g.append(h('dt', { text: k }), h('dd', {}, v, d ? h('span', { class: `dv ${cls || 'diff'}`, text: d }) : null));
   return g;
 };
 
 // The data sheet of one part: key figures, where to buy it, then every figure in the game data, by group.
-export function detailPane(part) {
+export function detailPane(part, ref) {
   const pane = h('div', { class: 'holo-detail' });
   if (!part) {
     pane.append(h('p', { class: 'small muted', text: 'Pick a part to see its data sheet.' }));
@@ -83,13 +91,17 @@ export function detailPane(part) {
     photo(part.img, part.name, partArt(part.type), 'photo thumb'),
     h('div', {}, h('h4', { class: 'holo-name', text: part.name }),
       h('div', { class: 'mk', text: [part.mfr, TYPE_LABEL[part.type] || part.type, part.cls, part.grade && `grade ${part.grade}`, part.size != null && `size ${part.size}`].filter(Boolean).join(' · ') }))));
-  const key = columnsFor(part.type).map((c) => [c.label, c.get(part)]).filter(([, v]) => v != null && v !== '').map(([k, v]) => [k, typeof v === 'number' ? fmtVal(v) : v]);
+  const cols = columnsFor(part.type);
+  const key = cols.map((c) => [c.label, c.get(part), compareCol(c, part, ref)]).filter(([, v]) => v != null && v !== '')
+    .map(([k, v, cmp]) => [k, typeof v === 'number' ? fmtVal(v) : v, cmp?.text, cmp?.cls]);
+  if (ref && ref.id !== part.id) pane.append(h('p', { class: 'small muted m0 mt8', text: `Compared with your fitted ${ref.name}: green is better, red is worse.` }));
+  else if (ref) pane.append(h('p', { class: 'small muted m0 mt8', text: 'This is the part you have fitted.' }));
   if (key.length) pane.append(h('div', { class: 'lbl mt8', text: 'Key figures' }), grid(key));
   const buy = cheapest(part);
   pane.append(h('div', { class: 'lbl mt8', text: 'Where to buy' }),
     buy ? h('p', { class: 'small m0', text: `${num(buy.price)} aUEC at ${buy.at}${buy.where ? ` · ${buy.where}` : ''}${buy.sys ? ` (${buy.sys})` : ''}${buy.date ? ` · seen ${buy.date}${buy.stale ? ', old' : ''}` : ''}` })
       : h('p', { class: 'small muted m0', text: 'No shop is known for this part. It may be loot, a reward or stock-only.' }));
-  const groups = detailGroups(part);
+  const groups = detailGroupsVs(part, ref);
   if (!groups.length) pane.append(h('p', { class: 'small muted mt8', text: 'The game data holds no further figures for this part.' }));
   groups.forEach((g, i) => pane.append(h('details', { class: 'dgroup', open: i < 2 ? '' : null }, h('summary', { text: `${g.title} (${g.rows.length})` }), grid(g.rows))));
   return pane;
@@ -111,8 +123,11 @@ export function openSwap({ title, kicker, type, options, currentId, stockId, all
   let sortCol = cols[0];
   let dir = -1;
   let query = '';
+  let shop = 'all'; // all | buy | nobuy
   let sel = options.some((p) => p.id === currentId) ? currentId : options[0]?.id;
   const byId = new Map(options.map((p) => [p.id, p]));
+  // What the table is compared against: the fitted part, or the stock part when the fitted one is a missile choice not yet made.
+  const ref = byId.get(currentId) || byId.get(stockId) || null;
   const max = new Map(cols.filter((c) => c.bar).map((c) => [c.id, Math.max(0, ...options.map((p) => Number(c.get(p)) || 0))]));
 
   const thead = h('tr');
@@ -121,7 +136,7 @@ export function openSwap({ title, kicker, type, options, currentId, stockId, all
   const equip = h('button', { type: 'button', class: 'primary', text: 'Equip' });
   const status = h('span', { class: 'small muted', role: 'status' });
 
-  const showDetail = () => { detail.textContent = ''; detail.append(detailPane(byId.get(sel))); };
+  const showDetail = () => { detail.textContent = ''; detail.append(detailPane(byId.get(sel), ref)); };
   const refreshFoot = () => {
     const same = sel === currentId;
     equip.textContent = same ? 'Fitted' : 'Equip';
@@ -141,7 +156,7 @@ export function openSwap({ title, kicker, type, options, currentId, stockId, all
 
   function rows() {
     const q = query.trim().toLowerCase();
-    const list = sortParts(options.filter((p) => !q || `${p.name} ${p.mfr || ''}`.toLowerCase().includes(q) || p.id === currentId), sortCol, dir);
+    const list = sortParts(options.filter((p) => p.id === currentId || ((!q || `${p.name} ${p.mfr || ''}`.toLowerCase().includes(q)) && (shop === 'all' || (shop === 'buy') === isBuyable(p)))), sortCol, dir);
     tbody.textContent = '';
     for (const p of list) {
       const tr = h('tr', { class: `swaprow${p.id === sel ? ' sel' : ''}${p.id === currentId ? ' cur' : ''}`, tabindex: '0', 'data-id': p.id,
@@ -150,16 +165,30 @@ export function openSwap({ title, kicker, type, options, currentId, stockId, all
       h('td', {}, h('b', { text: p.name }), h('div', { class: 'mk', text: [p.mfr, p.id === currentId && 'fitted', p.id === stockId && 'stock'].filter(Boolean).join(' · ') })));
       for (const c of cols) {
         const v = c.get(p);
-        const td = h('td', { class: 'num' });
+        const cmp = compareCol(c, p, ref);
+        const td = h('td', { class: `num${cmp?.cls ? ` ${cmp.cls}` : ''}` });
+        if (cmp?.text) td.setAttribute('title', `${cmp.text} compared with the fitted ${ref.name}`);
         if (v == null || v === '') td.textContent = '—';
-        else if (c.bar && max.get(c.id)) td.append(h('div', { class: 'cellbar' }, h('span', { text: fmtVal(Number(v)) }), meter(Math.round((Number(v) / max.get(c.id)) * 100), 'info')));
-        else td.textContent = typeof v === 'number' ? fmtVal(v) : String(v);
+        else {
+          const text = typeof v === 'number' ? fmtVal(v) : String(v);
+          const cell = h('div', { class: 'cellv' }, h('span', { class: 'v', text }));
+          if (c.bar && max.get(c.id)) cell.append(meter(Math.round((Number(v) / max.get(c.id)) * 100), 'info'));
+          if (cmp?.text) cell.append(h('span', { class: `dv ${cmp.cls || 'diff'}`, text: cmp.text }));
+          td.append(cell);
+        }
         tr.append(td);
       }
       tbody.append(tr);
     }
     status.textContent = `${list.length} of ${options.length} parts shown`;
   }
+
+  // Filter by what the game sells. "No shop known" parts may still be loot, rewards or stock-only.
+  const nBuy = options.filter(isBuyable).length;
+  const shopTabs = h('div', { class: 'tabs holo-shop', role: 'group', 'aria-label': 'Filter by availability' });
+  const shopDefs = [['all', `All (${options.length})`], ['buy', `Buyable in game (${nBuy})`], ['nobuy', `No shop known (${options.length - nBuy})`]];
+  const paintShop = () => { shopTabs.textContent = ''; for (const [id, label] of shopDefs) shopTabs.append(h('button', { type: 'button', 'aria-pressed': String(id === shop), text: label, onclick: () => { shop = id; paintShop(); rows(); } })); };
+  paintShop();
 
   const search = h('input', { type: 'search', placeholder: 'Filter by name or maker', 'aria-label': 'Filter parts' });
   search.addEventListener('input', () => { query = search.value; rows(); });
@@ -168,7 +197,8 @@ export function openSwap({ title, kicker, type, options, currentId, stockId, all
   rows();
   showDetail();
   refreshFoot();
-  dlg.append(h('div', { class: 'holo-tools' }, search, status),
+  dlg.append(h('div', { class: 'holo-tools' }, search, shopTabs, status),
+    h('div', { class: 'holo-legend small muted' }, ref ? h('span', {}, 'Each figure is compared with your fitted ', h('b', { text: ref.name }), ': ', h('span', { class: 'dv better', text: 'green' }), ' is better, ', h('span', { class: 'dv worse', text: 'red' }), ' is worse.') : null),
     h('div', { class: 'holo-body' }, h('div', { class: 'holo-list' }, h('table', { class: 'swaptbl' }, h('thead', {}, thead), tbody)), detail),
     h('div', { class: 'holo-foot' }, equip,
       allowClear && currentId ? h('button', { type: 'button', class: 'ghost', text: 'Back to stock', onclick: () => { onPick(''); shut(); } }) : null,

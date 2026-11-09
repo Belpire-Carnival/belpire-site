@@ -321,3 +321,37 @@ export function detailGroups(part) {
   }
   return [...groups].map(([title, rows]) => ({ title, rows }));
 }
+
+// ---------------------------------------------------------------- swap pop-up: compare with the fitted part, and what is for sale
+// Columns with no better direction (a size is not "better" than another) show the difference but never turn green or red.
+const NEUTRAL_COLS = new Set(['size', 'grade', 'tubes', 'msize', 'sig']);
+export const signedVal = (d) => (d > 0 ? '+' : '−') + fmtVal(Math.abs(d));
+
+// True when the data holds at least one shop that sells the part. A part with no shop may still be loot, a reward or stock-only.
+export const isBuyable = (p) => Array.isArray(p?.buy) && p.buy.length > 0;
+
+// How one column's figure for `part` compares with the same figure on `ref` (the part now fitted):
+// null when there is nothing to compare, else { delta, cls, text } with cls 'better', 'worse' or '' (no direction or no change).
+export function compareCol(c, part, ref) {
+  if (!c || !part || !ref || part.id === ref.id) return null;
+  const a = c.get(part), b = c.get(ref);
+  if (typeof a !== 'number' || typeof b !== 'number' || !Number.isFinite(a) || !Number.isFinite(b)) return null;
+  const delta = a - b;
+  if (Math.abs(delta) < 1e-9) return { delta: 0, cls: '', text: '' };
+  const cls = NEUTRAL_COLS.has(c.id) ? '' : (delta > 0) === c.higher ? 'better' : 'worse';
+  return { delta, cls, text: signedVal(delta) };
+}
+
+// detailGroups with a third item per row: the difference from `ref`'s figure for the same key, when both are numbers.
+export function detailGroupsVs(part, ref) {
+  const groups = new Map();
+  for (const [key, value] of Object.entries(part?.x || {})) {
+    const [root, ...rest] = key.split('.');
+    const title = GROUP_TITLE[root] || humanKey(root);
+    if (!groups.has(title)) groups.set(title, []);
+    const was = ref && ref.id !== part.id ? ref.x?.[key] : undefined;
+    const d = typeof value === 'number' && typeof was === 'number' && Number.isFinite(value - was) ? value - was : 0;
+    groups.get(title).push([rest.map(humanKey).join(' › ') || humanKey(root), fmtVal(value), Math.abs(d) < 1e-9 ? '' : signedVal(d)]);
+  }
+  return [...groups].map(([title, rows]) => ({ title, rows }));
+}
