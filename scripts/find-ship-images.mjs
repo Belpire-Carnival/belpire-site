@@ -38,26 +38,56 @@ export function candidateTitles(name, mfr = '') {
   return out.slice(0, 5);
 }
 
-// The media paths of the images in a rendered wiki page, in page order, without placeholders and duplicates.
-export function thumbPaths(html) {
-  const seen = new Set();
-  const out = [];
-  const re = /(?:https:)?\/\/media\.starcitizen\.tools\/([^\s"'<>),]+)/g;
-  for (const m of String(html || '').matchAll(re)) {
-    const path = m[1];
-    if (/placeholder/i.test(path) || !IMG_PATH.test(path) || seen.has(path)) continue;
-    seen.add(path);
-    out.push(path);
-  }
-  return out;
+// A media URL as it appears in the page's HTML, cleaned to a plain path: the wiki adds a cache tag (?abc12), HTML entities
+// (&#95; for "_", &quot; at the end of a CSS string) and a ".webp" tail on thumbnail names.
+export function cleanMediaPath(raw) {
+  let t = String(raw).replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&amp;/g, '&');
+  t = t.split(/[?#]|&quot;|&[a-z]+;/i)[0];
+  return t.replace(/(\.(?:jpe?g|png|webp|gif))\.webp$/i, '$1');
 }
 
-// Prefer an image whose file name mentions the ship; otherwise the first one on the page.
+// The photo thumbnails in a rendered wiki page, one per picture (the size closest to 400 px), in page order, without
+// placeholders and duplicates. Icons and logos (CdxIconSuccess.svg and the like) are on every page and are skipped.
+export function thumbPaths(html) {
+  const byFile = new Map();
+  const re = /(?:https:)?\/\/media\.starcitizen\.tools\/([^\s"'<>),]+)/g;
+  for (const m of String(html || '').matchAll(re)) {
+    const path = cleanMediaPath(m[1]);
+    const w = /\/(\d{2,4})px-[^/]+$/.exec(path);
+    if (!w || !path.startsWith('thumb/') || !/\.(?:jpe?g|png|webp)\//i.test(path) || /placeholder/i.test(path) || !IMG_PATH.test(path)) continue;
+    const file = path.slice(0, path.lastIndexOf('/'));
+    const gap = Math.abs(Number(w[1]) - 400);
+    const have = byFile.get(file);
+    if (!have) byFile.set(file, { path, gap });
+    else if (gap < have.gap) have.path = path, have.gap = gap;
+  }
+  return [...byFile.values()].map((x) => x.path);
+}
+
+// Words that say nothing about which ship a file shows: makers, editions, event tags.
+const GENERIC = new Set(['star', 'fighter', 'mk', 'edition', 'special', 'wikelo', 'war', 'work', 'sneak', 'best', 'in', 'show', 'pyam', 'exec', 'savior', 'speedy', 'limited', 'executive', 'touring', 'bis', 'the', 'of', 'and', 'emerald', 'alliance', 'pirate', 'expedition', 'rescue', 'medic', 'utility',
+  'misc', 'drake', 'rsi', 'aegis', 'anvil', 'crusader', 'origin', 'aopoa', 'banu', 'gatac', 'esperia', 'mirai', 'kruger', 'tumbril', 'greycat', 'argo', 'cnou', 'musashi', 'consolidated', 'outland']);
+const words = (s) => {
+  let t = String(s);
+  try { t = decodeURIComponent(t); } catch { /* keep as is */ }
+  return t.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+};
+
+// The photo whose file name names the most words of the ship's name (words are whole, so "ion" does not match "version").
+// A page whose images do not mention the ship gives nothing: a ship with no picture is better than one with the wrong one.
 export function pickThumb(html, name = '') {
-  const paths = thumbPaths(html);
-  const tokens = String(name).toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 2);
-  const hit = paths.find((p) => tokens.some((t) => p.toLowerCase().includes(t)));
-  return hit || paths[0] || '';
+  const tokens = [...new Set(words(name).filter((t) => t.length > 1 && !GENERIC.has(t)))];
+  let best = '';
+  let top = 0;
+  for (const p of thumbPaths(html)) {
+    const have = new Set(words(p));
+    const hits = tokens.filter((t) => have.has(t)).length;
+    if (!hits) continue;
+    // Several photos of one ship: the wiki's isometric renders look alike from ship to ship; concept art does not.
+    const score = hits + (have.has('isometric') ? 0.5 : 0) - (have.has('concept') ? 0.5 : 0);
+    if (score > top) { top = score; best = p; }
+  }
+  return best;
 }
 
 async function getJson(url) {
