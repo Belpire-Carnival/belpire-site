@@ -464,12 +464,14 @@ export async function refreshBuilder(env, { force = false, lock = false } = {}) 
     await kv.put(LOCK_KEY, '1', { expirationTtl: 60 });
   }
   let work = await readJson(kv, WORK_KEY);
+  // Progress saved by an older build of this code was slimmed with older rules: start over rather than publish it.
+  if (work && work.schema !== SCHEMA) work = null;
   if (!work) {
     const snap = await readJson(kv, SNAP_KEY);
     const version = await currentVersion(env);
     const age = snap?.updatedAt ? Date.now() - Date.parse(snap.updatedAt) : Infinity;
     if (!force && snap && snap.version === version && snap.schema === SCHEMA && age < REBUILD_MS) return snap;
-    work = { version, startedAt: new Date().toISOString(), pages: 0, jobs: freshJobs(), ships: [], parts: [], stock: [] };
+    work = { schema: SCHEMA, version, startedAt: new Date().toISOString(), pages: 0, jobs: freshJobs(), ships: [], parts: [], stock: [] };
   }
   work = await stepWork(env, work);
   if (work.jobs.length) {

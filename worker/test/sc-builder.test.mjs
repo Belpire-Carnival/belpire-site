@@ -496,3 +496,14 @@ test('missiles are catalogue parts, racks are locked slots, and a missile and a 
   assert.deepEqual(m.msl, { sig: 'Electromagnetic', dmg: 1500, lock: 0.84, speed: 1029, rmin: 1800, rmax: 10000, ang: 45 });
   assert.equal(m.x['missile.lock_angle'], 45);
 });
+
+import { refreshBuilder as refreshB, SCHEMA as SCH } from '../sc-builder.js';
+test('saved rebuild progress from an older schema is thrown away, not published', async () => {
+  const kv = new Map();
+  const env = { SC_DATA: { async get(k) { return kv.has(k) ? JSON.parse(kv.get(k)) : null; }, async put(k, v) { kv.set(k, v); }, async delete(k) { kv.delete(k); } } };
+  kv.set('sc:builder:work', JSON.stringify({ schema: SCH - 1, version: 'v', pages: 3, jobs: [], ships: [{ id: 'old', name: 'Old', slots: [{ id: 'x' }] }], parts: [], stock: [] }));
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => { throw new Error(`stop: ${String(url).split('?')[0]}`); };
+  try { await assert.rejects(refreshB(env, { force: true }), /stop: .*game-versions/); } finally { globalThis.fetch = realFetch; }
+  assert.ok(kv.has('sc:builder:work')); // untouched until a fresh rebuild replaces it
+});
