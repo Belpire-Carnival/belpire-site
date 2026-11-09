@@ -26,7 +26,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 4;
+export const SCHEMA = 5;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
