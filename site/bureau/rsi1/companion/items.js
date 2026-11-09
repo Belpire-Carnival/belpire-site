@@ -32,7 +32,7 @@ export function attachPicker(input, onPick) {
   input.parentNode.append(box);
   let timer = 0;
   const close = () => { box.hidden = true; box.textContent = ''; };
-  const note = (t) => { box.textContent = ''; const p = document.createElement('div'); p.className = 'pick note'; p.textContent = t; box.append(p); box.hidden = false; };
+  const note = (t) => { box.textContent = ''; const p = document.createElement('div'); p.className = 'sugg note'; p.textContent = t; box.append(p); box.hidden = false; };
   input.addEventListener('input', () => {
     clearTimeout(timer);
     const q = input.value.trim();
@@ -46,15 +46,15 @@ export function attachPicker(input, onPick) {
         box.textContent = '';
         for (const it of items) {
           const b = document.createElement('button');
-          b.type = 'button'; b.className = 'pick'; b.setAttribute('role', 'option');
-          const meta = [it.mfr, it.sub || it.type, it.size != null ? `S${it.size}` : ''].filter(Boolean).join(' · ');
+          b.type = 'button'; b.className = 'sugg'; b.setAttribute('role', 'option');
+          const meta = [it.mfr, it.kind || it.sub || it.type, it.size != null ? `S${it.size}` : '', (it.info || '').slice(0, 70)].filter(Boolean).join(' · ');
           const t = document.createElement('span');
           const n = document.createElement('b'); n.textContent = it.name;
           const m = document.createElement('small'); m.textContent = meta;
           t.append(n, m);
           b.append(photo(cleanImg(it.img), '', (() => { const s = document.createElement('span'); s.className = 'photo thumb none'; return s; })(), 'photo thumb'), t);
           b.addEventListener('mousedown', (e) => e.preventDefault());
-          b.addEventListener('click', () => { input.value = it.name; onPick({ name: it.name, img: cleanImg(it.img) }); close(); });
+          b.addEventListener('click', () => { input.value = it.name; onPick({ name: it.name, img: cleanImg(it.img), info: String(it.info || '').slice(0, 220) }); close(); });
           box.append(b);
         }
         box.hidden = false;

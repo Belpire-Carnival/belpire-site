@@ -81,8 +81,10 @@ export function partArt(type) {
   return s;
 }
 
-// A picture served through this site's own image route (/api/sc-img), with the drawn art as the fallback
-// when there is no picture or it fails to load.
+// A picture from the Star Citizen wiki's media server. It is asked for through this site's own image route first
+// (/api/sc-img, cached); if that fails the browser asks the wiki directly (the page's security policy allows only
+// that one image host). If both fail, the drawn art shown in its place stays.
+const MEDIA = 'https://media.starcitizen.tools/';
 export function photo(path, alt, fallback, cls = 'photo') {
   if (!path || typeof path !== 'string' || path.length > 220) return fallback;
   const img = document.createElement('img');
@@ -91,7 +93,11 @@ export function photo(path, alt, fallback, cls = 'photo') {
   img.loading = 'lazy';
   img.decoding = 'async';
   img.referrerPolicy = 'no-referrer';
+  let tried = 0;
+  img.addEventListener('error', () => {
+    if (tried++ === 0) { img.src = MEDIA + path; return; }
+    if (fallback && img.parentNode) img.replaceWith(fallback); else img.remove();
+  });
   img.src = `/api/sc-img?p=${encodeURIComponent(path)}`;
-  img.addEventListener('error', () => { if (fallback && img.parentNode) img.replaceWith(fallback); else img.remove(); }, { once: true });
   return img;
 }

@@ -3,7 +3,7 @@
 // art.js. The page is built with text nodes and SVG attributes only.
 import {
   indexParts, partsFor, totals, diff, upgradeCost, slotLabel, partLabel, TYPE_LABEL, TOTAL_ROWS, deltaClass, signed,
-  reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms
+  reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms, statSheet, STAT_GROUPS
 } from './builder-core.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
@@ -292,19 +292,22 @@ export function initBuilder(host) {
         el('span', { class: 'small', text: `${n.name} · ${sh.name} · ${Object.keys(n.ov).length} swap${Object.keys(n.ov).length === 1 ? '' : 's'}` }),
         el('span', { class: 'row' },
           el('button', { type: 'button', class: 'ghost', text: 'Load', onclick: () => { setShip(sh.id); setBuild(sh, { ...n.ov }); paint(); } }),
-          el('button', { type: 'button', class: 'ghost', text: 'To hangar', onclick: () => { addToHangar(sh, n.name); } }),
+          el('button', { type: 'button', class: 'ghost', text: 'Save to fleet', onclick: () => { addToHangar(sh, n.name, { ...n.ov }); } }),
           el('button', { type: 'button', class: 'ghost', text: '✕', 'aria-label': `Delete ${n.name}`, onclick: () => { saved.named = saved.named.filter((x) => x.id !== n.id); persist(); paint(); } }))));
     }
     return c;
   }
 
-  // The hangar lives in app.js; it listens for this event and stores the ship in the player's own hangar.
-  function addToHangar(s, label) {
+  // The hangar lives in app.js; it listens for this event and stores the ship, with the whole stat sheet and a
+  // link back to this exact build, in the player's own hangar on the Fleet tab.
+  function addToHangar(s, label, ov = overrides(s)) {
     const ag = s.stats?.agility || {};
+    const n = changedSlots(s, ov).length;
     window.dispatchEvent(new CustomEvent('arsenal:hangar-add', { detail: {
-      name: `${s.name}${label ? ` (${label})` : ''}`.slice(0, 60), role: s.role || '', scm: s.scm ?? null, nav: s.max ?? null, pitch: ag.pitch ?? null, yaw: ag.yaw ?? null, roll: ag.roll ?? null, accel: null
+      name: `${s.name}${label ? ` (${label})` : ''}`.slice(0, 60), role: s.role || '', scm: s.scm ?? null, nav: s.max ?? null, pitch: ag.pitch ?? null, yaw: ag.yaw ?? null, roll: ag.roll ?? null, accel: null,
+      stats: statSheet(s, partsById, ov), code: encodeBuild(s, ov), swaps: n, img: s.img || ''
     } }));
-    status = 'Added to your hangar on the Fleet tab.';
+    status = `Saved "${s.name}${label ? ` (${label})` : ''}" to your fleet.`;
     paint();
   }
 
@@ -328,13 +331,14 @@ export function initBuilder(host) {
       catch { status = link(); }
       paint();
     } });
+    const toFleet = el('button', { type: 'button', class: 'primary', text: 'Save to fleet', onclick: () => addToHangar(s, changedSlots(s, overrides(s)).length ? 'custom build' : 'stock') });
     const reset = el('button', { type: 'button', class: 'ghost', text: 'Reset to stock', onclick: () => { setBuild(s, {}); status = ''; paint(); } });
     const tabs = el('div', { class: 'tabs' });
     for (const id of saved.recent || []) {
       const x = data.ships.find((y) => y.id === id);
       if (x) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
     }
-    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, share, reset)), tabs.childNodes.length ? tabs : null,
+    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null,
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
 

@@ -16,14 +16,23 @@ export async function handleImg(url, ctx) {
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const hit = cache ? await cache.match(key) : null;
   if (hit) return hit;
+  // The wiki may redirect (to a regenerated thumbnail, say). Follow up to three redirects, and only on its own host.
   let res;
+  let target = `https://${MEDIA_HOST}/${p}`;
   try {
-    res = await fetch(`https://${MEDIA_HOST}/${p}`, { headers: { 'User-Agent': UA, Accept: 'image/*' }, signal: AbortSignal.timeout(15000), redirect: 'error' });
-  } catch {
-    return new Response('image host unreachable', { status: 502, headers: { 'Cache-Control': 'no-store' } });
+    for (let hop = 0; hop < 4; hop++) {
+      res = await fetch(target, { headers: { 'User-Agent': UA, Accept: 'image/avif,image/webp,image/*,*/*;q=0.8', Referer: 'https://starcitizen.tools/' }, signal: AbortSignal.timeout(15000), redirect: 'manual' });
+      const loc = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
+      if (!loc) break;
+      const next = new URL(loc, target);
+      if (next.protocol !== 'https:' || next.hostname !== MEDIA_HOST) return new Response(`image host redirected elsewhere (${next.hostname})`, { status: 502, headers: { 'Cache-Control': 'no-store' } });
+      target = next.toString();
+    }
+  } catch (err) {
+    return new Response(`image host unreachable (${String(err?.message || err).slice(0, 80)})`, { status: 502, headers: { 'Cache-Control': 'no-store' } });
   }
   const type = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-  if (!res.ok || !TYPES.has(type)) return new Response('no image', { status: res.status === 404 ? 404 : 502, headers: { 'Cache-Control': 'public, max-age=300' } });
+  if (!res.ok || !TYPES.has(type)) return new Response(`no image (host answered ${res.status} ${type || 'no type'})`, { status: res.status === 404 ? 404 : 502, headers: { 'Cache-Control': 'public, max-age=300' } });
   const buf = await res.arrayBuffer();
   if (buf.byteLength > MAX_BYTES) return new Response('image too large', { status: 502, headers: { 'Cache-Control': 'no-store' } });
   const out = new Response(buf, { status: 200, headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=2592000, immutable', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox" } });
@@ -31,11 +40,29 @@ export async function handleImg(url, ctx) {
   return out;
 }
 
-// One wiki item record → what the page shows.
+// One wiki item record → what the page shows. `info` is a short stat line built from the record's own numbers:
+// the in-game stat list (damage, rate of fire, carrying capacity and so on), armor resistances, and the cheapest shop.
+const RESIST = [['physical', 'Phys'], ['energy', 'Energy'], ['distortion', 'Dist'], ['thermal', 'Thermal'], ['biochemical', 'Bio'], ['stun', 'Stun']];
+const scalars = (o, max) => (o && typeof o === 'object' ? Object.entries(o).filter(([, v]) => (typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && v && v.length < 20)).slice(0, max) : []);
+export function itemInfo(it) {
+  const bits = [];
+  for (const d of Array.isArray(it.description_data) ? it.description_data : []) {
+    const n = String(d?.name ?? '').trim(), v = String(d?.value ?? '').trim();
+    if (n && v && n.length < 30 && v.length < 30 && bits.length < 5) bits.push(`${n} ${v}`);
+  }
+  const map = it.suit_armor?.damage_resistance_map || it.clothing?.damage_resistance_map;
+  const res = RESIST.map(([k, label]) => (Number.isFinite(Number(map?.[k])) && map[k] !== null ? `${label} ${Math.round(map[k] * 1000) / 1000}` : null)).filter(Boolean);
+  if (res.length) bits.push(`Resist ${res.join(' ')}`);
+  const wpn = scalars(it.personal_weapon || it.weapon || it.fps_weapon, 6).map(([k, v]) => `${k.replace(/_/g, ' ')} ${v}`);
+  if (wpn.length) bits.push(wpn.join(', '));
+  const buys = (it.uex_prices?.purchase || []).map((p) => Number(p?.price_buy)).filter((n) => n > 0);
+  if (buys.length) bits.push(`from ${Math.min(...buys).toLocaleString('en-US')} aUEC`);
+  return bits.join(' · ').slice(0, 220);
+}
 export function slimItem(it) {
   if (!it || typeof it !== 'object' || !it.name) return null;
   const s = (v, n) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim().slice(0, n));
-  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it) };
+  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it) };
 }
 
 export async function handleItem(url, env, ctx) {

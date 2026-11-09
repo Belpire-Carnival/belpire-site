@@ -37,7 +37,7 @@ test('innerHTML is limited to the fixed checklist strings, and style is never se
 });
 
 test('links from the page are https or relative', () => {
-  for (const [, href] of html.matchAll(/href="([^"]+)"/g)) assert.match(href, /^(https:\/\/|\.\.?\/|#|\/|companion\.css$)/, href);
+  for (const [, href] of html.matchAll(/href="([^"]+)"/g)) assert.match(href, /^(https:\/\/|\.\.?\/|#|\/|companion\.css$|omniglass\.svg$)/, href);
   for (const [, u] of app.matchAll(/href="(https?:[^"]+)"/g)) assert.match(u, /^https:/, u);
 });
 
@@ -69,7 +69,7 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
 
 test('the drawing helpers build SVG with attributes only and reach no other origin', () => {
   assert.doesNotMatch(viz + art, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\.|fetch\(/);
-  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg)/);
+  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg|media\.starcitizen\.tools\/)/);
   assert.doesNotMatch(builder, /\bhref\s*=|<img|src\s*=/);
 });
 

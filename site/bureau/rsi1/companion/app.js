@@ -3,8 +3,10 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
-import { icon, bars } from './viz.js';
-import { heroArt } from './art.js';
+import { icon, bars, duo } from './viz.js';
+import { heroArt, photo } from './art.js';
+import { STAT_GROUPS, STAT_KEYS } from './builder-core.js';
+import { cleanImg } from './items.js';
 import { initLoadouts } from './loadouts.js';
 import { initOutfits } from './outfits.js';
 import { normalize as normLoadout } from './loadouts.js';
@@ -57,9 +59,9 @@ const Store = {
 
 // ---------------- routing ----------------
 const NAV = [
-  ['Command', [['ops', 'Operations'], ['contracts', 'Contracts'], ['log', 'Ops Log']]],
-  ['Industry', [['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid']]],
-  ['Combat & fleet', [['calc', 'Calculator'], ['combat', 'Armory'], ['fleet', 'Fleet']]],
+  ['Command', [['ops', 'OmniOps'], ['contracts', 'TacBoard'], ['log', 'OmniLog']]],
+  ['Industry', [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']]],
+  ['Hangar & combat', [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix'], ['fleet', 'Hangar Command']]],
   ['Reference', [['manual', 'Field Manual']]],
 ];
 const VIEWS = NAV.flatMap(([, items]) => items);
@@ -70,11 +72,41 @@ for (const [group, items] of NAV) {
   for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
 }
 for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
+// Phone dock: the five tabs used most, plus the full menu.
+const DOCK = [['ops', 'Ops'], ['contracts', 'Jobs'], ['calc', 'Avionics'], ['combat', 'Ballistics']];
+{
+  const dock = $('#dock');
+  for (const [id, label] of DOCK) dock.append(el('a', { href: '#' + id, 'data-d': id }, icon(id), el('span', { text: label })));
+  dock.append(el('button', { type: 'button', id: 'dockMore', 'aria-label': 'Open the full menu' }, icon('manual'), el('span', { text: 'More' })));
+  $('#dockMore').addEventListener('click', () => $('#menuBtn').click());
+}
+// Honest status line: what the page can actually tell about itself.
+function paintStatus() {
+  const online = navigator.onLine !== false;
+  const live = (document.querySelector('[data-patch] b')?.textContent.match(/Alpha ([0-9.]+)/) || [])[1] || C.PATCH.version;
+  const signed = !!document.querySelector('#acct .out, #acct [data-signed]') || /sign out/i.test($('#acct')?.textContent || '');
+  $('#sysState').textContent = `[ KERNEL: ${live} // LINK: ${online ? 'ONLINE' : 'OFFLINE'} ]`;
+  $('#ogSys').textContent = `SYS: FINTAC OMNIGLASS · ALPHA ${live}`;
+  $('#ogLink').textContent = `LINK: ${online ? 'ONLINE' : 'OFFLINE'}`;
+  $('#ogSync').textContent = `SYNC: ${signed ? 'PROFILE' : 'THIS BROWSER ONLY'}`;
+  let n = 0; try { n = Object.keys(localStorage).filter((k) => k.startsWith('arsenal.')).length; } catch { /* storage blocked */ }
+  $('#ogCache').textContent = `LOCAL CACHE: ${n ? 'NOMINAL' : 'EMPTY'}`;
+}
+window.addEventListener('online', paintStatus); window.addEventListener('offline', paintStatus);
+setTimeout(paintStatus, 600); setInterval(paintStatus, 30000);
+function setMenu(open) {
+  const hd = $('header.top'), b = $('#menuBtn');
+  hd.classList.toggle('open', open); b.setAttribute('aria-expanded', String(open));
+}
+$('#menuBtn').addEventListener('click', () => setMenu(!$('header.top').classList.contains('open')));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 function route() {
   const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
+  for (const d of $$('#dock a')) { if (d.dataset.d === v) d.setAttribute('aria-current', 'page'); else d.removeAttribute('aria-current'); }
   for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+  { const cur = $('a[data-v="' + v + '"]', nav); $('#menuNow').textContent = cur ? cur.textContent : 'Menu'; setMenu(false); }
   if (v === 'fleet') drawRadar();
   if (v === 'calc') builder.show();
   window.scrollTo(0, 0);
@@ -85,8 +117,16 @@ window.addEventListener('arsenal:hangar-add', (e) => {
   const d = e.detail || {}; const name = String(d.name || '').slice(0, 60); if (!name) return;
   const ship = { name, role: String(d.role || '').slice(0, 40) };
   for (const k of ['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel']) ship[k] = C.nOrNull(d[k]);
+  // A build from the calculator also brings its whole stat sheet, a link back to the build and its picture.
+  if (d.stats && typeof d.stats === 'object') {
+    ship.stats = {};
+    for (const k of STAT_KEYS) { const v = C.nOrNull(d.stats[k]); if (v != null) ship.stats[k] = v; }
+  }
+  if (typeof d.code === 'string' && /^[A-Za-z0-9_-]{1,3000}$/.test(d.code)) ship.code = d.code;
+  if (Number.isFinite(Number(d.swaps))) ship.swaps = Math.max(0, Math.min(99, Math.floor(Number(d.swaps))));
+  const pic = cleanImg(d.img); if (pic) ship.img = pic;
   S.fleet = [...S.fleet.filter((x) => x.name !== ship.name), ship].slice(0, 60);
-  Store.saveFleet(); renderFleet(); toast('Added to your hangar');
+  Store.saveFleet(); renderFleet(); toast('Saved to your fleet');
 });
 const P = C.PATCH;
 function paintPatch(live) {
@@ -514,16 +554,22 @@ $('#flAdd').addEventListener('click', () => {
   S.fleet = [...S.fleet.filter((s) => s.name !== ship.name), ship].slice(0, 60);
   Store.saveFleet(); renderFleet(); toast('Ship saved');
 });
-const AX = [['scm', 'SCM'], ['nav', 'NAV'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['accel', 'Accel']];
+// Axes of the flight and combat envelope. A value comes from a calculator build's stat sheet, or from the
+// basic figures typed in by hand.
+const AX = [['scm', 'SCM'], ['max', 'NAV'], ['burst', 'DPS'], ['shieldHp', 'Shield'], ['hull', 'Hull'], ['cargo', 'Cargo'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['qtRange', 'QT range']];
+const stat = (s, k) => { const v = s?.stats?.[k] ?? (k === 'max' ? s?.nav : s?.[k]); return C.nOrNull(v); };
 function renderFleet() {
   const tb = $('#flList'); tb.textContent = '';
-  if (!S.fleet.length) tb.append(el('tr', {}, el('td', { colspan: '7', class: 'muted small', text: 'No ships yet.' })));
+  if (!S.fleet.length) tb.append(el('tr', {}, el('td', { colspan: '11', class: 'muted small', text: 'No ships yet. Save a build from the Calculator, or add one here.' })));
   for (const s of S.fleet) {
     const del = el('button', { class: 'ghost', type: 'button', text: '✕', 'aria-label': 'Remove ' + s.name });
     del.addEventListener('click', () => { S.fleet = S.fleet.filter((x) => x !== s); Store.saveFleet(); renderFleet(); });
-    tb.append(el('tr', {}, el('td', { text: s.name }), el('td', { class: 'num', text: C.fmt(s.scm) }), el('td', { class: 'num', text: C.fmt(s.nav) }),
-      el('td', { class: 'num', text: [s.pitch, s.yaw, s.roll].map((v) => C.fmt(v)).join(' / ') }), el('td', { class: 'num', text: C.fmt(s.accel, 1) }),
-      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, del)));
+    const open = s.code ? el('a', { class: 'btnlink', href: `#calc?b=${s.code}`, text: 'Open' }) : null;
+    const nm = el('td', {}, el('div', { class: 'row' }, photo(s.img, '', el('span', { class: 'photo thumb none' }), 'photo thumb'), el('span', {}, el('b', { text: s.name }), s.swaps ? el('span', { class: 'chip', text: `${s.swaps} swap${s.swaps === 1 ? '' : 's'}` }) : null)));
+    tb.append(el('tr', {}, nm, el('td', { class: 'num', text: C.fmt(stat(s, 'scm')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'max')) }),
+      el('td', { class: 'num', text: [s.pitch, s.yaw, s.roll].map((v) => C.fmt(v)).join(' / ') }), el('td', { class: 'num', text: C.fmt(stat(s, 'burst')) }),
+      el('td', { class: 'num', text: C.fmt(stat(s, 'shieldHp')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'hull')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'cargo')) }),
+      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, open), el('td', {}, del)));
   }
   for (const [id, i] of [['#flA', 0], ['#flB', 1]]) {
     const sel = $(id), prev = sel.value; sel.textContent = '';
@@ -536,18 +582,38 @@ $('#flA').addEventListener('change', drawRadar); $('#flB').addEventListener('cha
 function drawRadar() {
   const svg = $('#flRadar'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
   const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); svg.append(e); return e; };
-  const cx = 180, cy = 160, R = 120, N = AX.length;
+  const cx = 180, cy = 160, R = 110, N = AX.length;
   const pt = (i, r) => [cx + r * Math.sin((2 * Math.PI * i) / N), cy - r * Math.cos((2 * Math.PI * i) / N)];
-  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#22385a' });
-  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#22385a' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
+  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#12435a' });
+  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#12435a' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
   const A = S.fleet.find((s) => s.name === $('#flA').value), B = S.fleet.find((s) => s.name === $('#flB').value);
-  const ships = [[A, '#e3b679'], [B, '#7fa7e0']].filter(([s]) => s);
+  const ships = [[A, '#00f0ff'], [B, '#e5a93c']].filter(([s]) => s);
+  renderStatTable(ships.map(([s]) => s));
   if (!ships.length) { const t = mk('text', { x: cx, y: cy, 'text-anchor': 'middle' }); t.textContent = 'Add ships to compare'; return; }
-  const max = AX.map(([k]) => Math.max(...ships.map(([s]) => C.n(s[k])), 1e-9));
+  const max = AX.map(([k]) => Math.max(...ships.map(([s]) => C.n(stat(s, k))), 1e-9));
   for (const [s, col] of ships) {
-    mk('polygon', { points: AX.map(([k], i) => pt(i, R * Math.min(1, C.n(s[k]) / max[i])).join(',')).join(' '), fill: col, 'fill-opacity': '0.18', stroke: col, 'stroke-width': '2' });
+    mk('polygon', { points: AX.map(([k], i) => pt(i, R * Math.min(1, C.n(stat(s, k)) / max[i])).join(',')).join(' '), fill: col, 'fill-opacity': '0.18', stroke: col, 'stroke-width': '2' });
   }
   ships.forEach(([s, col], i) => { mk('rect', { x: 20 + i * 170, y: 308, width: 10, height: 10, fill: col }); const t = mk('text', { x: 36 + i * 170, y: 317 }); t.textContent = s.name; });
+}
+// Every stat the two ships have, grouped, with a bar pair per row. Rows neither ship has a value for are left out.
+function renderStatTable(ships) {
+  const host = $('#flStats'); host.textContent = '';
+  if (!ships.length) return;
+  const [a, b] = ships;
+  for (const [group, rows] of STAT_GROUPS) {
+    const body = el('tbody');
+    for (const [k, label, better, unit] of rows) {
+      const va = stat(a, k), vb = b ? stat(b, k) : null;
+      if (va == null && vb == null) continue;
+      const lead = va != null && vb != null && va !== vb ? ((va > vb) === better ? 'a' : 'b') : '';
+      body.append(el('tr', {}, el('td', { text: label }), el('td', { class: `num ${lead === 'a' ? 'ok' : ''}`.trim(), text: va == null ? '—' : `${C.fmt(va, va % 1 ? 1 : 0)}${unit ? ' ' + unit : ''}` }),
+        b ? el('td', { class: `num ${lead === 'b' ? 'ok' : ''}`.trim(), text: vb == null ? '—' : `${C.fmt(vb, vb % 1 ? 1 : 0)}${unit ? ' ' + unit : ''}` }) : null,
+        b ? el('td', { class: 'w-num' }, duo(va ?? 0, vb ?? 0)) : null));
+    }
+    if (!body.childNodes.length) continue;
+    host.append(el('h3', { class: 'mt12', text: group }), el('div', { class: 'scrollx' }, el('table', { class: 'cmp' }, el('thead', {}, el('tr', {}, el('th', { text: 'Stat' }), el('th', { class: 'num', text: a.name }), b ? el('th', { class: 'num', text: b.name }) : null, b ? el('th', { text: '' }) : null)), body)));
+  }
 }
 
 // ---------------- MANUAL ----------------
@@ -1080,7 +1146,7 @@ scanner('#scan-ship', { kind: 'fleet', title: 'ship stats',
 
 
 scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any mission or contract',
-  hint: 'The mobiGlas contract details, or the contract list.',
+  hint: 'The FinTac OmniGlass contract details, or the contract list.',
   render: (d, res) => {
     const list = (Array.isArray(d.contracts) ? d.contracts : []).filter((c) => c && (c.title || c.payout != null)).slice(0, 10).map(normContract);
     if (!list.length) { res.append(el('p', { class: 'small muted', text: 'No contract found on that screenshot.' })); return; }

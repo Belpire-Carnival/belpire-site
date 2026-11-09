@@ -42,8 +42,8 @@ const count = (v) => { const n = Math.floor(Number(v)); return Number.isFinite(n
 export function normalize(o) {
   const slots = {};
   for (const [, list] of GROUPS) for (const [k] of list) slots[k] = clean(o?.slots?.[k]);
-  const imgs = {};
-  for (const [, list] of GROUPS) for (const [k] of list) imgs[k] = slots[k] ? cleanImg(o?.imgs?.[k]) : '';
+  const imgs = {}, infos = {};
+  for (const [, list] of GROUPS) for (const [k] of list) { imgs[k] = slots[k] ? cleanImg(o?.imgs?.[k]) : ''; infos[k] = slots[k] ? clean(o?.infos?.[k], 220) : ''; }
   const supplies = {};
   for (const [k] of SUPPLIES) supplies[k] = count(o?.supplies?.[k]);
   return {
@@ -51,7 +51,7 @@ export function normalize(o) {
     name: clean(o?.name, 50) || 'Untitled loadout',
     mission: MISSIONS.includes(o?.mission) ? o.mission : 'Other',
     threat: THREATS.includes(o?.threat) ? o.threat : 'Medium',
-    slots, imgs, supplies,
+    slots, imgs, infos, supplies,
     notes: String(o?.notes ?? '').slice(0, 600),
     at: Number(o?.at) || Date.now()
   };
@@ -69,7 +69,7 @@ export function gaps(l) {
 export function briefing(l) {
   const lines = [`**${l.name}** · ${l.mission} · threat ${l.threat}`];
   for (const [group, list] of GROUPS) {
-    const rows = list.filter(([k]) => l.slots[k]).map(([k, label]) => `${label}: ${l.slots[k]}`);
+    const rows = list.filter(([k]) => l.slots[k]).map(([k, label]) => `${label}: ${l.slots[k]}${l.infos?.[k] ? ` (${l.infos[k]})` : ''}`);
     if (rows.length) lines.push('', `__${group}__`, ...rows);
   }
   const sup = SUPPLIES.filter(([k]) => l.supplies[k]).map(([k, label]) => `${label} ${l.supplies[k]}`);
@@ -100,9 +100,9 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
       el('div', { class: 'fields' }, ...slots.map(([k, label]) => {
         inputs[k] = el('input', { type: 'text', value: l.slots[k], maxlength: '80', 'aria-label': label, autocomplete: 'off' });
         let picked = l.slots[k];
-        inputs[k].addEventListener('input', () => { if (inputs[k].value !== picked) l.imgs[k] = ''; });
+        inputs[k].addEventListener('input', () => { if (inputs[k].value !== picked) { l.imgs[k] = ''; l.infos[k] = ''; } });
         const f = field(label, inputs[k]);
-        attachPicker(inputs[k], ({ name, img }) => { picked = name; l.imgs[k] = img; });
+        attachPicker(inputs[k], ({ name, img, info }) => { picked = name; l.imgs[k] = img; l.infos[k] = info || ''; });
         return f;
       }))));
     const sup = {};
@@ -112,7 +112,7 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
     })));
     const notes = el('textarea', { rows: '3', maxlength: '600', placeholder: 'Plan, callouts, who carries what', 'aria-label': 'Notes' });
     notes.value = l.notes;
-    const read = () => normalize({ ...l, imgs: l.imgs, name: name.value, mission: mission.value, threat: threat.value, notes: notes.value,
+    const read = () => normalize({ ...l, imgs: l.imgs, infos: l.infos, name: name.value, mission: mission.value, threat: threat.value, notes: notes.value,
       slots: Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.value])), supplies: Object.fromEntries(Object.entries(sup).map(([k, i]) => [k, i.value])) });
     const save = el('button', { type: 'button', class: 'primary', text: 'Save loadout', onclick: () => {
       const next = read();
@@ -133,6 +133,7 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
     return el('div', { class: `lo-item threat-${l.threat.toLowerCase()}` },
       el('div', { class: 'row between' }, el('b', { text: l.name }), el('span', { class: 'row' }, el('span', { class: 'chip', text: l.mission }), el('span', { class: `chip ${l.threat === 'High' ? 'warn' : l.threat === 'Low' ? 'ok' : ''}`.trim(), text: l.threat }))),
       thumbStrip(GROUPS.flatMap(([, list]) => list).filter(([k]) => l.imgs[k]).map(([k, label]) => [label, l.slots[k], l.imgs[k]])),
+      ...GROUPS.flatMap(([, list]) => list).filter(([k]) => l.infos[k]).slice(0, 4).map(([k, label]) => el('p', { class: 'small muted m0', text: `${l.slots[k]}: ${l.infos[k]}` })),
       el('p', { class: 'small muted m0', text: `${armor} of 6 armor pieces${guns.length ? ` · ${guns.join(', ')}` : ' · no weapons set'}` }),
       flags.length ? el('p', { class: 'small warn m0', text: flags.slice(0, 3).join(' · ') + (flags.length > 3 ? ` · +${flags.length - 3} more` : '') }) : el('p', { class: 'small ok m0', text: 'Ready to go' }),
       el('div', { class: 'row mt6' },

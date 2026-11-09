@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { imgPath, slimPart, slimShip, buildSnapshot, SCHEMA, IMG_PATH } from '../sc-builder.js';
 import { handleImg, slimItem, handleItem } from '../sc-img.js';
@@ -60,4 +61,13 @@ test('the page applies the same picture-path rule', () => {
   assert.equal(cleanImg('thumb/8/87/A.jpg/600px-A.jpg'), 'thumb/8/87/A.jpg/600px-A.jpg');
   assert.equal(cleanImg('https://evil/a.jpg'), ''); assert.equal(cleanImg('../x'), ''); assert.equal(cleanImg(5), '');
   assert.ok(IMG_PATH.test('8/87/a.jpg'));
+});
+
+test('item search builds a stat line from the record, and the CSP allows only the wiki image host', async () => {
+  const { itemInfo } = await import('../sc-img.js');
+  const line = itemInfo({ description_data: [{ name: 'Carrying Capacity', value: '180K µSCU' }, { name: 'Item Type', value: 'Heavy Backpack' }], suit_armor: { damage_resistance_map: { physical: 0.8, energy: null, stun: 0.5 } }, uex_prices: { purchase: [{ price_buy: 8531 }, { price_buy: 8105 }] } });
+  assert.match(line, /Carrying Capacity 180K µSCU/); assert.match(line, /Resist Phys 0.8 Stun 0.5/); assert.match(line, /from 8,105 aUEC/);
+  const headers = readFileSync(new URL('../../site/_headers', import.meta.url), 'utf8');
+  assert.match(headers, /img-src 'self' data: blob: [^;]*https:\/\/media\.starcitizen\.tools;/);
+  assert.doesNotMatch(headers, /(?:script|connect|default)-src[^;]*media\.starcitizen\.tools/);
 });

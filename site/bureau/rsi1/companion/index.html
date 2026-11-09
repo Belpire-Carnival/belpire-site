@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Citizen Arsenal — Star Citizen Companion — Bureau of Finality</title>
+  <title>FinTac OmniGlass // Companion OS</title>
   <meta name="description" content="The Bureau of Finality's Star Citizen companion: live commodity prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime. Unofficial fan tool.">
   <link rel="canonical" href="https://bureau.belpire.com/rsi1/companion/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Bureau of Finality">
-  <meta property="og:title" content="Citizen Arsenal — Star Citizen Companion">
+  <meta property="og:title" content="FinTac OmniGlass // Companion OS">
   <meta property="og:description" content="Live prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime for Star Citizen pilots.">
   <meta property="og:url" content="https://bureau.belpire.com/rsi1/companion/">
   <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
@@ -16,8 +16,8 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="The Bureau of Finality crest over the division's battle scene">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="theme-color" content="#08111E">
-  <link rel="icon" href="../../crest.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#03070D">
+  <link rel="icon" href="omniglass.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="companion.css">
@@ -28,11 +28,13 @@
 <header class="top">
   <div class="brand">
     <div class="id">
-      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2 36 11v18L20 38 4 29V11Z"/><path d="M20 10l9 5v10l-9 5-9-5V15Z"/><circle cx="20" cy="20" r="2.5"/></svg>
-      <div><h1>CITIZEN ARSENAL</h1><span class="sub">Bureau of Finality · DIV_RSI1</span></div>
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><path d="M20 2 36 11v18L20 38 4 29V11Z"/><path d="M20 8v6M20 26v6M8 20h6M26 20h6"/><circle cx="20" cy="20" r="4.5"/><circle cx="20" cy="20" r="1.2"/></svg>
+      <div><h1>FINTAC OMNIGLASS</h1><span class="sub">Bureau Tactical Systems · DIV_RSI1</span></div>
     </div>
-    <div class="motto"><b>Finem Ultimum Nos Afferimus.</b></div>
+    <div class="motto"><b>Finem Ultimum Nos Afferimus.</b><span class="sys-state" id="sysState">[ KERNEL: — // LINK: — ]</span></div>
+    <button type="button" id="menuBtn" class="menubtn" aria-expanded="false" aria-controls="menuPanel"><span class="mb-now" id="menuNow">Menu</span><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
   </div>
+  <div id="menuPanel" class="menupanel">
   <nav id="nav" aria-label="Modules"></nav>
   <div class="vt" aria-label="VerseTime">
     <div><div class="lbl">Body</div>
@@ -48,13 +50,14 @@
     <div id="acct" class="acct"></div>
     <a class="small" href="../">&larr; Back to the division</a>
   </div>
+  </div>
 </header>
 
 <main id="main" class="app">
 
 <!-- ================= OPS ================= -->
 <section class="view" id="v-ops" aria-labelledby="h-ops">
-  <div class="hero"><div><h2 id="h-ops">Operations</h2><p class="tag">Your day at a glance: earnings, a pre-launch checklist and the state of the verse.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs logged</div><div class="val" data-k="ops.runs">—</div></div><div class="kpi"><div class="lbl">Lifetime net</div><div class="val" data-k="ops.net">—</div></div><div class="kpi"><div class="lbl">Average per hour</div><div class="val" data-k="ops.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="ops"></div></div>
+  <div class="hero"><div><h2 id="h-ops">OmniOps</h2><span class="daemon">sys://ops.telemetry</span><p class="tag">Your day at a glance: earnings, a pre-launch checklist and the state of the verse.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs logged</div><div class="val" data-k="ops.runs">—</div></div><div class="kpi"><div class="lbl">Lifetime net</div><div class="val" data-k="ops.net">—</div></div><div class="kpi"><div class="lbl">Average per hour</div><div class="val" data-k="ops.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="ops"></div></div>
   <div class="grid g3">
     <div class="card accent"><h3>Today</h3><div class="stat-big" id="opsToday">0 aUEC</div><div class="muted small" id="opsTodaySub">No runs logged today</div></div>
     <div class="card accent"><h3>Last 7 days</h3><div class="stat-big" id="opsWeek">0 aUEC</div><div class="muted small" id="opsWeekSub">—</div></div>
@@ -82,9 +85,9 @@
 
 <!-- ================= CONTRACTS ================= -->
 <section class="view" id="v-contracts" aria-labelledby="h-contracts">
-  <div class="hero"><div><h2 id="h-contracts">Contracts Board</h2><p class="tag">Scan a contract from your mobiGlas, check it, and keep every open job in one place.</p><div class="kpis"><div class="kpi"><div class="lbl">Open contracts</div><div class="val" data-k="contracts.open">—</div></div><div class="kpi"><div class="lbl">Open payout</div><div class="val" data-k="contracts.payout">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="contracts"></div></div>
+  <div class="hero"><div><h2 id="h-contracts">TacBoard</h2><span class="daemon">sys://contracts.scan</span><p class="tag">Scan a contract from your FinTac OmniGlass, check it, and keep every open job in one place.</p><div class="kpis"><div class="kpi"><div class="lbl">Open contracts</div><div class="val" data-k="contracts.open">—</div></div><div class="kpi"><div class="lbl">Open payout</div><div class="val" data-k="contracts.payout">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="contracts"></div></div>
   <div class="card">
-    <p class="small muted mt0">Screenshot any contract in your mobiGlas (hauling, salvage, mining, bounty, mercenary, delivery, investigation, anything) and scan it. An AI model reads the payout, cargo, routes, deadline and requirements; you check them, then add the contract to your board. A list screen with several contracts works too.</p>
+    <p class="small muted mt0">Screenshot any contract in your FinTac OmniGlass (hauling, salvage, mining, bounty, mercenary, delivery, investigation, anything) and scan it. An AI model reads the payout, cargo, routes, deadline and requirements; you check them, then add the contract to your board. A list screen with several contracts works too.</p>
     <div id="scan-contracts"></div>
     <div class="out" id="ctTotals"></div>
     <div class="row mt10">
@@ -97,7 +100,7 @@
 
 <!-- ================= SALVAGE ================= -->
 <section class="view" id="v-salvage" aria-labelledby="h-salvage">
-  <div class="hero"><div><h2 id="h-salvage">Salvage Companion</h2><p class="tag">Hull scraping, structural salvage and refining, with live sell points.</p><div class="kpis"><div class="kpi"><div class="lbl">Salvage runs</div><div class="val" data-k="salvage.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="salvage.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="salvage.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="salvage"></div></div>
+  <div class="hero"><div><h2 id="h-salvage">Slag &amp; Scrape</h2><span class="daemon">sys://salvage.refinery</span><p class="tag">Hull scraping, structural salvage and refining, with live sell points.</p><div class="kpis"><div class="kpi"><div class="lbl">Salvage runs</div><div class="val" data-k="salvage.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="salvage.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="salvage.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="salvage"></div></div>
   <div class="card accent mb12">
     <p><b>The loop:</b> hull-scrape wrecks into <b>Recycled Material Composite (RMC)</b>, then optionally fracture and disintegrate the hull into raw construction material. Since Alpha 4.3.2 that raw material must be <b>refined</b> into <b>Construction Materials</b> before it sells. The grade you get depends on ship class: <b>Rubble</b> (light salvage: fastest refining, lowest yield), <b>Pieces</b>, then <b>Salvage</b>.</p>
     <p class="small muted m0">Sources: RSI Salvage &amp; Repair guide (Comm-Link 19070), starcitizen.tools Salvage, timesaver.gg 4.10 guide.</p>
@@ -171,7 +174,7 @@
 
 <!-- ================= MINING ================= -->
 <section class="view" id="v-mining" aria-labelledby="h-mining">
-  <div class="hero"><div><h2 id="h-mining">Mining &amp; Refining</h2><p class="tag">Plan the refinery job, price the ore and log the haul.</p><div class="kpis"><div class="kpi"><div class="lbl">Mining runs</div><div class="val" data-k="mining.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="mining.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="mining.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="mining"></div></div>
+  <div class="hero"><div><h2 id="h-mining">Extraction OS</h2><span class="daemon">sys://mining.yield</span><p class="tag">Plan the refinery job, price the ore and log the haul.</p><div class="kpis"><div class="kpi"><div class="lbl">Mining runs</div><div class="val" data-k="mining.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="mining.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="mining.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="mining"></div></div>
   <div class="grid g2">
     <div class="card">
       <h3>Refinery job calculator</h3>
@@ -207,7 +210,7 @@
 
 <!-- ================= TRADE ================= -->
 <section class="view" id="v-trade" aria-labelledby="h-trade">
-  <div class="hero"><div><h2 id="h-trade">Trade &amp; Hauling</h2><p class="tag">Live buy and sell pairs, a route planner and a contract check.</p><div class="kpis"><div class="kpi"><div class="lbl">Trade runs</div><div class="val" data-k="trade.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="trade.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="trade.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="trade"></div></div>
+  <div class="hero"><div><h2 id="h-trade">OmniRoute</h2><span class="daemon">sys://logistics.hauler</span><p class="tag">Live buy and sell pairs, a route planner and a contract check.</p><div class="kpis"><div class="kpi"><div class="lbl">Trade runs</div><div class="val" data-k="trade.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="trade.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="trade.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="trade"></div></div>
   <div class="card accent mb12">
     <h3>Live market <span id="mkChip" class="chip warn">MANUAL</span></h3>
     <p class="small muted">Best buy-to-sell pairs across all terminals, from recent UEX reports (older than two weeks is ignored). "Buy" is what you pay, "Sell" is what you get. Margins this good deserve a second look: check in game before you commit a hold.</p>
@@ -251,7 +254,7 @@
 
 <!-- ================= CARGO ================= -->
 <section class="view" id="v-cargo" aria-labelledby="h-cargo">
-  <div class="hero"><div><h2 id="h-cargo">Cargo Grid</h2><p class="tag">Lay out 1 to 32 SCU boxes in your hold and get a loading order.</p><div class="chips"><span class="chip">1–32 SCU boxes</span><span class="chip">Auto-pack</span><span class="chip">Loading sequence</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="cargo"></div></div>
+  <div class="hero"><div><h2 id="h-cargo">GridMaster</h2><span class="daemon">sys://grid.stowage</span><p class="tag">Lay out 1 to 32 SCU boxes in your hold and get a loading order.</p><div class="chips"><span class="chip">1–32 SCU boxes</span><span class="chip">Auto-pack</span><span class="chip">Loading sequence</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="cargo"></div></div>
   <div class="card">
     <p class="small muted">Set the grid size in 1-SCU cells for your ship's hold (width × length × height). Check the real grid in game or on SPViewer; the starting size is only an example. Box footprints are the standard 1–32 SCU containers.</p>
     <div class="fields" id="cgFields"></div>
@@ -277,7 +280,7 @@
 
 <!-- ================= COMBAT ================= -->
 <section class="view" id="v-combat" aria-labelledby="h-combat">
-  <div class="hero"><div><h2 id="h-combat">Tactical Armory</h2><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span><span class="chip">Ground loadouts</span><span class="chip">Wardrobe</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
+  <div class="hero"><div><h2 id="h-combat">Ballistics Matrix</h2><span class="daemon">sys://tac.armory</span><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span><span class="chip">Ground loadouts</span><span class="chip">Wardrobe</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
   <div class="grid g2">
     <div class="card">
       <h3>TTK matrix</h3>
@@ -310,14 +313,14 @@
 
 <!-- ================= CALCULATOR ================= -->
 <section class="view" id="v-calc" aria-labelledby="h-calc">
-  <div class="hero"><div><h2 id="h-calc">Calculator</h2><p class="tag">Build a ship loadout and see its damage, defense, power and flight stats. Compare against stock, save builds and price the upgrade.</p>
+  <div class="hero"><div><h2 id="h-calc">Avionics Lab</h2><span class="daemon">sys://avionics.flight</span><p class="tag">Build a ship loadout and see its damage, defense, power and flight stats. Compare against stock, save builds and price the upgrade.</p>
     <div class="chips"><span class="chip">Swap any hardpoint</span><span class="chip">Stock vs build</span><span class="chip">Upgrade cost</span><span class="chip">Share link</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="calc"></div></div>
   <div id="builder" class="calc"></div>
 </section>
 
 <!-- ================= FLEET ================= -->
 <section class="view" id="v-fleet" aria-labelledby="h-fleet">
-  <div class="hero"><div><h2 id="h-fleet">Fleet Command</h2><p class="tag">Your hangar and a flight envelope comparison between two ships.</p><div class="kpis"><div class="kpi"><div class="lbl">Ships in hangar</div><div class="val" data-k="fleet.count">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="fleet"></div></div>
+  <div class="hero"><div><h2 id="h-fleet">Hangar Command</h2><span class="daemon">sys://avionics.hangar</span><p class="tag">Your hangar and a flight envelope comparison between two ships.</p><div class="kpis"><div class="kpi"><div class="lbl">Ships in hangar</div><div class="val" data-k="fleet.count">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="fleet"></div></div>
     <div class="grid g2">
     <div class="card">
       <h3>Your hangar</h3>
@@ -326,7 +329,7 @@
       <div class="fields" id="flFields"></div>
       <div class="row mt8"><button class="primary" id="flAdd">Save ship</button><button class="ghost" id="flLookup">Look up SCM / NAV / rotation</button></div>
       <div class="scrollx mt12"><table>
-        <thead><tr><th>Ship</th><th class="num">SCM</th><th class="num">NAV</th><th class="num">P/Y/R</th><th class="num">Accel</th><th>Role</th><th></th></tr></thead>
+        <thead><tr><th>Ship</th><th class="num">SCM</th><th class="num">NAV</th><th class="num">P/Y/R</th><th class="num">DPS</th><th class="num">Shield</th><th class="num">Hull</th><th class="num">SCU</th><th>Role</th><th></th><th></th></tr></thead>
         <tbody id="flList"></tbody>
       </table></div>
     </div>
@@ -334,7 +337,8 @@
       <h3>Flight envelope comparison</h3>
       <div class="row"><select id="flA" aria-label="Ship A"></select><span class="muted">vs</span><select id="flB" aria-label="Ship B"></select></div>
       <div class="svgwrap"><svg id="flRadar" class="radar svgmax" viewBox="0 0 360 330" width="100%" role="img" aria-label="Radar chart comparing two ships"></svg></div>
-      <p class="small muted">Each axis is scaled to the better of the two ships. Atmospheric handling isn't modelled here: SPViewer shows atmospheric figures where they're known.</p>
+      <p class="small muted">Each axis is scaled to the better of the two ships. Builds saved from the Calculator bring damage, shields, hull, cargo, quantum range and more; ships typed in by hand only have the basic figures.</p>
+      <div id="flStats"></div>
     </div>
   </div>
 </section>
@@ -342,7 +346,7 @@
 
 <!-- ================= MANUAL ================= -->
 <section class="view" id="v-manual" aria-labelledby="h-manual">
-  <div class="hero"><div><h2 id="h-manual">Field Manual</h2><p class="tag">Bug workarounds and the reference sites worth bookmarking.</p><div class="chips"><span class="chip">Bug mitigations</span><span class="chip">Reference tools</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="manual"></div></div>
+  <div class="hero"><div><h2 id="h-manual">Field Manual</h2><span class="daemon">sys://ref.manual</span><p class="tag">Bug workarounds and the reference sites worth bookmarking.</p><div class="chips"><span class="chip">Bug mitigations</span><span class="chip">Reference tools</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="manual"></div></div>
   <div class="grid g2">
     <div class="card"><h3>Bug mitigations</h3><table><tbody id="bugTable"></tbody></table>
       <p class="small muted mt8">For bug reports, add a screenshot with <span class="mono">r_displaySessionInfo 1</span> and file it on the <a href="https://issue-council.robertsspaceindustries.com/" target="_blank" rel="noopener">Issue Council</a>.</p></div>
@@ -353,7 +357,7 @@
 
 <!-- ================= LOG ================= -->
 <section class="view" id="v-log" aria-labelledby="h-log">
-  <div class="hero"><div><h2 id="h-log">Ops Log</h2><p class="tag">Everything you have logged, totalled and sorted.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs</div><div class="val" data-k="log.runs">—</div></div><div class="kpi"><div class="lbl">Net</div><div class="val" data-k="log.net">—</div></div><div class="kpi"><div class="lbl">Time</div><div class="val" data-k="log.time">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="log"></div></div>
+  <div class="hero"><div><h2 id="h-log">OmniLog</h2><span class="daemon">sys://ops.ledger</span><p class="tag">Everything you have logged, totalled and sorted.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs</div><div class="val" data-k="log.runs">—</div></div><div class="kpi"><div class="lbl">Net</div><div class="val" data-k="log.net">—</div></div><div class="kpi"><div class="lbl">Time</div><div class="val" data-k="log.time">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="log"></div></div>
   <div class="card">
     <div class="row between"><div class="row"><label class="f inline">Activity <select id="lgFilter"><option value="">All</option><option>salvage</option><option>mining</option><option>trade</option><option>contract</option></select></label></div><span class="small muted" id="lgStore"></span></div>
     <div class="out" id="lgTotals"></div>
@@ -370,6 +374,8 @@
 <div class="toast" id="toast" role="status" hidden></div>
 <footer class="foot">
   <p class="fine">This is an unofficial Star Citizen fan tool, not affiliated with the Cloud Imperium group of companies. Commodity prices come from <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX Corp</a> (community data; UEX is a fictional in-game entity). Ship data credits <a href="https://api.star-citizen.wiki/" target="_blank" rel="noopener">api.star-citizen.wiki</a>. Ship and item pictures come from the <a href="https://starcitizen.tools/" target="_blank" rel="noopener">Star Citizen Wiki</a> and are the property of Cloud Imperium Games (Star Citizen®, Roberts Space Industries® and Cloud Imperium® are registered trademarks of Cloud Imperium Rights LLC); they are shown here as fan content and are not licensed to or endorsed by CIG. Status and Comm-Link information comes from robertsspaceindustries.com. What you enter on this page is saved in your browser only. <a href="https://belpire.com/privacy/">Privacy Policy</a> · <a href="https://belpire.com/terms/">Terms of Use</a></p>
+  <div class="omniglass-status" id="ogStatus" aria-label="System status"><span id="ogSys">SYS: FINTAC OMNIGLASS</span><span id="ogLink">LINK: —</span><span id="ogSync">SYNC: —</span><span id="ogCache">LOCAL CACHE: —</span></div>
 </footer>
+<nav id="dock" class="dock" aria-label="Quick tabs"></nav>
 </body>
 </html>
