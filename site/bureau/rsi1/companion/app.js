@@ -3,8 +3,15 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
-import { icon, bars } from './viz.js';
-import { heroArt } from './art.js';
+import { icon, bars, duo } from './viz.js';
+import { heroArt, photo } from './art.js';
+import { STAT_GROUPS, STAT_KEYS } from './builder-core.js';
+import { cleanImg, attachPicker } from './items.js';
+import { initLoadouts } from './loadouts.js';
+import { initOutfits } from './outfits.js';
+import { normalize as normLoadout } from './loadouts.js';
+import * as M from './market.js';
+import { learnZones } from './risk.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -54,9 +61,9 @@ const Store = {
 
 // ---------------- routing ----------------
 const NAV = [
-  ['Command', [['ops', 'Operations'], ['contracts', 'Contracts'], ['log', 'Ops Log']]],
-  ['Industry', [['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid']]],
-  ['Combat & fleet', [['calc', 'Calculator'], ['combat', 'Armory'], ['fleet', 'Fleet']]],
+  ['Command', [['ops', 'OmniOps'], ['contracts', 'TacBoard'], ['log', 'OmniLog']]],
+  ['Industry', [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']]],
+  ['Hangar & combat', [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix'], ['fleet', 'Hangar Command']]],
   ['Reference', [['manual', 'Field Manual']]],
 ];
 const VIEWS = NAV.flatMap(([, items]) => items);
@@ -67,11 +74,41 @@ for (const [group, items] of NAV) {
   for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
 }
 for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
+// Bottom bar: every module as an icon tab, the signed-in user pinned at the right end.
+{
+  const dock = $('#dock');
+  const tabs = el('div', { class: 'dock-tabs', role: 'presentation' });
+  for (const [id, label] of VIEWS) tabs.append(el('a', { href: '#' + id, 'data-d': id }, icon(id), el('span', { text: label })));
+  dock.append(tabs, $('#acct'));
+}
+// Honest status line: what the page can actually tell about itself.
+function paintStatus() {
+  const online = navigator.onLine !== false;
+  const live = (document.querySelector('[data-patch] b')?.textContent.match(/Alpha ([0-9.]+)/) || [])[1] || C.PATCH.version;
+  const signed = !!document.querySelector('#acct .out, #acct [data-signed]') || /sign out/i.test($('#acct')?.textContent || '');
+  $('#sysState').textContent = `[ KERNEL: ${live} // LINK: ${online ? 'ONLINE' : 'OFFLINE'} ]`;
+  $('#ogSys').textContent = `SYS: FINTAC OMNIGLASS · ALPHA ${live}`;
+  $('#ogLink').textContent = `LINK: ${online ? 'ONLINE' : 'OFFLINE'}`;
+  $('#ogSync').textContent = `SYNC: ${signed ? 'PROFILE' : 'THIS BROWSER ONLY'}`;
+  let n = 0; try { n = Object.keys(localStorage).filter((k) => k.startsWith('arsenal.')).length; } catch { /* storage blocked */ }
+  $('#ogCache').textContent = `LOCAL CACHE: ${n ? 'NOMINAL' : 'EMPTY'}`;
+}
+window.addEventListener('online', paintStatus); window.addEventListener('offline', paintStatus);
+setTimeout(paintStatus, 600); setInterval(paintStatus, 30000);
+function setMenu(open) {
+  const hd = $('header.top'), b = $('#menuBtn');
+  hd.classList.toggle('open', open); b.setAttribute('aria-expanded', String(open));
+}
+$('#menuBtn').addEventListener('click', () => setMenu(!$('header.top').classList.contains('open')));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 function route() {
   const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
+  document.body.dataset.v = v;
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
+  for (const d of $$('#dock a')) { if (d.dataset.d === v) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current'); }
   for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+  { const cur = $('a[data-v="' + v + '"]', nav); $('#menuNow').textContent = cur ? cur.textContent : 'Menu'; setMenu(false); }
   if (v === 'fleet') drawRadar();
   if (v === 'calc') builder.show();
   window.scrollTo(0, 0);
@@ -82,8 +119,16 @@ window.addEventListener('arsenal:hangar-add', (e) => {
   const d = e.detail || {}; const name = String(d.name || '').slice(0, 60); if (!name) return;
   const ship = { name, role: String(d.role || '').slice(0, 40) };
   for (const k of ['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel']) ship[k] = C.nOrNull(d[k]);
+  // A build from the calculator also brings its whole stat sheet, a link back to the build and its picture.
+  if (d.stats && typeof d.stats === 'object') {
+    ship.stats = {};
+    for (const k of STAT_KEYS) { const v = C.nOrNull(d.stats[k]); if (v != null) ship.stats[k] = v; }
+  }
+  if (typeof d.code === 'string' && /^[A-Za-z0-9_-]{1,3000}$/.test(d.code)) ship.code = d.code;
+  if (Number.isFinite(Number(d.swaps))) ship.swaps = Math.max(0, Math.min(99, Math.floor(Number(d.swaps))));
+  const pic = cleanImg(d.img); if (pic) ship.img = pic;
   S.fleet = [...S.fleet.filter((x) => x.name !== ship.name), ship].slice(0, 60);
-  Store.saveFleet(); renderFleet(); toast('Added to your hangar');
+  Store.saveFleet(); renderFleet(); toast('Saved to your fleet');
 });
 const P = C.PATCH;
 function paintPatch(live) {
@@ -457,6 +502,18 @@ fields($('#tkFields'), [
   { k: 'burst', label: 'Shots / burst', step: '1' }, { k: 'cooldown', label: 'Burst cooldown (s)' },
   { k: 'hp', label: 'Target health' }, { k: 'zone', label: 'Hit-zone multiplier' },
 ], tk, () => { ls.set('tk.inputs', tk); calcTTK(); });
+// Type two letters of a weapon and pick it: its damage, rate of fire, magazine and fire mode fill the form from the item database.
+attachPicker($('#tkFields [data-k="name"]'), ({ name, wpn }) => {
+  tk.name = name;
+  if (!wpn) { ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name']); return toast('No weapon numbers for that item. Enter them by hand.'); }
+  const o = { phys: wpn.phys, energy: wpn.energy, pellets: wpn.pellets, rpm: wpn.rpm ?? '', mag: wpn.mag ?? '', mode: wpn.mode, burst: wpn.burst ?? '', cooldown: wpn.cooldown ?? '' };
+  if (!tk.hp) o.hp = 100;
+  Object.assign(tk, o);
+  ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name', ...Object.keys(o)]); calcTTK();
+  const missing = [!o.rpm && 'RPM', !tk.reload && 'reload time'].filter(Boolean);
+  toast(`Filled from the item database${wpn.rpmFrom ? ` (RPM from ${wpn.rpmFrom} mode)` : ''}${o.hp === 100 ? '; target health 100' : ''}.${missing.length ? ` Still to enter: ${missing.join(', ')}.` : ''}`);
+  loadArmor(false);
+}, { type: 'weapon' });
 const AC = ['NONE', 'LIGHT', 'MEDIUM', 'HEAVY'];
 for (const a of AC) {
   tk.armor[a] = tk.armor[a] || {};
@@ -477,6 +534,24 @@ function calcTTK() {
     : 'Enter damage, RPM and target health to fill the matrix.';
 }
 calcTTK();
+// Typical armor multipliers per class (middle of the wiki's torso pieces). Fills the Light, Medium and Heavy rows;
+// on page load only when they are still empty, and from the "Fill armor" button always.
+async function loadArmor(force) {
+  const rows = ['LIGHT', 'MEDIUM', 'HEAVY'];
+  if (!force && rows.some((a) => tk.armor[a].phys || tk.armor[a].energy)) return;
+  try {
+    const r = await fetch('/api/sc-armor', { cache: 'no-cache', headers: { Accept: 'application/json' } });
+    const j = r.ok ? await r.json() : null;
+    if (!j?.classes) throw new Error('none');
+    for (const a of rows) { const c = j.classes[a[0] + a.slice(1).toLowerCase()]; if (c) tk.armor[a] = { phys: c.phys, energy: c.energy }; }
+    ls.set('tk.inputs', tk);
+    for (const a of rows) for (const k of ['phys', 'energy']) { const i = $('#tkArmor').querySelector(`[aria-label="${a} ${k}"]`); if (i) i.value = tk.armor[a][k] ?? ''; }
+    calcTTK();
+    if (force) toast('Armor multipliers filled from the item database');
+  } catch { if (force) toast('Armor values are unavailable right now. Enter them by hand.'); }
+}
+$('#tkArmorFill').addEventListener('click', () => loadArmor(true));
+loadArmor(false);
 const bd = ls.get('bd.inputs', { doses: [] });
 fields($('#bdFields'), [{ k: 'perDose', label: 'BDL per dose' }, { k: 'decay', label: 'Decay per second' }, { k: 'overdose', label: 'Overdose threshold' }],
   bd, () => { ls.set('bd.inputs', bd); tickBDL(); });
@@ -490,6 +565,12 @@ function tickBDL() {
 }
 setInterval(() => { if (!document.hidden && $('#v-combat').classList.contains('on')) tickBDL(); }, 1000);
 tickBDL();
+{
+  const copyPlain = async (t) => { try { await navigator.clipboard.writeText(t); return true; } catch { return false; } };
+  initLoadouts($('#groundLoadouts'), { toast, copy: copyPlain });
+  const readLoadouts = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.loadouts')); return Array.isArray(v) ? v.map(normLoadout) : []; } catch { return []; } };
+  initOutfits($('#wardrobe'), { toast, copy: copyPlain, getLoadouts: readLoadouts });
+}
 $('#loSave').addEventListener('click', () => { S.settings.loadout = $('#loNotes').value.slice(0, 4000); Store.saveSettings(); toast('Notes saved in this browser'); });
 $('#loBrief').addEventListener('click', () => copyText(briefRun('Ground Loadout', $('#loNotes').value.split('\n').filter(Boolean)), $('#loBriefBox')));
 
@@ -505,16 +586,42 @@ $('#flAdd').addEventListener('click', () => {
   S.fleet = [...S.fleet.filter((s) => s.name !== ship.name), ship].slice(0, 60);
   Store.saveFleet(); renderFleet(); toast('Ship saved');
 });
-const AX = [['scm', 'SCM'], ['nav', 'NAV'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['accel', 'Accel']];
+// Axes of the flight and combat envelope. A value comes from a calculator build's stat sheet, or from the
+// basic figures typed in by hand.
+const AX = [['scm', 'SCM'], ['max', 'NAV'], ['burst', 'DPS'], ['shieldHp', 'Shield'], ['hull', 'Hull'], ['cargo', 'Cargo'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['qtRange', 'QT range']];
+const stat = (s, k) => { const v = s?.stats?.[k] ?? (k === 'max' ? s?.nav : s?.[k]); return C.nOrNull(v); };
+// Right-click (or long-press) a ship to remove it. A small menu, no browser dialogs.
+const ctxSheet = new CSSStyleSheet(); document.adoptedStyleSheets = [...document.adoptedStyleSheets, ctxSheet];
+function ctxRemove(target, ship) {
+  target.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    for (const m of $$('.ctxmenu')) m.remove();
+    const m = el('div', { class: 'ctxmenu', role: 'menu' });
+    const del = el('button', { type: 'button', role: 'menuitem', class: 'danger', text: 'Remove ' + ship.name + ' from fleet' });
+    const no = el('button', { type: 'button', role: 'menuitem', text: 'Cancel' });
+    const close = () => { m.remove(); document.removeEventListener('pointerdown', away, true); };
+    const away = (ev) => { if (!m.contains(ev.target)) close(); };
+    del.addEventListener('click', () => { close(); S.fleet = S.fleet.filter((x) => x !== ship); Store.saveFleet(); renderFleet(); toast('Removed ' + ship.name); });
+    no.addEventListener('click', close);
+    m.append(del, no); document.body.append(m);
+    const x = Math.max(8, Math.min(e.clientX, window.innerWidth - m.offsetWidth - 8)), y = Math.max(8, Math.min(e.clientY, window.innerHeight - m.offsetHeight - 8));
+    ctxSheet.replaceSync(`.ctxmenu{left:${Math.round(x)}px;top:${Math.round(y)}px}`);
+    document.addEventListener('pointerdown', away, true); del.focus();
+  });
+}
 function renderFleet() {
   const tb = $('#flList'); tb.textContent = '';
-  if (!S.fleet.length) tb.append(el('tr', {}, el('td', { colspan: '7', class: 'muted small', text: 'No ships yet.' })));
+  if (!S.fleet.length) tb.append(el('tr', {}, el('td', { colspan: '11', class: 'muted small', text: 'No ships yet. Save a build from the Calculator, or add one here.' })));
   for (const s of S.fleet) {
     const del = el('button', { class: 'ghost', type: 'button', text: '✕', 'aria-label': 'Remove ' + s.name });
     del.addEventListener('click', () => { S.fleet = S.fleet.filter((x) => x !== s); Store.saveFleet(); renderFleet(); });
-    tb.append(el('tr', {}, el('td', { text: s.name }), el('td', { class: 'num', text: C.fmt(s.scm) }), el('td', { class: 'num', text: C.fmt(s.nav) }),
-      el('td', { class: 'num', text: [s.pitch, s.yaw, s.roll].map((v) => C.fmt(v)).join(' / ') }), el('td', { class: 'num', text: C.fmt(s.accel, 1) }),
-      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, del)));
+    const open = s.code ? el('a', { class: 'btnlink', href: `#calc?b=${s.code}`, text: 'Open' }) : null;
+    const nm = el('td', {}, el('div', { class: 'row' }, photo(s.img, '', el('span', { class: 'photo thumb none' }), 'photo thumb'), el('span', {}, el('b', { text: s.name }), s.swaps ? el('span', { class: 'chip', text: `${s.swaps} swap${s.swaps === 1 ? '' : 's'}` }) : null)));
+    const row = el('tr', { title: 'Right-click to remove' }, nm, el('td', { class: 'num', text: C.fmt(stat(s, 'scm')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'max')) }),
+      el('td', { class: 'num', text: [s.pitch, s.yaw, s.roll].map((v) => C.fmt(v)).join(' / ') }), el('td', { class: 'num', text: C.fmt(stat(s, 'burst')) }),
+      el('td', { class: 'num', text: C.fmt(stat(s, 'shieldHp')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'hull')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'cargo')) }),
+      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, open), el('td', {}, del));
+    ctxRemove(row, s); tb.append(row);
   }
   for (const [id, i] of [['#flA', 0], ['#flB', 1]]) {
     const sel = $(id), prev = sel.value; sel.textContent = '';
@@ -527,18 +634,40 @@ $('#flA').addEventListener('change', drawRadar); $('#flB').addEventListener('cha
 function drawRadar() {
   const svg = $('#flRadar'), NS = 'http://www.w3.org/2000/svg'; svg.textContent = '';
   const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); svg.append(e); return e; };
-  const cx = 180, cy = 160, R = 120, N = AX.length;
+  const cx = 180, cy = 160, R = 110, N = AX.length;
   const pt = (i, r) => [cx + r * Math.sin((2 * Math.PI * i) / N), cy - r * Math.cos((2 * Math.PI * i) / N)];
-  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#22385a' });
-  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#22385a' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
+  for (const f of [0.25, 0.5, 0.75, 1]) mk('polygon', { points: AX.map((_, i) => pt(i, R * f).join(',')).join(' '), fill: 'none', stroke: '#3a4658' });
+  AX.forEach(([, lab], i) => { const [x, y] = pt(i, R); mk('line', { x1: cx, y1: cy, x2: x, y2: y, stroke: '#3a4658' }); const [tx, ty] = pt(i, R + 16); const t = mk('text', { x: tx, y: ty + 3, 'text-anchor': 'middle' }); t.textContent = lab; });
   const A = S.fleet.find((s) => s.name === $('#flA').value), B = S.fleet.find((s) => s.name === $('#flB').value);
-  const ships = [[A, '#e3b679'], [B, '#7fa7e0']].filter(([s]) => s);
+  const ships = [[A, '#ffa94d'], [B, '#8fb4d8']].filter(([s]) => s);
+  renderStatTable(ships.map(([s]) => s));
   if (!ships.length) { const t = mk('text', { x: cx, y: cy, 'text-anchor': 'middle' }); t.textContent = 'Add ships to compare'; return; }
-  const max = AX.map(([k]) => Math.max(...ships.map(([s]) => C.n(s[k])), 1e-9));
+  const max = AX.map(([k]) => Math.max(...ships.map(([s]) => C.n(stat(s, k))), 1e-9));
   for (const [s, col] of ships) {
-    mk('polygon', { points: AX.map(([k], i) => pt(i, R * Math.min(1, C.n(s[k]) / max[i])).join(',')).join(' '), fill: col, 'fill-opacity': '0.18', stroke: col, 'stroke-width': '2' });
+    mk('polygon', { points: AX.map(([k], i) => pt(i, R * Math.min(1, C.n(stat(s, k)) / max[i])).join(',')).join(' '), fill: col, 'fill-opacity': '0.18', stroke: col, 'stroke-width': '2' });
   }
   ships.forEach(([s, col], i) => { mk('rect', { x: 20 + i * 170, y: 308, width: 10, height: 10, fill: col }); const t = mk('text', { x: 36 + i * 170, y: 317 }); t.textContent = s.name; });
+}
+// Every stat the two ships have, grouped, with a bar pair per row. Rows neither ship has a value for are left out.
+function renderStatTable(ships) {
+  const host = $('#flStats'); host.textContent = '';
+  if (!ships.length) return;
+  const [a, b] = ships;
+  const head = (sh) => { const t = el('th', { class: 'num', text: sh.name, title: 'Right-click to remove' }); ctxRemove(t, sh); return t; };
+  for (const [group, rows] of STAT_GROUPS) {
+    const body = el('tbody');
+    const thA = head(a), thB = b ? head(b) : null;
+    for (const [k, label, better, unit] of rows) {
+      const va = stat(a, k), vb = b ? stat(b, k) : null;
+      if (va == null && vb == null) continue;
+      const lead = va != null && vb != null && va !== vb ? ((va > vb) === better ? 'a' : 'b') : '';
+      body.append(el('tr', {}, el('td', { text: label }), el('td', { class: `num ${lead === 'a' ? 'ok' : ''}`.trim(), text: va == null ? '—' : `${C.fmt(va, va % 1 ? 1 : 0)}${unit ? ' ' + unit : ''}` }),
+        b ? el('td', { class: `num ${lead === 'b' ? 'ok' : ''}`.trim(), text: vb == null ? '—' : `${C.fmt(vb, vb % 1 ? 1 : 0)}${unit ? ' ' + unit : ''}` }) : null,
+        b ? el('td', { class: 'w-num' }, duo(va ?? 0, vb ?? 0)) : null));
+    }
+    if (!body.childNodes.length) continue;
+    host.append(el('h3', { class: 'mt12', text: group }), el('div', { class: 'scrollx' }, el('table', { class: 'cmp' }, el('thead', {}, el('tr', {}, el('th', { text: 'Stat' }), thA, thB, b ? el('th', { text: '' }) : null)), body)));
+  }
 }
 
 // ---------------- MANUAL ----------------
@@ -713,25 +842,77 @@ function paintLiveChip() {
   line.textContent = `Prices from UEX, updated ${ago(MK.updatedAt)}${MK.partial ? ' (last refresh was partial)' : ''}.`;
 }
 
+const riskChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label}` });
+const runChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label} · ${r.score}/${r.max}` });
+let mkSys = ls.get('mk.sys', '');
+function paintSystemTabs(systems) {
+  const tabs = $('#mkSys'); tabs.textContent = '';
+  if (mkSys && !systems.includes(mkSys)) mkSys = '';
+  for (const [id, label] of [['', 'All systems'], ...systems.map((x) => [x, x])]) {
+    tabs.append(el('button', { type: 'button', role: 'tab', 'aria-pressed': String(id === mkSys), text: label, onclick: () => { mkSys = id; ls.set('mk.sys', id); renderRoutes(); } }));
+  }
+}
+function areaCard(a, rank) {
+  const list = (items, head, dir) => (items.length ? el('table', { class: 'shoptbl' }, el('thead', {}, el('tr', {}, el('th', { text: head }), el('th', { class: 'num', text: 'Price' }), el('th', { class: 'num', text: 'Run' }), el('th', { text: dir }))),
+    el('tbody', {}, ...items.map((i) => el('tr', {}, el('td', { text: i.commodity }), el('td', { class: 'num', text: C.fmt(i.price) }), el('td', { class: 'num pay', text: `+${C.fmt(i.margin)}` }),
+      el('td', { class: 'small' }, i.other, ' ', riskChip(i.otherRisk)))))) : el('p', { class: 'small muted m0', text: 'Nothing profitable here.' }));
+  return el('details', { class: `area risk-edge-${a.risk.level}` }, el('summary', {},
+    rank <= 3 ? el('span', { class: 'chip ok', text: `#${rank}` }) : null, el('b', { text: a.name }), ' ', el('span', { class: 'chip', text: a.system }), ' ', riskChip(a.risk), ' ',
+    el('span', { class: 'pay', text: a.score ? `up to +${C.fmt(a.score)} / SCU` : 'no profitable run' })),
+  el('p', { class: 'small muted', text: `${a.risk.note} ${a.terminals.length} terminal${a.terminals.length === 1 ? '' : 's'} here.` }),
+  el('div', { class: 'area-cols' }, el('div', {}, el('div', { class: 'lbl', text: 'Buy here, sell at' }), list(a.out, 'Commodity', 'Sell at')), el('div', {}, el('div', { class: 'lbl', text: 'Sell here, bought cheapest at' }), list(a.in, 'Commodity', 'Buy at'))),
+  a.jump ? el('p', { class: 'small mt8' }, el('span', { class: 'chip warn', text: 'JUMP' }), ` Best run out of ${a.system}: buy ${a.jump.commodity} here at ${C.fmt(a.jump.price)}, sell at ${a.jump.other} (${a.jump.otherSystem}) for ${C.fmt(a.jump.otherPrice)}, +${C.fmt(a.jump.margin)} / SCU. `, riskChip(a.jump.otherRisk)) : null);
+}
 function renderRoutes() {
-  const wrap = $('#mkRoutes'); wrap.textContent = '';
+  const wrap = $('#mkRoutes'), areasEl = $('#mkAreas'); wrap.textContent = ''; areasEl.textContent = '';
+  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); $('#mkSys').textContent = ''; $('#mkSafeRoutes').textContent = ''; $('#mkSafeHead').textContent = ''; return; }
+  const rows = M.freshRows(MK.prices);
+  const systems = M.systemsIn(rows);
+  paintSystemTabs(systems);
   const q = norm($('#mkSearch').value);
-  const list = routesFromMarket().filter((r) => !q || norm(r.commodity).includes(q)).slice(0, q ? 12 : 10);
-  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); return; }
-  if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); return; }
+  const opts = { q: q.toLowerCase(), avoidHigh: $('#mkSafe').checked };
+  // Areas: the best three in every system on "All systems", every area of one system otherwise.
+  for (const sys of mkSys ? [mkSys] : systems) {
+    const board = M.areaBoard(rows, sys, opts);
+    if (!board.length) continue;
+    const shown = mkSys ? board.slice(0, 40) : board.filter((a) => a.score > 0).slice(0, 3);
+    areasEl.append(el('div', { class: 'lbl mt8', text: mkSys ? `Areas in ${sys}, best first` : `Best areas in ${sys}` }), ...shown.map((a, i) => areaCard(a, i + 1)));
+    if (!mkSys && board.length > shown.length) areasEl.append(el('p', { class: 'small muted m0', text: `${board.length - shown.length} more in ${sys}. Pick the ${sys} tab to see them all.` }));
+  }
+  $('#mkRunsHead').textContent = mkSys ? `Best runs inside ${mkSys}` : 'Best runs, any system';
+  const list = M.bestRuns(rows, { ...opts, system: mkSys }).slice(0, 12);
+  if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); renderSafeRuns(rows, systems, opts); return; }
+  wrap.append(runsTable(list));
+  renderSafeRuns(rows, systems, opts);
+}
+
+function runsTable(list) {
   const tb = el('tbody');
   for (const r of list) {
     const use = el('button', { type: 'button', class: 'ghost', text: 'Use as leg' });
     use.addEventListener('click', () => {
       const leg = { commodity: r.commodity, from: r.from.terminal, buy: r.from.buy, to: r.to.terminal, sell: r.to.sell };
       if (tr.legs.length === 1 && !Object.values(tr.legs[0]).some(Boolean)) tr.legs[0] = leg; else tr.legs.push(leg);
-      ls.set('tr.inputs', tr); renderLegs(); toast('Leg added: check the price in game before you buy');
+      ls.set('tr.inputs', tr); renderLegs(); toast(r.cross ? 'Leg added. This run crosses systems: check the jump and the price in game' : 'Leg added: check the price in game before you buy');
     });
-    tb.append(el('tr', {}, el('td', { text: r.commodity }), el('td', { class: 'small', text: where(r.from) }), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
-      el('td', { class: 'small', text: where(r.to) }), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, use)));
+    tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small' }, where(r.from), el('div', {}, riskChip(r.buyRisk))), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
+      el('td', { class: 'small' }, where(r.to), el('div', {}, riskChip(r.sellRisk))), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, runChip(r.risk)), el('td', {}, use)));
   }
-  wrap.append(el('div', { class: 'scrollx' }, el('table', {},
-    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+  return (el('div', { class: 'scrollx' }, el('table', {},
+    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'Run risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+}
+
+// PvP-free runs: both the buy end and the sell end are Safe. One short list per system.
+function renderSafeRuns(rows, systems, opts) {
+  const head = $('#mkSafeHead'), box = $('#mkSafeRoutes'); box.textContent = '';
+  head.textContent = mkSys ? `Best PvP-free runs inside ${mkSys}` : 'Best PvP-free runs, by system';
+  box.append(el('p', { class: 'small muted m0', text: 'Both ends are Safe: an armistice zone at the shop and the pad. The flight between them is still open to attack.' }));
+  for (const sys of mkSys ? [mkSys] : systems) {
+    const list = M.safeRuns(rows, { q: opts.q, system: sys }).slice(0, mkSys ? 12 : 4);
+    box.append(el('div', { class: 'lbl mt8', text: sys }));
+    if (list.length) box.append(runsTable(list));
+    else box.append(el('p', { class: 'small muted m0', text: sys === 'Pyro' ? 'Nothing PvP-free in Pyro: every place there counts as PvP risk.' : `No profitable run between two Safe places in ${sys} right now.` }));
+  }
 }
 
 // Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab).
@@ -744,7 +925,7 @@ function sellList(container, pattern, onUse) {
   for (const { c, r } of rows.sort((a, b) => b.r.sell - a.r.sell).slice(0, 6)) {
     const use = el('button', { type: 'button', class: 'ghost', text: 'Use' });
     use.addEventListener('click', () => onUse(r.sell));
-    tb.append(el('tr', {}, el('td', { text: c }), el('td', { class: 'small', text: where(r) }), el('td', { class: 'num', text: C.fmt(r.sell) }), el('td', {}, use)));
+    tb.append(el('tr', {}, el('td', { text: c }), el('td', { class: 'small' }, where(r), ' ', riskChip(M.riskOfRow(r))), el('td', { class: 'num', text: C.fmt(r.sell) }), el('td', {}, use)));
   }
   container.append(el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Commodity' }), el('th', { text: 'Pays at' }), el('th', { class: 'num', text: 'aUEC / SCU' }), el('th'))), tb));
 }
@@ -789,14 +970,32 @@ async function loadStatus() {
 
 async function loadMarket() {
   try {
-    const r = await fetch('/api/sc-market', { headers: { Accept: 'application/json' } });
+    const r = await fetch('/api/sc-market', { cache: 'no-cache', headers: { Accept: 'application/json' } });
     if (!r.ok) throw new Error(String(r.status));
     const j = await r.json();
     MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial;
   } catch { MK.enabled = false; MK.prices = []; }
-  indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList();
+  indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList(); paintStamp();
+  // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
+  learnZones(MK.prices).then((got) => { if (got) { renderRoutes(); renderSalvageLive(); } });
 }
+// Shows what this page is running on, so a phone with an old copy is easy to spot.
+function paintStamp() {
+  const t = (v) => { const d = v ? new Date(v) : null; return d && !Number.isNaN(+d) ? d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'none'; };
+  const n = $('#dataStamp'); if (!n) return;
+  n.textContent = `Page loaded ${t(PAGE_LOADED)} · prices ${MK.enabled ? t(MK.updatedAt) : 'manual (no live feed)'}${MK.partial ? ' (partial)' : ''} · ${MK.prices.filter((r) => r.system).length}/${MK.prices.length} rows placed`;
+}
+const PAGE_LOADED = Date.now();
+// A phone keeps a tab alive for hours. When it comes back after a while, reload so code and data are current.
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+  if (hiddenAt && Date.now() - hiddenAt > 10 * 60 * 1000 && !document.activeElement?.matches?.('input, textarea, select')) location.reload();
+  else if (hiddenAt && Date.now() - hiddenAt > 2 * 60 * 1000) loadMarket();
+});
+window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
 $('#mkSearch').addEventListener('input', renderRoutes);
+$('#mkSafe').addEventListener('change', renderRoutes);
 
 // Ship lookup (Star Citizen Wiki API through our Worker). Only fields actually found are filled.
 const dig = (o, path) => path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
@@ -1071,7 +1270,7 @@ scanner('#scan-ship', { kind: 'fleet', title: 'ship stats',
 
 
 scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any mission or contract',
-  hint: 'The mobiGlas contract details, or the contract list.',
+  hint: 'The FinTac OmniGlass contract details, or the contract list.',
   render: (d, res) => {
     const list = (Array.isArray(d.contracts) ? d.contracts : []).filter((c) => c && (c.title || c.payout != null)).slice(0, 10).map(normContract);
     if (!list.length) { res.append(el('p', { class: 'small muted', text: 'No contract found on that screenshot.' })); return; }

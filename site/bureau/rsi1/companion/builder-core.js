@@ -89,8 +89,8 @@ export function upgradeCost(ship, partsById, overrides = {}, now = Date.now()) {
 
 // ---------------------------------------------------------------- labels for the page
 
-export const TYPE_ORDER = ['WeaponGun', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
-export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars' };
+export const TYPE_ORDER = ['WeaponGun', 'MissileLauncher', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
+export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars', MissileLauncher: 'Missile racks' };
 
 // 'hardpoint_shield_generator_l' → 'shield generator l'. A turret gun keeps the turret in its name, so eight
 // guns read 'turret back rear · turret left', not eight identical 'class 2' rows.
@@ -199,3 +199,36 @@ export const dims = (a) => (Array.isArray(a) && a.every((x) => x != null) ? a.ma
 // Distances: the wiki gives metres; show Gm for jump distances and km/s for quantum speed.
 export const gm = (m) => (m == null ? '—' : `${num(m / 1e9, 1)} Gm`);
 export const kms = (ms) => (ms == null ? '—' : `${num(ms / 1000)} km/s`);
+
+// ---------------------------------------------------------------- full stat sheet
+// Every number worth comparing for one build, grouped for the page. [key, label, higherIsBetter, unit].
+export const STAT_GROUPS = [
+  ['Damage', [['burst', 'Burst DPS', true, ''], ['sustained', 'Sustained DPS', true, ''], ['alpha', 'Alpha damage', true, ''], ['missileDmg', 'Missile damage', true, '']]],
+  ['Defense', [['shieldHp', 'Shield HP', true, ''], ['shieldRegen', 'Shield regen / s', true, ''], ['hull', 'Hull HP', true, ''], ['armorHp', 'Armor HP', true, ''], ['physRed', 'Physical reduction', true, '%'], ['enrgRed', 'Energy reduction', true, '%']]],
+  ['Speed', [['scm', 'SCM speed', true, 'm/s'], ['max', 'Max speed', true, 'm/s'], ['boostF', 'Boost forward', true, 'm/s'], ['toScm', '0 to SCM time', false, 's']]],
+  ['Maneuverability', [['pitch', 'Pitch', true, '°/s'], ['yaw', 'Yaw', true, '°/s'], ['roll', 'Roll', true, '°/s']]],
+  ['Cargo and range', [['cargo', 'Cargo', true, 'SCU'], ['fuelH2', 'Hydrogen fuel', true, ''], ['fuelQt', 'Quantum fuel', true, ''], ['qtSpeed', 'Quantum speed', true, 'Gm/s'], ['qtRange', 'Quantum range', true, 'Gm']]],
+  ['Systems', [['powerGen', 'Power output', true, ''], ['powerDraw', 'Power draw', false, ''], ['coolGen', 'Cooling output', true, ''], ['coolDraw', 'Cooling draw', false, ''], ['mass', 'Mass', false, 'kg'], ['crew', 'Crew (max)', true, '']]],
+  ['Signature', [['sigIr', 'Infrared', false, ''], ['sigEm', 'Electromagnetic', false, '']]]
+];
+export const STAT_KEYS = STAT_GROUPS.flatMap(([, rows]) => rows.map((r) => r[0]));
+
+const pos = (v) => (Number.isFinite(v) && v > 0 ? v : null);
+// One flat map of numbers (or null when the data has none) for a ship with the given swaps applied.
+export function statSheet(ship, partsById, overrides = {}) {
+  const t = totals(ship, partsById, overrides);
+  const st = ship.stats || {};
+  const q = st.quantum || {};
+  return {
+    burst: pos(t.burstDps), sustained: pos(t.sustainedDps), alpha: pos(t.alpha), missileDmg: pos(st.missiles?.damage),
+    shieldHp: pos(t.shieldHp), shieldRegen: pos(t.shieldRegen), hull: pos(st.hull), armorHp: pos(st.armor?.hp),
+    physRed: st.armor?.phys != null ? reduction(st.armor.phys) : null, enrgRed: st.armor?.energy != null ? reduction(st.armor.energy) : null,
+    scm: pos(ship.scm), max: pos(ship.max), boostF: pos(st.speed?.boostF), toScm: pos(st.speed?.toScm),
+    pitch: pos(st.agility?.pitch), yaw: pos(st.agility?.yaw), roll: pos(st.agility?.roll),
+    cargo: pos(ship.cargo), fuelH2: pos(st.fuel?.h2), fuelQt: pos(st.fuel?.qt),
+    qtSpeed: q.speed ? Math.round(q.speed / 1e7) / 100 : null, qtRange: q.range ? Math.round(q.range / 1e7) / 100 : null,
+    powerGen: pos(t.powerGen), powerDraw: pos(t.powerDraw), coolGen: pos(t.coolGen), coolDraw: pos(t.coolDraw),
+    mass: pos(st.mass) , crew: pos(ship.crew?.max),
+    sigIr: pos(st.sig?.ir), sigEm: pos(st.sig?.em)
+  };
+}

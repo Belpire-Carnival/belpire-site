@@ -18,6 +18,8 @@ const MARKET_KEY = 'sc:market';
 export const MARKET_EVERY_MS = 55 * 60 * 1000;
 const STALE_MS = 3 * 60 * 60 * 1000;
 const MAX_ROWS = 6000;
+// Bump when the stored rows gain fields, so the next request rebuilds the snapshot instead of waiting out the hour.
+const MARKET_SCHEMA = 2;
 
 const num = (v) => {
   const n = typeof v === 'string' ? Number(v.trim()) : v;
@@ -59,9 +61,38 @@ export function parsePriceRow(row) {
   };
 }
 
-export function parsePrices(data) {
+// UEX's price rows carry the terminal but not where it is. The terminals list does: star system, city / station / outpost.
+// Keyed by terminal id and by lower-cased name, nickname and code, so a row joins on whichever it has.
+const lc = (v) => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+export function parseTerminals(data) {
+  const map = new Map();
+  if (!Array.isArray(data)) return map;
+  for (const t of data) {
+    if (!t || typeof t !== 'object') continue;
+    const loc = {
+      system: str(first(t, ['star_system_name', 'system_name']), 40),
+      // displayname is the name players use ("Grim HEX", "Area18", "CRU-L4 Shallow Fields Station"); UEX's own station field can differ.
+      place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60)
+    };
+    if (!loc.system && !loc.place) continue;
+    if (t.id != null) map.set(`id:${t.id}`, loc);
+    for (const k of ['name', 'nickname', 'code', 'displayname']) if (t[k]) map.set(`n:${lc(t[k])}`, loc);
+  }
+  return map;
+}
+
+export function parsePrices(data, terminals) {
   if (!Array.isArray(data)) throw new Error('prices: expected a list');
-  const rows = data.slice(0, MAX_ROWS).map(parsePriceRow).filter(Boolean);
+  const rows = [];
+  for (const raw of data.slice(0, MAX_ROWS)) {
+    const r = parsePriceRow(raw);
+    if (!r) continue;
+    if (terminals?.size && (!r.system || !r.place)) {
+      const loc = terminals.get(`id:${raw.id_terminal}`) || terminals.get(`n:${lc(r.terminal)}`);
+      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; }
+    }
+    rows.push(r);
+  }
   if (data.length && !rows.length) {
     const keys = Object.keys(data[0] || {}).slice(0, 40).join(',');
     throw new Error(`prices: no usable rows (first row keys: ${keys})`);
@@ -102,12 +133,17 @@ async function readJson(kv, key) {
 
 export async function buildMarket(env, previous) {
   const errors = [];
-  const [prices, version] = await Promise.allSettled([
-    uex(env, 'commodities_prices_all').then(parsePrices),
-    uex(env, 'game_versions').then(parseLiveVersion)
+  const [prices, version, terms] = await Promise.allSettled([
+    uex(env, 'commodities_prices_all'),
+    uex(env, 'game_versions').then(parseLiveVersion),
+    uex(env, 'terminals').then(parseTerminals)
   ]);
-  const rows = prices.status === 'fulfilled' ? prices.value : null;
+  const terminals = terms.status === 'fulfilled' ? terms.value : null;
+  if (!terminals?.size) errors.push(terms.status === 'fulfilled' ? 'terminals: nothing recognised' : `terminals: ${terms.reason?.message}`);
+  let rows = null;
+  if (prices.status === 'fulfilled') { try { rows = parsePrices(prices.value, terminals); } catch (e) { prices.status = 'rejected'; prices.reason = e; } }
   if (!rows) errors.push(prices.reason?.message || 'prices failed');
+  else if (terminals?.size && rows.every((r) => !r.system)) errors.push('terminals: no price row matched a terminal');
   let live = previous?.version ?? null;
   if (version.status === 'fulfilled' && version.value) live = version.value;
   else errors.push(version.status === 'fulfilled' ? 'version: nothing recognised' : `version: ${version.reason?.message}`);
@@ -117,6 +153,7 @@ export async function buildMarket(env, previous) {
     source: 'UEX Corp',
     version: live,
     prices: rows ?? previous?.prices ?? [],
+    schema: MARKET_SCHEMA,
     errors
   };
 }
@@ -124,7 +161,7 @@ export async function buildMarket(env, previous) {
 export async function refreshMarket(env, { force = false } = {}) {
   if (!env.UEX_API_TOKEN) return null;
   const previous = await readJson(env.SC_DATA, MARKET_KEY);
-  if (!force && previous?.checkedAt && Date.now() - Date.parse(previous.checkedAt) < MARKET_EVERY_MS) return previous;
+  if (!force && previous?.schema === MARKET_SCHEMA && previous?.checkedAt && Date.now() - Date.parse(previous.checkedAt) < MARKET_EVERY_MS) return previous;
   const market = await buildMarket(env, previous);
   await env.SC_DATA.put(MARKET_KEY, JSON.stringify(market));
   if (market.errors.length) console.warn('Market refresh warnings:', market.errors.join(' | '));
@@ -135,7 +172,7 @@ export async function refreshMarket(env, { force = false } = {}) {
 export async function handleMarket(env, ctx) {
   if (!env.UEX_API_TOKEN) return { enabled: false, prices: [], version: null, updatedAt: null };
   let market = await readJson(env.SC_DATA, MARKET_KEY);
-  if (!market) market = await refreshMarket(env);
+  if (!market || market.schema !== MARKET_SCHEMA) market = (await refreshMarket(env, { force: true })) ?? market;
   else if (Date.now() - Date.parse(market.checkedAt || 0) > STALE_MS) ctx.waitUntil(refreshMarket(env, { force: true }));
   if (!market) return { enabled: true, prices: [], version: null, updatedAt: null };
   // `errors` can name upstream fields; the page only needs to know whether data is fresh.

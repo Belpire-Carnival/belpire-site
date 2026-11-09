@@ -37,7 +37,7 @@ test('innerHTML is limited to the fixed checklist strings, and style is never se
 });
 
 test('links from the page are https or relative', () => {
-  for (const [, href] of html.matchAll(/href="([^"]+)"/g)) assert.match(href, /^(https:\/\/|\.\.?\/|#|\/|companion\.css$)/, href);
+  for (const [, href] of html.matchAll(/href="([^"]+)"/g)) assert.match(href, /^(https:\/\/|\.\.?\/|#|\/|companion\.css$|omniglass\.svg$)/, href);
   for (const [, u] of app.matchAll(/href="(https?:[^"]+)"/g)) assert.match(u, /^https:/, u);
 });
 
@@ -61,6 +61,8 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
   assert.deepEqual(urls, []); // the endpoint is a named constant, checked below
   assert.match(builder, /const API = '\/api\/sc-builder';/);
   assert.match(builder, /fetch\(API,/);
+  assert.match(builder, /const SHOP_API = '\/api\/sc-shop';/);
+  assert.match(builder, /fetch\(SHOP_API,/);
   assert.doesNotMatch(builder + builderCore, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
   assert.doesNotMatch(builder + builderCore, /https?:\/\//);
   assert.match(html, /id="builder"/);
@@ -69,7 +71,7 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
 
 test('the drawing helpers build SVG with attributes only and reach no other origin', () => {
   assert.doesNotMatch(viz + art, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\.|fetch\(/);
-  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg)/);
+  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg|media\.starcitizen\.tools\/)/);
   assert.doesNotMatch(builder, /\bhref\s*=|<img|src\s*=/);
 });
 

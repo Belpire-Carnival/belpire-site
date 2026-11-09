@@ -25,10 +25,31 @@ const PART_PAGE = 100;
 const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
-export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
+// Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
+export const SCHEMA = 4;
+export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
 export const SLOT_TYPES = new Set([...PART_TYPES, WEAPON_TYPE]);
+
+// Picture of a wiki record: the path (after the host) of its first usable image on the wiki's media server, or ''.
+// Only that one host is accepted, and the path is kept short and plain so it can be requested through /api/sc-img.
+export const MEDIA_HOST = 'media.starcitizen.tools';
+export const IMG_PATH = /^(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/[A-Za-z0-9._%()~'+-]{1,160}(?:\/[0-9]{2,4}px-[A-Za-z0-9._%()~'+-]{1,160})?$/;
+export function imgPath(it) {
+  const list = Array.isArray(it?.images) ? it.images : it?.image ? [it.image] : [];
+  for (const im of list) {
+    for (const u of [im?.thumbnail_url, im?.original_url, typeof im === 'string' ? im : null]) {
+      try {
+        const url = new URL(String(u));
+        if (url.protocol !== 'https:' || url.hostname !== MEDIA_HOST) continue;
+        const path = url.pathname.replace(/^\//, '');
+        if (IMG_PATH.test(path)) return path;
+      } catch { /* not a URL */ }
+    }
+  }
+  return '';
+}
 
 const num = (v) => {
   const n = typeof v === 'string' ? Number(v.trim()) : v;
@@ -73,6 +94,8 @@ export function slimPart(it) {
     mfr: str(it.manufacturer?.name, 40),
     mass: num(it.mass)
   };
+  const img = imgPath(it);
+  if (img) part.img = img;
   if (num(use?.power?.max) != null) part.pw = round(use.power.max, 2);
   if (num(use?.coolant?.max) != null) part.cw = round(use.coolant.max, 2);
   if (it.shield) part.shield = { hp: num(it.shield.max_health), regen: num(it.shield.regen_rate) };
@@ -122,6 +145,65 @@ export function collectSlots(ports) {
   return slots;
 }
 
+
+// ---- guns the wiki does not list as child ports ---------------------------------------------------------------
+// Pilot guns sit in gimbal mounts that the wiki lists as swappable `Turret` ports with no child ports; the guns
+// themselves are only named, in the ship's `weaponry.fixed_weapons` list, in the same order as the mounts. A manned
+// or remote turret whose port has no children is described by the ship's `turrets` list instead (one entry per
+// mount, with the stock gun's uuid). Both become ordinary gun slots; a slot's stock gun is found by name later
+// (see buildSnapshot) when only the name is known.
+const holdsGun = (p) => Array.isArray(p?.compatible_types) && p.compatible_types.some((t) => t?.type === WEAPON_TYPE);
+
+export function pilotGunSlots(ports, fixedWeapons) {
+  const mounts = [];
+  const walk = (list) => {
+    for (const p of Array.isArray(list) ? list : []) {
+      if (!p || typeof p !== 'object') continue;
+      const kids = Array.isArray(p.ports) ? p.ports.length : 0;
+      // A hardware-locked gimbal still carries swappable guns, so the mount's own `editable` flag is not required.
+      if (p.type === 'Turret' && !kids && holdsGun(p)) mounts.push(p);
+      walk(p.ports);
+    }
+  };
+  walk(ports);
+  const names = (Array.isArray(fixedWeapons) ? fixedWeapons : []).map((w) => str(w?.name, 60));
+  // Only trust the order when there is exactly one named gun per mount.
+  const named = names.length === mounts.length && names.every(Boolean);
+  const seen = new Set();
+  const out = [];
+  for (const m of mounts) {
+    let id = str(m.name, 60) || 'gun';
+    for (let n = 2; seen.has(id); n++) id = `${str(m.name, 60)}#${n}`;
+    seen.add(id);
+    const size = num(m.sizes?.max) ?? 0;
+    out.push({ id, type: WEAPON_TYPE, min: num(m.sizes?.min) ?? size, max: size, stock: null, group: '', ...(named ? { stockName: names[out.length] } : {}) });
+  }
+  return out;
+}
+
+export function turretGunSlots(turrets, have = []) {
+  const out = [];
+  const taken = new Set(have.map((s) => s.id));
+  for (const cat of ['manned', 'remote', 'pdc']) {
+    for (const t of Array.isArray(turrets?.[cat]) ? turrets[cat] : []) {
+      const hp = str(t?.hardpoint_name, 60);
+      if (!hp || have.some((s) => s.id.startsWith(`${hp}/`))) continue; // its guns are already ordinary ports
+      const mounts = Array.isArray(t.mounts) ? t.mounts : [];
+      mounts.forEach((m, i) => {
+        if (!(Array.isArray(m?.payload_types) && m.payload_types.some((x) => String(x).startsWith(WEAPON_TYPE)))) return;
+        const mp = str(m.hardpoint_name, 60) || `mount_${i + 1}`;
+        let id = `${hp}/${mp}`;
+        for (let n = 2; taken.has(id); n++) id = `${hp}/${mp}#${n}`;
+        taken.add(id);
+        const size = num(m.weapon_sizes?.[0]) ?? num(m.payload_sizes?.[0]) ?? num(m.size) ?? 0;
+        const gun = Array.isArray(t.weapons) && t.weapons.length === mounts.length ? t.weapons[i] : null;
+        out.push({ id, type: WEAPON_TYPE, min: size, max: size, stock: str(gun?.uuid, 40) || null, group: hp });
+      });
+    }
+  }
+  return out;
+}
+
 // Stock parts that sit in the ship's slots, so parts the catalogue lacks can still be shown.
 export function stockParts(ports, into = new Map()) {
   for (const p of Array.isArray(ports) ? ports : []) {
@@ -161,9 +243,34 @@ export function slimStats(v) {
   };
 }
 
+// The ship's stock armament as the game data summarises it, kept apart from the swappable slots. It lets the page
+// show what a ship carries even when its hardpoints could not be turned into gun slots.
+export function slimArmament(v) {
+  const w = v?.weaponry || {}, t = v?.turrets || {};
+  const pilot = (Array.isArray(w.fixed_weapons?.weapons) ? w.fixed_weapons.weapons : []).slice(0, 12).map((x) => ({ name: str(x?.name, 60), dps: r2(x?.dps, 0) })).filter((x) => x.name);
+  const turrets = [];
+  for (const kind of ['manned', 'remote', 'pdc']) {
+    for (const x of Array.isArray(t[kind]) ? t[kind] : []) {
+      const mounts = Array.isArray(x?.mounts) ? x.mounts.length : 0;
+      const gun = Array.isArray(x?.weapons) && x.weapons[0] ? str(x.weapons[0].name, 60) : '';
+      turrets.push({ kind, mounts, gun, size: num(x?.size) ?? num(x?.mounts?.[0]?.weapon_sizes?.[0]) });
+      if (turrets.length >= 16) break;
+    }
+  }
+  return {
+    pilot, turrets,
+    pilotDps: r2(w.fixed_weapons?.dps_total ?? w.pilot_dps, 0),
+    turretDps: r2(w.turret_dps ?? w.turrets?.dps_total ?? t.dps_total, 0),
+    missiles: r2(w.missiles?.count, 0),
+    gunners: num(v?.crew?.weapon)
+  };
+}
+
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
+  slots.push(...pilotGunSlots(v.ports, v.weaponry?.fixed_weapons?.weapons));
+  slots.push(...turretGunSlots(v.turrets, slots));
   return {
     id: str(v.uuid, 40),
     slug: str(v.slug, 80),
@@ -177,9 +284,11 @@ export function slimShip(v) {
     scm: num(v.speed?.scm),
     max: num(v.speed?.max),
     msrp: num(v.msrp),
+    img: imgPath(v),
     buy: slimPrices(v.uex_prices),
     slots,
     stats: slimStats(v),
+    arm: slimArmament(v),
     api: {
       shieldHp: num(v.shield?.hp),
       shieldRegen: num(v.shield?.regeneration),
@@ -197,10 +306,20 @@ export function buildSnapshot(version, ships, catalogue, stock = []) {
   const parts = new Map();
   for (const p of stock) if (p && !parts.has(p.id)) parts.set(p.id, p);
   for (const p of catalogue) if (p) parts.set(p.id, p);
+  const guns = [...parts.values()].filter((p) => p.type === WEAPON_TYPE);
   const byId = new Map();
-  for (const s of ships) if (s && s.slots.length) byId.set(s.id, s);
+  for (const s of ships) {
+    if (!s || !s.slots.length) continue;
+    // Slots that only know their stock gun by name get its id from the catalogue (the same size and name).
+    const slots = s.slots.map(({ stockName, ...slot }) => {
+      if (slot.stock || !stockName) return slot;
+      const hit = guns.find((p) => p.name === stockName && p.size >= slot.min && p.size <= slot.max);
+      return { ...slot, stock: hit ? hit.id : null };
+    });
+    byId.set(s.id, { ...s, slots });
+  }
   const list = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { version, updatedAt: new Date().toISOString(), source: 'Star Citizen Wiki API', ships: list, parts: [...parts.values()] };
+  return { schema: SCHEMA, version, updatedAt: new Date().toISOString(), source: 'Star Citizen Wiki API', ships: list, parts: [...parts.values()] };
 }
 
 // ------------------------------------------------------------------ fetching (resumable)
@@ -285,7 +404,7 @@ export async function refreshBuilder(env, { force = false, lock = false } = {}) 
     const snap = await readJson(kv, SNAP_KEY);
     const version = await currentVersion(env);
     const age = snap?.updatedAt ? Date.now() - Date.parse(snap.updatedAt) : Infinity;
-    if (!force && snap && snap.version === version && age < REBUILD_MS) return snap;
+    if (!force && snap && snap.version === version && snap.schema === SCHEMA && age < REBUILD_MS) return snap;
     work = { version, startedAt: new Date().toISOString(), pages: 0, jobs: freshJobs(), ships: [], parts: [], stock: [] };
   }
   work = await stepWork(env, work);

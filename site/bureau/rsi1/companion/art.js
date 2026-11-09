@@ -71,6 +71,7 @@ const PART = {
   QuantumDrive: (s) => add(s, C(42, 20, 6, 'f1'), P('M16 20h16M52 20h16', 'l1'), C(42, 20, 14, 'l2')),
   JumpDrive: (s) => add(s, C(42, 20, 14, 'l2'), C(42, 20, 7, 'f1'), P('M42 3v8M42 29v8', 'l1')),
   Radar: (s) => add(s, P('M42 34 42 20', 'l1'), P('M24 20a18 18 0 0 1 36 0', 'l1'), P('M31 20a11 11 0 0 1 22 0', 'l2'), C(42, 20, 2.5, 'dot')),
+  MissileLauncher: (s) => add(s, R(16, 10, 52, 20, 'f1'), L(28, 10, 28, 30, 'l2'), L(42, 10, 42, 30, 'l2'), L(56, 10, 56, 30, 'l2'), P('M68 20h10', 'l1')),
   WeaponGun: (s) => add(s, R(14, 17, 40, 8, 'f1'), P('M54 19h24v4H54Z', 'l1'), R(24, 25, 10, 8, 'l1'), L(78, 21, 82, 21, 'l2'))
 };
 
@@ -78,4 +79,25 @@ export function partArt(type) {
   const s = art(84, 40, 'art thumb');
   (PART[type] || PART.WeaponGun)(s);
   return s;
+}
+
+// A picture from the Star Citizen wiki's media server. It is asked for through this site's own image route first
+// (/api/sc-img, cached); if that fails the browser asks the wiki directly (the page's security policy allows only
+// that one image host). If both fail, the drawn art shown in its place stays.
+const MEDIA = 'https://media.starcitizen.tools/';
+export function photo(path, alt, fallback, cls = 'photo') {
+  if (!path || typeof path !== 'string' || path.length > 220) return fallback;
+  const img = document.createElement('img');
+  img.className = cls;
+  img.alt = alt || '';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+  let tried = 0;
+  img.addEventListener('error', () => {
+    if (tried++ === 0) { img.src = MEDIA + path; return; }
+    if (fallback && img.parentNode) img.replaceWith(fallback); else img.remove();
+  });
+  img.src = `/api/sc-img?p=${encodeURIComponent(path)}`;
+  return img;
 }
