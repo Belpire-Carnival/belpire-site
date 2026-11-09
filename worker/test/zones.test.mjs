@@ -26,7 +26,8 @@ test('wiki status overrides the rule of thumb: armistice is SAFE, "not armistice
   setZones({ [k('Teasa Spaceport')]: { z: 'armistice' }, [k('Shepherd Outpost')]: { z: 'open' }, [k('Lorville')]: { z: 'unknown' }, [k('Rustville')]: { z: 'open' }, [k('Grim HEX')]: { z: 'armistice' } });
   assert.equal(riskOf('Stanton', 'TDD - Teasa Spaceport', 'Lorville').level, 'safe');
   assert.equal(riskOf('Stanton', 'Shepherd Outpost').level, 'med');
-  assert.equal(riskOf('Stanton', 'Admin - Lorville').level, 'low'); // unknown on the wiki keeps the rule
+  assert.equal(riskOf('Stanton', 'Admin - Lorville').level, 'safe'); // unknown on the wiki keeps the rule (city landing zones are armistice)
+  assert.equal(riskOf('Stanton', 'Everus Harbor').level, 'low');
   assert.equal(riskOf('Pyro', 'Rustville').level, 'high');
   assert.equal(riskOf('Stanton', 'Grim HEX').level, 'safe');
   assert.equal(riskOf('Nyx', 'Somewhere Else').level, 'med');
@@ -83,4 +84,9 @@ test('fresh=1 skips the stored result and says so', async () => {
     const r = await handleZones(new URL('https://x/api/sc-zones?n=Washout&fresh=1'), env);
     assert.equal(r.body.zones.washout.z, 'open'); assert.equal(r.body.fresh, true); assert.equal(store.get('zone:v1:washout').z, 'open');
   } finally { globalThis.fetch = real; }
+});
+
+test('jurisdiction from the wiki shows in the note even when the page does not say armistice', () => {
+  setZones({ somedepot: { z: 'unknown', j: 'Hurston Dynamics' } });
+  assert.match(riskOf('Stanton', 'Some Depot').note, /Jurisdiction: Hurston Dynamics/);
 });

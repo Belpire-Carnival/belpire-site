@@ -12,7 +12,8 @@ const RULES = [
   [/ruin station|checkmate|orbituary|ghost arena/, 'high', 'Contested zone: free-fire PvPvE inside the station, and pirates watch the approach.'],
   [/grim ?hex|\byela\b/, 'high', 'Armistice inside the station, but the approach through Yela is a known pirate and ambush spot.'],
   [/levski|delamar/, 'med', 'Armistice inside Levski. Nyx is outside UEE law, and the approach and the jump gate can be camped.'],
-  [/lorville|area ?18|new babbage|orison|everus|seraphim|baijini|tressler|port olisar|\b(?:arc|cru|hur|mic)-l\d/, 'low', 'Armistice zone at the landing zone or station. The risk is on the approach and in quantum travel.'],
+  [/lorville|teasa|area ?18|\btdd\b|new babbage|orison/, 'safe', 'City landing zone: an armistice zone, so combat is blocked inside it. The approach and quantum travel are not covered.'],
+  [/everus|seraphim|baijini|tressler|port olisar|\b(?:arc|cru|hur|mic)-l\d/, 'low', 'Station: armistice at the station itself in most cases, but the exterior and the approach are open.'],
   [/gateway|jump point/, 'med', 'Jump gateway: ships arrive and leave in a line here, so it can be camped.']
 ];
 const SYSTEM = {
@@ -69,9 +70,15 @@ function base(system, names) {
   return s ? { level: s[0], label: LEVELS[s[0]].label, note: s[1] } : { level: 'unknown', label: 'Unknown', note: 'No risk rule for this place.' };
 }
 
+// The wiki page's Jurisdiction line, shown even when the page does not say whether the place is an Armistice Zone.
+function jurisdiction(names) {
+  for (const c of nameCandidates(...names)) { const z = ZONES.get(norm(c)); if (z?.j) return z.j; }
+  return '';
+}
+
 function judged(system, names) {
-  const r = base(system, names), z = wikiZone(names), jur = z?.j ? ` Jurisdiction: ${z.j}.` : '';
-  if (!z) return r;
+  const r = base(system, names), z = wikiZone(names), jn = jurisdiction(names), jur = (z?.j || jn) ? ` Jurisdiction: ${z?.j || jn}.` : '';
+  if (!z) return jn ? { ...r, note: `${r.note}${jur}` } : r;
   if (z.z === 'armistice') return { level: 'safe', label: 'Safe', note: `Wiki: ${z.name} is an Armistice Zone, so combat is blocked inside it.${jur} The approach and quantum travel are not covered.`, wiki: 'armistice' };
   const level = LEVELS[r.level].rank >= LEVELS.med.rank ? r.level : 'med';
   return { level, label: LEVELS[level].label, note: `Wiki: ${z.name} is not an Armistice Zone, so anyone can shoot you here.${jur} ${level === r.level ? r.note : ''}`.trim(), wiki: 'open' };

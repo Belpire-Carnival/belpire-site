@@ -12,7 +12,7 @@ const rows = [
 ];
 
 test('risk rules: armistice cities low, Pyro lawless high, Levski and Nyx medium, unknown systems unknown', () => {
-  assert.equal(riskOf('Stanton', 'Admin - Lorville').level, 'low');
+  assert.equal(riskOf('Stanton', 'Admin - Lorville').level, 'safe');
   assert.equal(riskOf('Stanton', 'Shepherd Outpost').level, 'med');
   assert.equal(riskOf('Pyro', 'Rustville').level, 'high');
   assert.equal(riskOf('Pyro', 'Checkmate Station').level, 'high');
@@ -45,7 +45,7 @@ test('areaBoard ranks the areas of one system by the best run from or to them', 
   assert.deepEqual(s.map((a) => a.name), ['Area 18', 'Lorville']);
   assert.equal(s[1].out[0].commodity, 'Agricium'); assert.equal(s[1].out[0].margin, 10);
   assert.equal(s[0].in[0].margin, 10);
-  assert.equal(s[0].risk.level, 'low');
+  assert.equal(s[0].risk.level, 'safe');
   const p = areaBoard(f, 'Pyro');
   assert.equal(p[0].risk.level, 'high');
   assert.deepEqual(areaBoard(f, 'Nyx').map((a) => a.name), ['Levski']);
@@ -60,6 +60,6 @@ test('areaBoard keeps the best run that leaves the system apart from the ranking
 import { runRisk } from '../../site/bureau/rsi1/companion/risk.js';
 test('run risk: worst end sets the level, both ends add up to a score out of 10', () => {
   const r = runRisk(riskOf('Stanton', 'Admin - Lorville'), riskOf('Pyro', 'Rustville'));
-  assert.equal(r.level, 'high'); assert.equal(r.score, 6); assert.equal(r.max, 10);
+  assert.equal(r.level, 'high'); assert.equal(r.score, 5); assert.equal(r.max, 10);
   assert.equal(runRisk(riskOf('Terra', 'a'), riskOf('Terra', 'b')).score, 4);
 });
