@@ -127,7 +127,7 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
       const dye = el('span', { class: 'dye' }, swatchRow(o.tints[k], (hex) => { o.tints[k] = hex; o.colors[0] = o.tints.undersuit; o.colors[1] = o.tints.core; o.colors[2] = o.tints.helmet; drawSlot(k, label); }, `${label} dye`));
       c.append(el('div', { class: 'slot-top' }, el('div', { class: 'slot-pic' }, pic), el('div', { class: 'slot-body' }, el('span', { class: 'slot-label', text: label }), input)),
         ...(o.infos[k] ? [el('p', { class: 'slot-stats', text: o.infos[k] })] : []), dye);
-      attachPicker(input, ({ name: nm, img, info }) => { picked = nm; o.pieces[k] = nm; o.imgs[k] = img; o.infos[k] = info || ''; drawSlot(k, label); sync(); });
+      attachPicker(input, ({ name: nm, img, info }) => { picked = nm; o.pieces[k] = nm; o.imgs[k] = img; o.infos[k] = info || ''; drawSlot(k, label); sync(); }, { type: k });
     };
     for (const [k, label] of PIECES) { cards[k] = el('div', { class: 'slot' }); grid.append(cards[k]); drawSlot(k, label); }
 

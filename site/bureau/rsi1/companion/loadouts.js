@@ -17,6 +17,8 @@ export const GROUPS = [
   ['Weapons', [['primary', 'Primary'], ['primaryAttach', 'Primary attachments'], ['secondary', 'Secondary'], ['sidearm', 'Sidearm'], ['sidearmAttach', 'Sidearm attachments'], ['melee', 'Melee or utility']]],
   ['Gadgets', [['gadget1', 'Gadget 1'], ['gadget2', 'Gadget 2'], ['tool', 'Tool']]]
 ];
+// Which kind of item each slot searches for, so Helmet only suggests helmets and Arms only arms.
+export const PICK_TYPE = { undersuit: 'undersuit', helmet: 'helmet', core: 'core', arms: 'arms', legs: 'legs', backpack: 'backpack', primary: 'weapon', secondary: 'weapon', sidearm: 'weapon', melee: 'weapon', primaryAttach: 'attach', sidearmAttach: 'attach', gadget1: 'gadget', gadget2: 'gadget', tool: 'gadget' };
 // Consumables, with a plain-language label and the amount the briefing flags as "low".
 export const SUPPLIES = [['medpens', 'Medpens', 3], ['medgel', 'MedGel', 2], ['oxypens', 'Oxy pens', 1], ['ammoPrimary', 'Primary magazines', 4], ['ammoSidearm', 'Sidearm magazines', 3], ['grenades', 'Grenades', 0]];
 
@@ -102,7 +104,7 @@ export function initLoadouts(host, { toast = () => {}, copy = async () => false 
         let picked = l.slots[k];
         inputs[k].addEventListener('input', () => { if (inputs[k].value !== picked) { l.imgs[k] = ''; l.infos[k] = ''; } });
         const f = field(label, inputs[k]);
-        attachPicker(inputs[k], ({ name, img, info }) => { picked = name; l.imgs[k] = img; l.infos[k] = info || ''; });
+        attachPicker(inputs[k], ({ name, img, info }) => { picked = name; l.imgs[k] = img; l.infos[k] = info || ''; }, { type: PICK_TYPE[k] || '' });
         return f;
       }))));
     const sup = {};

@@ -89,3 +89,17 @@ test('weaponStats falls back to ammunition damage for beam weapons with no per-s
   const withLine = { ...beam, description_data: [{ name: 'Rate Of Fire', value: '550 rpm' }] };
   assert.equal(weaponStats(withLine).rpm, 550);
 });
+
+test('item search filters by the slot kind, merges types and ignores unknown kinds', async () => {
+  const real = globalThis.fetch, urls = [];
+  try {
+    globalThis.fetch = async (u) => { urls.push(decodeURIComponent(String(u))); return new Response(JSON.stringify({ data: [{ uuid: String(u).includes('Arms') ? 'a' : 'h', name: String(u).includes('Arms') ? 'Arm piece' : 'Hand piece' }] }), { status: 200 }); };
+    const r = await handleItem(new URL('https://x.test/api/sc-item?q=piece&type=arms'), {}, {});
+    assert.equal(urls.length, 2);
+    assert.ok(urls.every((x) => /filter\[type\]=(Char_Armor_Arms|Char_Clothing_Hands)/.test(x)));
+    assert.equal(r.body.items.length, 2);
+    urls.length = 0;
+    await handleItem(new URL('https://x.test/api/sc-item?q=piece&type=__proto__'), {}, {});
+    assert.equal(urls.length, 1); assert.ok(!/filter\[type\]/.test(urls[0]));
+  } finally { globalThis.fetch = real; }
+});

@@ -10,10 +10,12 @@ test('tidy: duplicate name+maker collapses to the best documented copy and alias
   assert.deepEqual(t.ships.map((x) => x.id).sort(), ['2', '4']);
   assert.equal(t.alias.get('1'), '2');
 });
-test('tidy: ships without stats are dropped; pictures required only when the data has them', () => {
+test('tidy: ships without stats are dropped and say why; a picture-less ship stays unless a pictured variant exists', () => {
   const noStats = sh('9', 'Ghost', { scm: 0, stats: { hull: 0 }, api: {}, cargo: 0 });
-  const mix = [sh('1', 'A'), sh('2', 'B', { img: '' }), noStats];
-  assert.deepEqual(tidyShips(mix).ships.map((x) => x.id), ['1']);
-  const none = [sh('1', 'A', { img: '' }), sh('2', 'B', { img: '' }), sh('3', 'C', { img: '' }), sh('4', 'D', { img: '' }), noStats];
-  assert.equal(tidyShips(none).ships.length, 4);
+  const mix = [sh('1', 'Cutlass Black'), sh('2', 'Corsair', { img: '' }), sh('3', 'Cutlass Black Steel', { img: '' }), noStats];
+  const t = tidyShips(mix);
+  assert.deepEqual(t.ships.map((x) => x.id).sort(), ['1', '2']);
+  assert.equal(t.alias.get('3'), '1');
+  assert.ok(t.dropped.some((d) => d.name === 'Ghost' && /no flight stats/.test(d.why)));
+  assert.ok(t.dropped.some((d) => d.name === 'Cutlass Black Steel' && /variant/.test(d.why)));
 });

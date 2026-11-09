@@ -10,6 +10,7 @@ import { cleanImg, attachPicker } from './items.js';
 import { initLoadouts } from './loadouts.js';
 import { initOutfits } from './outfits.js';
 import { normalize as normLoadout } from './loadouts.js';
+import * as M from './market.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -840,11 +841,44 @@ function paintLiveChip() {
   line.textContent = `Prices from UEX, updated ${ago(MK.updatedAt)}${MK.partial ? ' (last refresh was partial)' : ''}.`;
 }
 
+const riskChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label}` });
+let mkSys = ls.get('mk.sys', '');
+function paintSystemTabs(systems) {
+  const tabs = $('#mkSys'); tabs.textContent = '';
+  if (mkSys && !systems.includes(mkSys)) mkSys = '';
+  for (const [id, label] of [['', 'All systems'], ...systems.map((x) => [x, x])]) {
+    tabs.append(el('button', { type: 'button', role: 'tab', 'aria-pressed': String(id === mkSys), text: label, onclick: () => { mkSys = id; ls.set('mk.sys', id); renderRoutes(); } }));
+  }
+}
+function areaCard(a, rank) {
+  const list = (items, head, dir) => (items.length ? el('table', { class: 'shoptbl' }, el('thead', {}, el('tr', {}, el('th', { text: head }), el('th', { class: 'num', text: 'Price' }), el('th', { class: 'num', text: 'Run' }), el('th', { text: dir }))),
+    el('tbody', {}, ...items.map((i) => el('tr', {}, el('td', { text: i.commodity }), el('td', { class: 'num', text: C.fmt(i.price) }), el('td', { class: 'num pay', text: `+${C.fmt(i.margin)}` }),
+      el('td', { class: 'small' }, i.other, ' ', riskChip(i.otherRisk)))))) : el('p', { class: 'small muted m0', text: 'Nothing profitable here.' }));
+  return el('details', { class: `area risk-edge-${a.risk.level}` }, el('summary', {},
+    rank <= 3 ? el('span', { class: 'chip ok', text: `#${rank}` }) : null, el('b', { text: a.name }), ' ', el('span', { class: 'chip', text: a.system }), ' ', riskChip(a.risk), ' ',
+    el('span', { class: 'pay', text: a.score ? `up to +${C.fmt(a.score)} / SCU` : 'no profitable run' })),
+  el('p', { class: 'small muted', text: `${a.risk.note} ${a.terminals.length} terminal${a.terminals.length === 1 ? '' : 's'} here.` }),
+  el('div', { class: 'area-cols' }, el('div', {}, el('div', { class: 'lbl', text: 'Buy here, sell at' }), list(a.out, 'Commodity', 'Sell at')), el('div', {}, el('div', { class: 'lbl', text: 'Sell here, bought cheapest at' }), list(a.in, 'Commodity', 'Buy at'))),
+  a.jump ? el('p', { class: 'small mt8' }, el('span', { class: 'chip warn', text: 'JUMP' }), ` Best run out of ${a.system}: buy ${a.jump.commodity} here at ${C.fmt(a.jump.price)}, sell at ${a.jump.other} (${a.jump.otherSystem}) for ${C.fmt(a.jump.otherPrice)}, +${C.fmt(a.jump.margin)} / SCU. `, riskChip(a.jump.otherRisk)) : null);
+}
 function renderRoutes() {
-  const wrap = $('#mkRoutes'); wrap.textContent = '';
+  const wrap = $('#mkRoutes'), areasEl = $('#mkAreas'); wrap.textContent = ''; areasEl.textContent = '';
+  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); $('#mkSys').textContent = ''; return; }
+  const rows = M.freshRows(MK.prices);
+  const systems = M.systemsIn(rows);
+  paintSystemTabs(systems);
   const q = norm($('#mkSearch').value);
-  const list = routesFromMarket().filter((r) => !q || norm(r.commodity).includes(q)).slice(0, q ? 12 : 10);
-  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); return; }
+  const opts = { q: q.toLowerCase(), avoidHigh: $('#mkSafe').checked };
+  // Areas: the best three in every system on "All systems", every area of one system otherwise.
+  for (const sys of mkSys ? [mkSys] : systems) {
+    const board = M.areaBoard(rows, sys, opts);
+    if (!board.length) continue;
+    const shown = mkSys ? board.slice(0, 40) : board.filter((a) => a.score > 0).slice(0, 3);
+    areasEl.append(el('div', { class: 'lbl mt8', text: mkSys ? `Areas in ${sys}, best first` : `Best areas in ${sys}` }), ...shown.map((a, i) => areaCard(a, i + 1)));
+    if (!mkSys && board.length > shown.length) areasEl.append(el('p', { class: 'small muted m0', text: `${board.length - shown.length} more in ${sys}. Pick the ${sys} tab to see them all.` }));
+  }
+  $('#mkRunsHead').textContent = mkSys ? `Best runs inside ${mkSys}` : 'Best runs, any system';
+  const list = M.bestRuns(rows, { ...opts, system: mkSys }).slice(0, 12);
   if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); return; }
   const tb = el('tbody');
   for (const r of list) {
@@ -852,13 +886,13 @@ function renderRoutes() {
     use.addEventListener('click', () => {
       const leg = { commodity: r.commodity, from: r.from.terminal, buy: r.from.buy, to: r.to.terminal, sell: r.to.sell };
       if (tr.legs.length === 1 && !Object.values(tr.legs[0]).some(Boolean)) tr.legs[0] = leg; else tr.legs.push(leg);
-      ls.set('tr.inputs', tr); renderLegs(); toast('Leg added: check the price in game before you buy');
+      ls.set('tr.inputs', tr); renderLegs(); toast(r.cross ? 'Leg added. This run crosses systems: check the jump and the price in game' : 'Leg added: check the price in game before you buy');
     });
-    tb.append(el('tr', {}, el('td', { text: r.commodity }), el('td', { class: 'small', text: where(r.from) }), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
-      el('td', { class: 'small', text: where(r.to) }), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, use)));
+    tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small', text: where(r.from) }), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
+      el('td', { class: 'small', text: where(r.to) }), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, riskChip(r.risk)), el('td', {}, use)));
   }
   wrap.append(el('div', { class: 'scrollx' }, el('table', {},
-    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'PvP risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
 }
 
 // Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab).
@@ -871,7 +905,7 @@ function sellList(container, pattern, onUse) {
   for (const { c, r } of rows.sort((a, b) => b.r.sell - a.r.sell).slice(0, 6)) {
     const use = el('button', { type: 'button', class: 'ghost', text: 'Use' });
     use.addEventListener('click', () => onUse(r.sell));
-    tb.append(el('tr', {}, el('td', { text: c }), el('td', { class: 'small', text: where(r) }), el('td', { class: 'num', text: C.fmt(r.sell) }), el('td', {}, use)));
+    tb.append(el('tr', {}, el('td', { text: c }), el('td', { class: 'small' }, where(r), ' ', riskChip(M.riskOfRow(r))), el('td', { class: 'num', text: C.fmt(r.sell) }), el('td', {}, use)));
   }
   container.append(el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Commodity' }), el('th', { text: 'Pays at' }), el('th', { class: 'num', text: 'aUEC / SCU' }), el('th'))), tb));
 }
@@ -924,6 +958,7 @@ async function loadMarket() {
   indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList();
 }
 $('#mkSearch').addEventListener('input', renderRoutes);
+$('#mkSafe').addEventListener('change', renderRoutes);
 
 // Ship lookup (Star Citizen Wiki API through our Worker). Only fields actually found are filled.
 const dig = (o, path) => path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);

@@ -96,25 +96,36 @@ export function slimItem(it) {
   return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it), wpn: weaponStats(it) };
 }
 
+// What each picker slot may search, as the wiki's own item types. Only these keys are accepted from the page.
+export const TYPE_MAP = {
+  weapon: ['WeaponPersonal'], attach: ['WeaponAttachment'], gadget: ['Gadget'],
+  undersuit: ['Char_Armor_Undersuit'], helmet: ['Char_Armor_Helmet'], core: ['Char_Armor_Torso', 'Char_Clothing_Torso_1'],
+  arms: ['Char_Armor_Arms', 'Char_Clothing_Hands'], legs: ['Char_Armor_Legs', 'Char_Clothing_Legs'], boots: ['Char_Clothing_Feet'], backpack: ['Char_Armor_Backpack']
+};
+
 export async function handleItem(url, env, ctx) {
   const q = (url.searchParams.get('q') || '').replace(/\s+/g, ' ').trim().slice(0, 60);
   if (q.length < 2) return { status: 400, body: { error: 'type at least two letters' } };
   const base = String(env.SC_WIKI_API || WIKI_API).replace(/\/+$/, '');
-  const weapon = url.searchParams.get('type') === 'weapon';
-  const target = `${base}/items?filter%5Bname%5D=${encodeURIComponent(q)}${weapon ? '&filter%5Btype%5D=WeaponPersonal' : ''}&page%5Bsize%5D=12`;
+  const typeKey = Object.hasOwn(TYPE_MAP, url.searchParams.get('type') || '') ? url.searchParams.get('type') : '';
   const cache = typeof caches !== 'undefined' ? caches.default : null;
-  const key = new Request(`https://item.cache.invalid/${weapon ? 'w/' : ''}${encodeURIComponent(q.toLowerCase())}`);
-  const hit = cache ? await cache.match(key) : null;
-  let json;
-  if (hit) json = await hit.json();
-  else {
-    let res;
-    try { res = await fetch(target, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) }); } catch { return { status: 502, body: { error: 'item database unreachable' } }; }
-    if (!res.ok) return { status: 502, body: { error: `item database answered ${res.status}` } };
-    json = await res.json();
+  const one = async (wikiType) => {
+    const target = `${base}/items?filter%5Bname%5D=${encodeURIComponent(q)}${wikiType ? `&filter%5Btype%5D=${wikiType}` : ''}&page%5Bsize%5D=12`;
+    const key = new Request(`https://item.cache.invalid/${wikiType ? `${wikiType}/` : ''}${encodeURIComponent(q.toLowerCase())}`);
+    const hit = cache ? await cache.match(key) : null;
+    if (hit) return hit.json();
+    const res = await fetch(target, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`item database answered ${res.status}`);
+    const json = await res.json();
     if (cache && ctx?.waitUntil) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(json), { headers: { 'Cache-Control': 'public, max-age=86400' } })));
-  }
-  const rows = Array.isArray(json?.data) ? json.data : [];
+    return json;
+  };
+  const wikiTypes = typeKey ? TYPE_MAP[typeKey] : [''];
+  const results = await Promise.allSettled(wikiTypes.map(one));
+  const ok = results.filter((r) => r.status === 'fulfilled');
+  if (!ok.length) return { status: 502, body: { error: 'item database unreachable' } };
+  const seen = new Set();
+  const rows = ok.flatMap((r) => (Array.isArray(r.value?.data) ? r.value.data : [])).filter((x) => { const id = x?.uuid || x?.name; if (seen.has(id)) return false; seen.add(id); return true; });
   if (url.searchParams.get('raw') === '1') return { status: 200, body: { raw: rows[0] ?? null, count: rows.length } };
   return { status: 200, body: { items: rows.map(slimItem).filter(Boolean).slice(0, 12) } };
 }

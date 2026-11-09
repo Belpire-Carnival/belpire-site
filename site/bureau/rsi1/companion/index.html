@@ -213,7 +213,12 @@
   <div class="card accent mb12">
     <h3>Live market <span id="mkChip" class="chip warn">MANUAL</span></h3>
     <p class="small muted">Best buy-to-sell pairs across all terminals, from recent UEX reports (older than two weeks is ignored). "Buy" is what you pay, "Sell" is what you get. Margins this good deserve a second look: check in game before you commit a hold.</p>
-    <label class="f grow">Search a commodity<input id="mkSearch" type="search" list="commList" placeholder="e.g. Agricium"></label>
+    <div class="row"><label class="f grow">Search a commodity<input id="mkSearch" type="search" list="commList" placeholder="e.g. Agricium"></label>
+      <label class="chk"><input id="mkSafe" type="checkbox"> Hide high PvP risk places</label></div>
+    <div id="mkSys" class="tabs mt8" role="tablist" aria-label="Star system"></div>
+    <p class="small muted mt8" id="mkRiskNote">PvP risk is a rule of thumb from how each place is set up (armistice zones, contested zones, lawless systems). It is not live: nothing tells us who is camping where.</p>
+    <div id="mkAreas" class="mt8"></div>
+    <h3 class="mt12" id="mkRunsHead">Best runs</h3>
     <div id="mkRoutes" class="mt8"></div>
     <datalist id="commList"></datalist>
   </div>

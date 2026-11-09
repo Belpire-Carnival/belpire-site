@@ -7,6 +7,7 @@ import {
 } from './builder-core.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
+import { riskOf } from './risk.js';
 
 const API = '/api/sc-builder';
 const SHOP_API = '/api/sc-shop';
@@ -36,19 +37,27 @@ const nrm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 export function tidyShips(ships) {
   const has = (x) => (x.scm > 0 || x.stats?.hull > 0 || x.api?.shieldHp > 0 || x.cargo > 0) && x.slots?.length;
   const score = (x) => (x.img ? 4 : 0) + (x.stats?.hull > 0 ? 2 : 0) + (x.api?.shieldHp > 0 ? 1 : 0) + (x.scm > 0 ? 1 : 0) + Math.min(x.slots?.length || 0, 60) * 0.01 + (x.buy?.length ? 0.5 : 0);
-  const withImg = ships.filter((x) => x.img).length;
-  const needImg = withImg >= ships.length * 0.25;
-  const best = new Map(), alias = new Map();
+  const best = new Map(), alias = new Map(), dropped = [];
   for (const x of ships) {
-    if (!has(x)) continue;
+    if (!has(x)) { dropped.push({ name: x.name, mfr: x.mfr, why: 'no flight stats or parts in the data' }); continue; }
     const k = nrm(x.mfr) + '|' + nrm(x.name);
     const cur = best.get(k);
     if (!cur) best.set(k, x);
     else if (score(x) > score(cur)) { alias.set(cur.id, x.id); best.set(k, x); } else alias.set(x.id, cur.id);
   }
-  if (needImg) for (const [k, x] of best) if (!x.img) best.delete(k);
-  return { ships: [...best.values()], alias, hidden: ships.length - best.size };
+  // A ship with no picture goes only when it is a variant of a ship that has one (same maker, name starts the same).
+  // A ship that simply has no picture on the wiki yet stays, with the drawn placeholder.
+  const pictured = [...best.values()].filter((x) => x.img);
+  for (const [k, x] of [...best]) {
+    if (x.img) continue;
+    const n = nrm(x.name);
+    const twin = pictured.find((y) => nrm(y.mfr) === nrm(x.mfr) && y !== x && (nrm(y.name).startsWith(n) || n.startsWith(nrm(y.name))));
+    if (twin) { best.delete(k); alias.set(x.id, twin.id); dropped.push({ name: x.name, mfr: x.mfr, why: `a variant of ${twin.name}, which has a picture` }); }
+  }
+  for (const [id, to] of alias) { const x = ships.find((y) => y.id === id); if (x && !dropped.some((d) => d.name === x.name && d.mfr === x.mfr) && !best.has(nrm(x.mfr) + '|' + nrm(x.name))) dropped.push({ name: x.name, mfr: x.mfr, why: 'duplicate entry' }); }
+  return { ships: [...best.values()], alias, hidden: ships.length - best.size, dropped };
 }
+const riskChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label}` });
 const aUEC = (v) => `${Number(v).toLocaleString('en-US')} aUEC`;
 
 const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 });
@@ -63,6 +72,7 @@ export function initBuilder(host) {
   let started = false;
   let saved = store.read(); // { ship, recent: [ids], builds: { shipId: { slotId: partId } }, named: [{ id, name, ship, ov, at }], cmp }
   let filter = '';
+  let hiddenShips = [];
   let status = '';
 
   const persist = () => store.write(saved);
@@ -361,7 +371,9 @@ export function initBuilder(host) {
       const x = data.ships.find((y) => y.id === id);
       if (x) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
     }
-    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null,
+    const why = hiddenShips.length ? el('details', { class: 'hiddenships' }, el('summary', { class: 'small muted', text: `${data.ships.length} ships listed. Missing one? ${hiddenShips.length} were left out: see why.` }),
+      el('ul', { class: 'small muted' }, ...hiddenShips.slice().sort((x, y) => x.name.localeCompare(y.name)).slice(0, 150).map((h) => el('li', { text: `${h.mfr ? `${h.mfr} ` : ''}${h.name}: ${h.why}` })))) : null;
+    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
 
@@ -390,7 +402,7 @@ export function initBuilder(host) {
     const list = (rows, none) => {
       if (!rows.length) return el('p', { class: 'small muted', text: none });
       const t = el('table', { class: 'shoptbl' });
-      for (const r of rows) t.append(el('tr', {}, el('td', { class: 'num', text: aUEC(r.p) }), el('td', {}, el('b', { text: r.at }), el('div', { class: 'small muted', text: [r.where, r.near && r.near !== r.where ? r.near : '', r.sys].filter(Boolean).join(' · ') }))));
+      for (const r of rows) t.append(el('tr', {}, el('td', { class: 'num', text: aUEC(r.p) }), el('td', {}, el('b', { text: r.at }), el('div', { class: 'small muted' }, [r.where, r.near && r.near !== r.where ? r.near : '', r.sys].filter(Boolean).join(' · '), ' ', riskChip(riskOf(r.sys, r.at, r.where, r.near))))));
       return t;
     };
     return el('div', { class: 'shopbox mt8' },
@@ -449,6 +461,7 @@ export function initBuilder(host) {
       data = json;
       const tidy = tidyShips(data.ships);
       data.ships = tidy.ships;
+      hiddenShips = tidy.dropped;
       if (tidy.alias.has(saved.ship)) saved.ship = tidy.alias.get(saved.ship);
       saved.recent = [...new Set((saved.recent || []).map((id) => tidy.alias.get(id) || id))];
       partsById = indexParts(data.parts);
