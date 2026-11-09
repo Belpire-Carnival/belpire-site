@@ -1,3 +1,4 @@
+import SHIP_IMAGES from './ship-images.json' with { type: 'json' };
 // Ship-builder data for the Star Citizen companion (bureau.belpire.com/rsi1/companion/).
 //
 // Source: the community Star Citizen Wiki API (api.star-citizen.wiki). It returns, per ship, the hardpoints and
@@ -26,7 +27,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 6;
+export const SCHEMA = 7;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -50,6 +51,14 @@ export function imgPath(it) {
     }
   }
   return '';
+}
+
+// 'ship' (spaceship), 'gravlev' (hover bike / grav vehicle) or 'ground' (wheeled or walking vehicle), from the wiki flags.
+export function shipKind(v) {
+  if (v?.is_spaceship) return 'ship';
+  if (v?.is_gravlev) return 'gravlev';
+  if (v?.is_vehicle) return 'ground';
+  return 'ship';
 }
 
 const num = (v) => {
@@ -87,7 +96,7 @@ export function slimPrices(uex) {
 const DETAIL_ROOTS = ['vehicle_weapon', 'missile', 'shield', 'cooler', 'power_plant', 'quantum_drive', 'jump_drive', 'radar', 'missile_rack', 'durability', 'distortion', 'temperature', 'emission', 'resource_network'];
 const DETAIL_TEXT = new Set(['signal_type', 'type', 'class', 'sub_type', 'face_type']);
 const DETAIL_SKIP = new Set(['modes', 'damages', 'states', 'uuid', 'minimum', 'maximum', 'unit', 'images', 'impact_damage', 'impact_damage_map']);
-const MAX_DETAIL = 90;
+const MAX_DETAIL = 160;
 export function detailOf(it) {
   const out = {};
   const walk = (v, path, depth) => {
@@ -348,6 +357,7 @@ export function slimShip(v) {
     scm: num(v.speed?.scm),
     max: num(v.speed?.max),
     msrp: num(v.msrp),
+    kind: shipKind(v),
     img: imgPath(v),
     buy: slimPrices(v.uex_prices),
     slots,
@@ -400,13 +410,15 @@ export function jobUrl(job) {
   const q = `page[size]=${job.size}&page[number]=${job.page}`.replace(/\[/g, '%5B').replace(/\]/g, '%5D');
   if (job.kind === 'parts') return `/vehicle-items?${q}&filter%5Btype%5D=${enc(PART_TYPES.join(','))}`;
   if (job.kind === 'weapons') return `/vehicle-weapons?${q}`;
+  if (job.kind === 'vehicles') return `/vehicles?${q}&filter%5Bis_vehicle%5D=true`;
   return `/vehicles?${q}&filter%5Bis_spaceship%5D=true`;
 }
 
 const freshJobs = () => [
   { kind: 'parts', page: 1, size: PART_PAGE },
   { kind: 'weapons', page: 1, size: PART_PAGE },
-  { kind: 'ships', page: 1, size: SHIP_PAGE }
+  { kind: 'ships', page: 1, size: SHIP_PAGE },
+  { kind: 'vehicles', page: 1, size: SHIP_PAGE }
 ];
 
 async function readJson(kv, key) {
@@ -433,11 +445,15 @@ export async function stepWork(env, work) {
     const json = await wiki(env, jobUrl(job));
     calls++;
     const rows = Array.isArray(json?.data) ? json.data : [];
-    if (job.kind === 'ships') {
+    if (job.kind === 'ships' || job.kind === 'vehicles') {
       const seen = new Map();
+      const known = new Set(work.ships.map((s) => s.id));
       for (const v of rows) {
         const ship = slimShip(v);
-        if (ship) work.ships.push(ship);
+        if (ship && !known.has(ship.id)) {
+          known.add(ship.id);
+          work.ships.push(ship);
+        }
         stockParts(v?.ports, seen);
       }
       const have = new Set(work.stock.map((p) => p.id));
@@ -499,5 +515,15 @@ export async function handleBuilder(env) {
     const work = await readJson(env.SC_DATA, WORK_KEY);
     return { ready: false, progress: work ? { pages: work.pages, remaining: work.jobs.length } : null };
   }
-  return { ready: true, ...snap };
+  return { ready: true, ...snap, ships: withPictures(snap.ships) };
+}
+
+// Pictures found by scripts/find-ship-images.mjs (worker/ship-images.json: ship id -> media path) fill in the ships
+// the wiki API has no picture for. Each path is checked again here, so a bad entry in the file can never be served.
+export function withPictures(ships, overrides = SHIP_IMAGES) {
+  return (ships || []).map((s) => {
+    if (s.img) return s;
+    const path = overrides?.[s.id];
+    return typeof path === 'string' && IMG_PATH.test(path) ? { ...s, img: path } : s;
+  });
 }

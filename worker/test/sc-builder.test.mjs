@@ -482,7 +482,7 @@ test('detail pop-up data: every wiki figure of a part is kept, flattened, withou
   assert.equal(d['quantum_drive.fuel_rate'], 6.1e-9);
   assert.ok(!('distortion.maximum' in d) && !('vehicle_weapon.spread.minimum' in d) && !Object.keys(d).some((k) => k.includes('formatted') || k.includes('modes') || k === 'name'));
   const big = detailOf({ resource_network: Object.fromEntries(Array.from({ length: 300 }, (_, i) => [`f${i}`, i])) });
-  assert.ok(Object.keys(big).length <= 90);
+  assert.ok(Object.keys(big).length <= 160);
 });
 test('missiles are catalogue parts, racks are locked slots, and a missile and a rack carry their own figures', () => {
   assert.ok(PT.includes('Missile') && !ST.has('Missile'));
@@ -506,4 +506,21 @@ test('saved rebuild progress from an older schema is thrown away, not published'
   globalThis.fetch = async (url) => { throw new Error(`stop: ${String(url).split('?')[0]}`); };
   try { await assert.rejects(refreshB(env, { force: true }), /stop: .*game-versions/); } finally { globalThis.fetch = realFetch; }
   assert.ok(kv.has('sc:builder:work')); // untouched until a fresh rebuild replaces it
+});
+
+test('vehicles are fetched with their own job, tagged by kind, and never listed twice', async () => {
+  assert.equal(jobUrl({ kind: 'vehicles', page: 1, size: 20 }), '/vehicles?page%5Bsize%5D=20&page%5Bnumber%5D=1&filter%5Bis_vehicle%5D=true');
+  const rows = { ships: [{ uuid: 'a', name: 'Ship A', is_spaceship: true }], vehicles: [{ uuid: 'a', name: 'Ship A', is_vehicle: true }, { uuid: 'b', name: 'Cyclone', is_vehicle: true }] };
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const data = String(url).includes('is_vehicle') ? rows.vehicles : rows.ships;
+    return new Response(JSON.stringify({ data, meta: { last_page: 1 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const work = { pages: 0, jobs: [{ kind: 'ships', page: 1, size: 20 }, { kind: 'vehicles', page: 1, size: 20 }], ships: [], parts: [], stock: [] };
+    await stepWork({}, work);
+    assert.deepEqual(work.ships.map((s) => [s.id, s.kind]), [['a', 'ship'], ['b', 'ground']]);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });
