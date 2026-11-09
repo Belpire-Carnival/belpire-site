@@ -21,7 +21,8 @@ const ICONS = {
   calc: ['M5 4h14v16H5Z', 'M8 8h8', 'M8 12h2M12 12h2M16 12h0', 'M8 16h2M12 16h4'],
   combat: ['M5 19 19 5', 'M14 4h6v6', 'M5 5l5 5', 'M4 15l5 5'],
   fleet: ['M12 3l3 7h5l-4 3 1 8-5-4-5 4 1-8-4-3h5Z'],
-  manual: ['M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3Z', 'M5 17a3 3 0 0 1 3-3h11', 'M9 8h6']
+  manual: ['M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3Z', 'M5 17a3 3 0 0 1 3-3h11', 'M9 8h6'],
+  guide: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7', 'M12 17v.01']
 };
 
 // Module icons (48×48), supplied as OmniGlass vector art. Drawn from data so the page needs no markup strings.

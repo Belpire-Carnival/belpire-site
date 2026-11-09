@@ -12,6 +12,7 @@ import { handleBuilder, refreshBuilder } from './sc-builder.js';
 import { handleImg, handleItem } from './sc-img.js';
 import { handleShop } from './sc-shop.js';
 import { handleArmor } from './sc-armor.js';
+import { handleWeapons } from './sc-weapons.js';
 import { handleZones } from './sc-zones.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
@@ -128,6 +129,10 @@ export default {
     }
     if (pathname === '/api/sc-armor') {
       const { status, body } = await handleArmor(env, ctx);
+      return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+    }
+    if (pathname === '/api/sc-weapons') {
+      const { status, body } = await handleWeapons(env, ctx);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-zones') {
