@@ -55,7 +55,7 @@ export async function learnZones(rows, { fetcher = fetch, cap = 90, fresh = type
     const chunk = todo.slice(i, i + 15);
     for (const c of chunk) asked.add(norm(c));
     try {
-      const r = await fetcher(`/api/sc-zones?${chunk.map((c) => `n=${encodeURIComponent(c)}`).join('&')}${fresh ? '&fresh=1' : ''}`, { headers: { Accept: 'application/json' } });
+      const r = await fetcher(`/api/sc-zones?${chunk.map((c) => `n=${encodeURIComponent(c)}`).join('&')}${fresh ? '&fresh=1' : ''}`, { cache: 'no-cache', headers: { Accept: 'application/json' } });
       if (!r.ok) continue;
       const j = await r.json();
       setZones(j.zones); got = got || Object.keys(j.zones || {}).length > 0;

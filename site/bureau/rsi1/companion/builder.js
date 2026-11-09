@@ -487,7 +487,7 @@ export function initBuilder(host) {
     started = true;
     message('Loading ship data…');
     try {
-      const res = await fetch(API, { headers: { Accept: 'application/json' } });
+      const res = await fetch(API, { cache: 'no-cache', headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error('bad status');
       const json = await res.json();
       if (!json.ready) { started = false; return message('Ship data is still being collected. Check back in a little while.', true); }
@@ -511,7 +511,7 @@ export function initBuilder(host) {
 
   async function loadShop() {
     try {
-      const res = await fetch(SHOP_API, { headers: { Accept: 'application/json' } });
+      const res = await fetch(SHOP_API, { cache: 'no-cache', headers: { Accept: 'application/json' } });
       const j = res.ok ? await res.json() : null;
       shop = j && j.ready ? j.ships : {};
     } catch { shop = {}; }

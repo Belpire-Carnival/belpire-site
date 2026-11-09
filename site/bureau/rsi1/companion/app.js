@@ -540,7 +540,7 @@ async function loadArmor(force) {
   const rows = ['LIGHT', 'MEDIUM', 'HEAVY'];
   if (!force && rows.some((a) => tk.armor[a].phys || tk.armor[a].energy)) return;
   try {
-    const r = await fetch('/api/sc-armor', { headers: { Accept: 'application/json' } });
+    const r = await fetch('/api/sc-armor', { cache: 'no-cache', headers: { Accept: 'application/json' } });
     const j = r.ok ? await r.json() : null;
     if (!j?.classes) throw new Error('none');
     for (const a of rows) { const c = j.classes[a[0] + a.slice(1).toLowerCase()]; if (c) tk.armor[a] = { phys: c.phys, energy: c.energy }; }
@@ -970,15 +970,30 @@ async function loadStatus() {
 
 async function loadMarket() {
   try {
-    const r = await fetch('/api/sc-market', { headers: { Accept: 'application/json' } });
+    const r = await fetch('/api/sc-market', { cache: 'no-cache', headers: { Accept: 'application/json' } });
     if (!r.ok) throw new Error(String(r.status));
     const j = await r.json();
     MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial;
   } catch { MK.enabled = false; MK.prices = []; }
-  indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList();
+  indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList(); paintStamp();
   // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
   learnZones(MK.prices).then((got) => { if (got) { renderRoutes(); renderSalvageLive(); } });
 }
+// Shows what this page is running on, so a phone with an old copy is easy to spot.
+function paintStamp() {
+  const t = (v) => { const d = v ? new Date(v) : null; return d && !Number.isNaN(+d) ? d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'none'; };
+  const n = $('#dataStamp'); if (!n) return;
+  n.textContent = `Page loaded ${t(PAGE_LOADED)} · prices ${MK.enabled ? t(MK.updatedAt) : 'manual (no live feed)'}${MK.partial ? ' (partial)' : ''} · ${MK.prices.filter((r) => r.system).length}/${MK.prices.length} rows placed`;
+}
+const PAGE_LOADED = Date.now();
+// A phone keeps a tab alive for hours. When it comes back after a while, reload so code and data are current.
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
+  if (hiddenAt && Date.now() - hiddenAt > 10 * 60 * 1000 && !document.activeElement?.matches?.('input, textarea, select')) location.reload();
+  else if (hiddenAt && Date.now() - hiddenAt > 2 * 60 * 1000) loadMarket();
+});
+window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
 $('#mkSearch').addEventListener('input', renderRoutes);
 $('#mkSafe').addEventListener('change', renderRoutes);
 
