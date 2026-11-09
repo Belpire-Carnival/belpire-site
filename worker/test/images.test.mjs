@@ -81,3 +81,11 @@ test('weaponStats maps a wiki weapon record onto the Ballistics Matrix fields', 
   assert.equal(weaponStats({ name: 'Helmet' }), null);
   assert.equal(slimItem({ name: 'Test Pistol', ...it }).wpn.mag, 30);
 });
+
+test('weaponStats falls back to ammunition damage for beam weapons with no per-shot figure', async () => {
+  const { weaponStats } = await import('../sc-img.js');
+  const beam = { personal_weapon: { capacity: 80, pellets_per_shot: null, rpm: null, fire_mode: 'Beam', damages: [{ type: 'impact', name: 'energy', damage: 13 }] }, damage: { alpha: { physical: null, energy: null } }, ammunition: { impact_damage_map: { energy: 13, distortion: 5 } } };
+  assert.deepEqual(weaponStats(beam), { phys: 0, energy: 13, pellets: 1, rpm: null, mag: 80, mode: 'AUTO', burst: null, cooldown: null });
+  const withLine = { ...beam, description_data: [{ name: 'Rate Of Fire', value: '550 rpm' }] };
+  assert.equal(weaponStats(withLine).rpm, 550);
+});

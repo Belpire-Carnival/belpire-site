@@ -507,7 +507,8 @@ attachPicker($('#tkFields [data-k="name"]'), ({ name, wpn }) => {
   const o = { phys: wpn.phys, energy: wpn.energy, pellets: wpn.pellets, rpm: wpn.rpm ?? '', mag: wpn.mag ?? '', mode: wpn.mode, burst: wpn.burst ?? '', cooldown: wpn.cooldown ?? '' };
   Object.assign(tk, o);
   ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name', ...Object.keys(o)]); calcTTK();
-  toast(tk.reload ? 'Filled from the item database' : 'Filled from the item database. Reload time is not listed: enter it.');
+  const missing = [!o.rpm && 'RPM', !tk.reload && 'reload time', !tk.hp && 'target health'].filter(Boolean);
+  toast(missing.length ? `Filled from the item database. Still to enter: ${missing.join(', ')}.` : 'Filled from the item database');
 }, { type: 'weapon' });
 const AC = ['NONE', 'LIGHT', 'MEDIUM', 'HEAVY'];
 for (const a of AC) {

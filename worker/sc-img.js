@@ -66,14 +66,23 @@ export function weaponStats(it) {
   const pw = it?.personal_weapon;
   if (!pw || typeof pw !== 'object') return null;
   const pellets = Math.max(1, Math.round(Number(pw.pellets_per_shot) || 1));
-  const alpha = (it.damage || pw.damage)?.alpha || {};
   const modes = Array.isArray(pw.modes) ? pw.modes : [];
   const m = modes.find((x) => x?.mode === pw.fire_mode) || modes[0] || {};
   const burst = m.type === 'burst';
-  const per = (v) => { const n = r3(Number(v) / pellets); return n && n > 0 ? n : 0; };
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
+  // Damage per projectile: the shot total divided by the projectile count when the record has one, otherwise the
+  // ammunition's own impact damage (beam and charge weapons have no per-shot figure).
+  const alpha = (it.damage || pw.damage)?.alpha || {};
+  const ammo = it.ammunition || pw.ammunition || {};
+  const listed = {};
+  for (const d of Array.isArray(pw.damages) ? pw.damages : []) listed[String(d?.name ?? '').toLowerCase()] = num(d?.damage);
+  const hit = (k) => (num(alpha[k]) ? r3(num(alpha[k]) / pellets) : num(listed[k]) || num(ammo.impact_damage_map?.[k]) || 0);
+  // Rate of fire: the mode's, the weapon's, or the "Rate Of Fire 550 rpm" line of its description data.
+  const line = (Array.isArray(it.description_data) ? it.description_data : []).find((d) => /rate of fire/i.test(String(d?.name ?? '')));
+  const rpm = num(m.rpm) || num(pw.rpm) || num(String(line?.value ?? '').replace(/[^\d.]/g, ''));
   const out = {
-    phys: per(alpha.physical), energy: per(alpha.energy), pellets,
-    rpm: r3(m.rpm ?? pw.rpm), mag: r3(pw.capacity ?? pw.magazine_size ?? it.magazine?.max_ammo_count),
+    phys: hit('physical'), energy: hit('energy'), pellets,
+    rpm: rpm ? r3(rpm) : null, mag: r3(num(pw.capacity) || num(pw.magazine_size) || num(it.magazine?.max_ammo_count)) || null,
     mode: burst ? 'BURST' : 'AUTO', burst: burst ? r3(m.shot_count) : null, cooldown: burst ? r3(m.cooldown_time) : null,
   };
   return out.phys || out.energy ? out : null;
