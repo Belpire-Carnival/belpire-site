@@ -181,6 +181,36 @@ export function pilotGunSlots(ports, fixedWeapons) {
   return out;
 }
 
+// Turret bases the wiki lists with no child ports and no gun type of their own (e.g. a Constellation's upper and lower
+// turrets): the guns they carry only show up in `weaponry.fixed_weapons`, after the pilot guns are accounted for.
+// When the leftover guns split evenly across the bases, each gets that many gun slots of the base's size.
+export function baseTurretSlots(ports, fixedWeapons, pilotCount = 0) {
+  const bases = [];
+  const walk = (list) => {
+    for (const p of Array.isArray(list) ? list : []) {
+      if (!p || typeof p !== 'object') continue;
+      const kids = Array.isArray(p.ports) ? p.ports.length : 0;
+      if (p.type === 'Turret' && !kids && !holdsGun(p) && num(p.sizes?.max) > 0) bases.push(p);
+      walk(p.ports);
+    }
+  };
+  walk(ports);
+  const names = (Array.isArray(fixedWeapons) ? fixedWeapons : []).map((w) => str(w?.name, 60));
+  const left = names.length - pilotCount;
+  if (!bases.length || left < bases.length || left % bases.length) return [];
+  const each = left / bases.length;
+  // The leftover guns are the leading names only when they are one model and the rest differ; otherwise stay unnamed.
+  const lead = names.slice(0, left);
+  const sure = lead[0] && lead.every((n) => n === lead[0]) && names.slice(left).every((n) => n !== lead[0]);
+  const out = [];
+  for (const b of bases) {
+    const hp = str(b.name, 60) || 'turret';
+    const size = num(b.sizes.max);
+    for (let i = 1; i <= each; i++) out.push({ id: `${hp}/mount_${i}`, type: WEAPON_TYPE, min: size, max: size, stock: null, group: hp, ...(sure ? { stockName: lead[0] } : {}) });
+  }
+  return out;
+}
+
 export function turretGunSlots(turrets, have = []) {
   const out = [];
   const taken = new Set(have.map((s) => s.id));
@@ -269,7 +299,9 @@ export function slimArmament(v) {
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
-  slots.push(...pilotGunSlots(v.ports, v.weaponry?.fixed_weapons?.weapons));
+  const pilot = pilotGunSlots(v.ports, v.weaponry?.fixed_weapons?.weapons);
+  slots.push(...pilot);
+  slots.push(...baseTurretSlots(v.ports, v.weaponry?.fixed_weapons?.weapons, pilot.length));
   slots.push(...turretGunSlots(v.turrets, slots));
   return {
     id: str(v.uuid, 40),
