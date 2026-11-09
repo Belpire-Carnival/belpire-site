@@ -57,3 +57,19 @@ test('endpoint reads the wiki once per name, caches, and degrades to unknown', a
     assert.equal((await handleZones(new URL('https://x/api/sc-zones'), env)).status, 400);
   } finally { globalThis.fetch = real; }
 });
+
+test('wiki visitor-information box: tick or cross on the Armistice zone row, with jurisdiction', () => {
+  const box = plain('<table><tr><td>Map marker</td><td>✓</td></tr><tr><td>Jurisdiction</td><td>microTech</td></tr><tr><td>Comm-array coverage</td><td>✓</td></tr><tr><td>Armistice zone</td><td>✗</td></tr><tr><td>Private property</td><td>✗</td></tr></table>');
+  const r = zoneFromText(box);
+  assert.equal(r.z, 'open'); assert.equal(r.j, 'microTech');
+  assert.equal(zoneFromText(plain('<tr><td>Jurisdiction</td><td>UEE</td></tr><tr><td>Armistice zone</td><td>✓</td></tr><tr><td>Private property</td><td>✗</td></tr>')).z, 'armistice');
+  assert.equal(zoneFromText(plain('<tr><td>Armistice zone</td><td><img alt="No" src="x.png"></td></tr>')).z, 'open');
+  assert.equal(zoneFromText(plain('<tr><td>Armistice zone</td><td>Yes</td></tr>')).z, 'armistice');
+  assert.equal(zoneFromText('Comm-array coverage ✓ Private property ✗').z, 'unknown');
+});
+
+test('every place in Pyro is PvP risk (High), even when the wiki says armistice', () => {
+  setZones({ checkmatestation: { z: 'armistice' }, rustvilleoutpost: { z: 'open' } });
+  assert.equal(riskOf('Pyro', 'Checkmate Station').level, 'high');
+  assert.equal(riskOf('Pyro', 'Some Safe Place').level, 'high');
+});

@@ -68,12 +68,19 @@ function base(system, names) {
   return s ? { level: s[0], label: LEVELS[s[0]].label, note: s[1] } : { level: 'unknown', label: 'Unknown', note: 'No risk rule for this place.' };
 }
 
-export function riskOf(system, ...names) {
-  const r = base(system, names), z = wikiZone(names);
+function judged(system, names) {
+  const r = base(system, names), z = wikiZone(names), jur = z?.j ? ` Jurisdiction: ${z.j}.` : '';
   if (!z) return r;
-  if (z.z === 'armistice') return { level: 'safe', label: 'Safe', note: `Wiki: ${z.name} is an Armistice Zone, so combat is blocked inside it. The approach and quantum travel are not covered.`, wiki: 'armistice' };
+  if (z.z === 'armistice') return { level: 'safe', label: 'Safe', note: `Wiki: ${z.name} is an Armistice Zone, so combat is blocked inside it.${jur} The approach and quantum travel are not covered.`, wiki: 'armistice' };
   const level = LEVELS[r.level].rank >= LEVELS.med.rank ? r.level : 'med';
-  return { level, label: LEVELS[level].label, note: `Wiki: ${z.name} is not an Armistice Zone, so anyone can shoot you here. ${level === r.level ? r.note : ''}`.trim(), wiki: 'open' };
+  return { level, label: LEVELS[level].label, note: `Wiki: ${z.name} is not an Armistice Zone, so anyone can shoot you here.${jur} ${level === r.level ? r.note : ''}`.trim(), wiki: 'open' };
+}
+
+// Every place in Pyro counts as PvP risk, whatever the wiki says: Safe never applies there.
+export function riskOf(system, ...names) {
+  const r = judged(system, names);
+  if (String(system || '').toLowerCase() === 'pyro' && r.level !== 'high') return { level: 'high', label: 'High', note: `Pyro: every place counts as PvP risk. ${r.note}`, wiki: r.wiki };
+  return r;
 }
 export const worst = (...rs) => rs.reduce((a, b) => (LEVELS[b.level].rank > LEVELS[a.level].rank ? b : a), rs[0] || riskOf(''));
 

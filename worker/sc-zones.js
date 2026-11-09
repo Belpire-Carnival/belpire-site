@@ -11,17 +11,28 @@ const POS = /\b(?:is|are|within|inside|in|part of|as) (?:an?|the) armistice zone
 
 const sentences = (t) => t.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
 
+// The wiki's "Visitor information" box has a row "Armistice zone" with a tick or a cross, and a "Jurisdiction" row.
+const YES = '(?:✓|✔|☑|√|yes|true)', NO = '(?:✗|✘|✖|☒|×|x(?![a-z])|no(?![a-z])|false)';
+const ROW_YES = new RegExp(`armistice zones?[^a-z0-9✓✔☑√✗✘✖☒×]{0,12}${YES}(?![a-z])`, 'i');
+const ROW_NO = new RegExp(`armistice zones?[^a-z0-9✓✔☑√✗✘✖☒×]{0,12}${NO}`, 'i');
+const JUR = /jurisdiction[^a-z0-9]{0,12}([A-Za-z][A-Za-z' .&-]{1,40}?)(?=\s{2,}|\n|\s+(?:comm|armistice|private|hazard|map|quantum)\b|$)/i;
+
 // Pure: decide the status from the page's plain text. A "not an Armistice Zone" sentence wins over any other mention.
 export function zoneFromText(text) {
+  const raw = String(text || '');
+  const j = (raw.match(JUR)?.[1] || '').trim();
+  const no = ROW_NO.exec(raw), yes = ROW_YES.exec(raw);
+  if (no && (!yes || no.index < yes.index)) return { z: 'open', ev: raw.slice(no.index, no.index + 40).replace(/\s+/g, ' ').trim(), j };
+  if (yes) return { z: 'armistice', ev: raw.slice(yes.index, yes.index + 40).replace(/\s+/g, ' ').trim(), j };
   const ss = sentences(String(text || '').replace(/\s+/g, ' ').replace(/(?<=[.!?]) (?=[A-Z])/g, '\n'));
   const neg = ss.find((s) => NEG.test(s));
-  if (neg) return { z: 'open', ev: neg.slice(0, 200) };
+  if (neg) return { z: 'open', ev: neg.slice(0, 200), j };
   const pos = ss.find((s) => POS.test(s));
-  if (pos) return { z: 'armistice', ev: pos.slice(0, 200) };
-  return { z: 'unknown', ev: '' };
+  if (pos) return { z: 'armistice', ev: pos.slice(0, 200), j };
+  return { z: 'unknown', ev: '', j };
 }
 
-export const plain = (html) => String(html || '').replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<\/(p|li|tr|div|h\d|dd|dt)>/gi, '\n').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').replace(/[ \t]+/g, ' ');
+export const plain = (html) => String(html || '').replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/gi, ' $1 ').replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<\/(p|li|tr|div|h\d|dd|dt)>/gi, '\n').replace(/<[^>]+>/g, ' ').replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').replace(/[ \t]+/g, ' ');
 
 async function wiki(params) {
   const res = await fetch(`${WIKI}?${new URLSearchParams({ format: 'json', formatversion: '2', redirects: '1', ...params })}`, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
