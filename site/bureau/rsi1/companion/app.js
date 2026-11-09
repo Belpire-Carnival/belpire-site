@@ -11,6 +11,7 @@ import { initLoadouts } from './loadouts.js';
 import { initOutfits } from './outfits.js';
 import { normalize as normLoadout } from './loadouts.js';
 import * as M from './market.js';
+import { learnZones } from './risk.js';
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -956,6 +957,8 @@ async function loadMarket() {
     MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial;
   } catch { MK.enabled = false; MK.prices = []; }
   indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList();
+  // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
+  learnZones(MK.prices).then((got) => { if (got) { renderRoutes(); renderSalvageLive(); } });
 }
 $('#mkSearch').addEventListener('input', renderRoutes);
 $('#mkSafe').addEventListener('change', renderRoutes);
