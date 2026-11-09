@@ -226,7 +226,8 @@ nav a[aria-current=page]{color:var(--hi);border-left-color:var(--bronze-hi);back
 .tabs{display:flex;flex-wrap:wrap;gap:6px}
 .tabs button{text-transform:none;letter-spacing:.02em;font:12px var(--sans);padding:5px 10px;color:var(--muted)}
 .tabs button[aria-pressed=true]{color:var(--hi);border-color:var(--bronze-hi);background:#3a2713}
-.calc-top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:14px;align-items:stretch}
+.calc-top{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.8fr);gap:14px;align-items:stretch}
+@media (max-width:1180px){.calc-top{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.calc-top>.shipcard{grid-column:1/-1}}
 .shipcard{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;align-items:center}
 .shipcard .art{width:200px;height:110px;border:1px solid var(--line);background:radial-gradient(circle at 60% 40%,rgba(150,170,195,.14),var(--panel2))}
 .shipcard h3.big{font-size:22px;color:var(--hi);letter-spacing:.12em;margin:2px 0 6px}

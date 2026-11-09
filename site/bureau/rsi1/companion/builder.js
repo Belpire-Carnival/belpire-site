@@ -372,8 +372,15 @@ export function initBuilder(host) {
     return el('div', { class: 'card accent shipcard' }, photo(s.img, s.name, shipArt(s), 'photo ship'),
       el('div', {}, el('div', { class: 'lbl', text: s.mfr }), el('h3', { class: 'big', text: s.name }),
         el('div', { class: 'tagrow' }, ...bits.map((b) => el('span', { class: 'tag2', text: b })), n ? el('span', { class: 'tag2', text: `${n} swap${n === 1 ? '' : 's'}` }) : null),
-        s.msrp ? el('p', { class: 'small muted mt8', text: `Pledge price from ${num(s.msrp)} USD.` }) : null,
-        shopBlock(s)));
+        ));
+  }
+
+  // Middle block: every way to get the ship, the pledge store first, then in-game buy and rent.
+  function acquireCard(s) {
+    return card('', title('trade', 'Where to get it'),
+      el('div', { class: 'lbl', text: 'Pledge store' }),
+      el('p', { class: 'small muted m0', text: s.msrp ? `From ${num(s.msrp)} USD.` : 'No pledge price listed.' }),
+      shopBlock(s));
   }
 
   // Where the ship is sold and rented in game (UEX Corp price lists, joined by ship name).
@@ -409,7 +416,7 @@ export function initBuilder(host) {
     const base = summaryOf(s, {});
     const mine = summaryOf(s, ov);
     host.append(topBar(s));
-    host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), summaryCard(base, mine, s)));
+    host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), acquireCard(s), summaryCard(base, mine, s)));
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
     host.append(el('div', { class: 'calc-cols' },
       el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
