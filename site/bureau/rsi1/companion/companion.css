@@ -517,3 +517,56 @@ canvas.holo:active{cursor:grabbing}
 @media (max-width:820px){.area-cols{grid-template-columns:1fr}}
 
 .armlist{margin:6px 0 0;padding-left:18px;line-height:1.5}
+
+/* Ships / vehicles switch, swap buttons and ordnance rows in the calculator */
+.seg{margin-bottom:10px}
+.swaprow2{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.swapbtn{flex:1 1 140px}
+.gun.ordn{grid-template-columns:44px minmax(0,1fr) auto}
+
+/* Holographic pop-ups: the part data sheet and the swap table (builder-holo.js) */
+dialog.holo{width:min(760px,96vw);max-height:92vh;padding:0;margin:auto;border:1px solid var(--bronze);border-radius:4px;color:var(--text);
+  background:linear-gradient(180deg,rgba(0,200,216,.12),rgba(3,12,22,.94) 150px),rgba(3,12,22,.95);
+  box-shadow:0 0 0 1px rgba(0,240,255,.15),0 0 40px rgba(0,200,216,.3),inset 0 0 70px rgba(0,200,216,.07);overflow:hidden}
+dialog.holo.wide{width:min(1180px,97vw)}
+dialog.holo[open]{display:flex;flex-direction:column;transform:perspective(1400px) rotateY(-2deg) rotateX(1deg)}
+dialog.holo::backdrop{background:rgba(1,6,12,.74);backdrop-filter:blur(3px)}
+dialog.holo::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,rgba(0,240,255,.05) 0 1px,transparent 1px 3px)}
+dialog.holo::after{content:'';position:absolute;inset:5px;pointer-events:none;z-index:2;border:1px solid rgba(0,240,255,.16)}
+@media (prefers-reduced-motion:reduce){dialog.holo[open]{transform:none}}
+.holo-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--line2);position:relative;z-index:3}
+.holo-title{font-size:16px;color:var(--bronze-hi);margin:2px 0 0;letter-spacing:.16em;text-shadow:0 0 12px rgba(0,240,255,.5)}
+.holo-tools{display:flex;gap:12px;align-items:center;padding:10px 16px;position:relative;z-index:3}
+.holo-tools input{max-width:320px}
+.holo-body{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);min-height:0;overflow:hidden;position:relative;z-index:3}
+.holo-body.one{grid-template-columns:minmax(0,1fr)}
+.holo-list{overflow:auto;max-height:62vh}
+.holo-side{overflow:auto;max-height:62vh;border-left:1px solid var(--line2)}
+.holo-detail{padding:14px 16px;overflow:auto;max-height:70vh}
+.holo-foot{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;border-top:1px solid var(--line2);position:relative;z-index:3}
+.holo-part{display:flex;gap:12px;align-items:center}
+.holo-name{font:600 15px var(--display);letter-spacing:.1em;color:var(--bronze-hi);margin:0 0 2px;text-transform:uppercase}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;margin:6px 0 0;font:12px var(--mono)}
+.dgrid dt{color:var(--muted);overflow-wrap:anywhere}
+.dgrid dd{margin:0;text-align:right;color:var(--bronze-hi);font-variant-numeric:tabular-nums}
+.dgroup{margin-top:10px;border-top:1px dashed var(--line2);padding-top:6px}
+.dgroup summary{cursor:pointer;font:10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--bronze)}
+.swaptbl{width:100%;border-collapse:collapse}
+.swaptbl thead th{position:sticky;top:0;background:#071a2b;z-index:1;padding:4px 6px}
+.sortbtn{all:unset;cursor:pointer;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--bronze);padding:4px 2px}
+.sortbtn:hover,.sortbtn.on{color:var(--bronze-hi)}
+.sortbtn:focus-visible{outline:2px solid var(--bronze-hi)}
+.swaptbl tr.swaprow{cursor:pointer}
+.swaptbl tr.swaprow:hover{background:rgba(0,240,255,.07)}
+.swaptbl tr.swaprow.sel{background:rgba(0,240,255,.14);box-shadow:inset 3px 0 0 var(--bronze-hi)}
+.swaptbl tr.swaprow.cur td:first-child b::after{content:' ●';color:var(--ok)}
+.swaptbl td .mk{font:11px var(--mono);color:var(--muted)}
+.cellbar{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.cellbar .meter{width:52px;flex:none}
+@media (max-width:820px){.holo-body{grid-template-columns:minmax(0,1fr)}.holo-side{border-left:0;border-top:1px solid var(--line2)}.holo-list{max-height:40vh}}
+
+/* a part card/row opens its data sheet when clicked */
+.part.clickable,.gun.clickable{cursor:pointer}
+.part.clickable:hover,.gun.clickable:hover{border-color:var(--bronze-hi)}
+.nmbtn{all:unset;cursor:pointer;color:inherit;font:inherit}
+.nmbtn:hover,.nmbtn:focus-visible{color:var(--hi);text-decoration:underline}

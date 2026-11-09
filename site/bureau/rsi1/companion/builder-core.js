@@ -173,6 +173,7 @@ const b64 = {
 export function encodeBuild(ship, overrides = {}) {
   const o = {};
   for (const s of changedSlots(ship, overrides)) o[s.id] = overrides[s.id];
+  for (const [k, v] of Object.entries(overrides)) if (k.startsWith(MSL_KEY) && ship.slots.some((s) => MSL_KEY + s.id === k) && v) o[k] = v;
   return b64.enc(JSON.stringify({ s: ship.id, o }));
 }
 
@@ -183,6 +184,11 @@ export function decodeBuild(code, ships, partsById) {
     if (!ship || typeof j.o !== 'object' || !j.o) return null;
     const overrides = {};
     for (const [slotId, partId] of Object.entries(j.o)) {
+      if (slotId.startsWith(MSL_KEY)) {
+        const rackSlot = ship.slots.find((x) => x.type === 'MissileLauncher' && MSL_KEY + x.id === slotId);
+        if (rackSlot && partsById.get(partId)?.type === 'Missile') overrides[slotId] = partId;
+        continue;
+      }
       const slot = ship.slots.find((x) => x.id === slotId);
       const part = partsById.get(partId);
       if (slot && part && fits(slot, part) && partId !== slot.stock) overrides[slotId] = partId;
@@ -231,4 +237,87 @@ export function statSheet(ship, partsById, overrides = {}) {
     mass: pos(st.mass) , crew: pos(ship.crew?.max),
     sigIr: pos(st.sig?.ir), sigEm: pos(st.sig?.em)
   };
+}
+
+// ---------------------------------------------------------------- ships and vehicles
+// The data tags each record 'ship', 'gravlev' (hover bike, grav vehicle) or 'ground'. The page shows two views.
+export const viewOf = (ship) => (ship?.kind === 'gravlev' || ship?.kind === 'ground' ? 'vehicle' : 'ship');
+
+// ---------------------------------------------------------------- ordnance (missiles on racks)
+// A rack is a slot of type MissileLauncher (most are locked to the ship). The missile a player would load into a rack is
+// kept in the same overrides map under 'm:<rack slot id>', so it saves, compares and travels in share links like any swap.
+export const MSL_KEY = 'm:';
+
+export function racksOf(ship, partsById, overrides = {}) {
+  return (ship?.slots || []).filter((s) => s.type === 'MissileLauncher').map((slot) => {
+    const rack = partsById.get(overrides[slot.id] ?? slot.stock) || null;
+    const tubes = rack?.rack?.count ?? null;
+    const size = rack?.rack?.size ?? null;
+    const key = MSL_KEY + slot.id;
+    const missile = partsById.get(overrides[key]) || null;
+    // A stand-in slot, so the swap table can list the missiles that fit this rack with the same size rule as every other part.
+    return { slot, key, rack, tubes, size, missile, pseudo: { id: key, type: 'Missile', min: size ?? 0, max: size ?? 99, stock: null } };
+  });
+}
+
+// Missiles the player has chosen: how many tubes are set, and the damage of that load. Racks left on stock count for nothing.
+export function ordnanceTotals(ship, partsById, overrides = {}) {
+  let chosen = 0, damage = 0, tubes = 0;
+  for (const r of racksOf(ship, partsById, overrides)) {
+    if (r.tubes) tubes += r.tubes;
+    if (r.missile && r.tubes && r.missile.msl?.dmg != null) { chosen += r.tubes; damage += r.tubes * r.missile.msl.dmg; }
+  }
+  return { tubes, chosen, damage: Math.round(damage) };
+}
+
+// ---------------------------------------------------------------- pop-up data: columns, sorting, data sheet
+const col = (id, label, get, higher = true, bar = false) => ({ id, label, get, higher, bar });
+const SPEC = {
+  WeaponGun: [col('burst', 'Burst DPS', (p) => p.wpn?.burst, true, true), col('sust', 'Sustained', (p) => p.wpn?.sustained, true, true), col('alpha', 'Alpha', (p) => p.wpn?.alpha), col('range', 'Range (m)', (p) => p.wpn?.range)],
+  Shield: [col('shp', 'Shield HP', (p) => p.shield?.hp, true, true), col('regen', 'Regen /s', (p) => p.shield?.regen, true, true)],
+  PowerPlant: [col('gen', 'Power seg.', (p) => p.gen, true, true)],
+  Cooler: [col('cool', 'Cooling', (p) => p.cool, true, true)],
+  Missile: [col('dmg', 'Damage', (p) => p.msl?.dmg, true, true), col('lock', 'Lock (s)', (p) => p.msl?.lock, false), col('speed', 'Speed m/s', (p) => p.msl?.speed), col('rng', 'Lock range m', (p) => p.msl?.rmax), col('sig', 'Tracking', (p) => p.msl?.sig || null)],
+  MissileLauncher: [col('tubes', 'Tubes', (p) => p.rack?.count), col('msize', 'Missile size', (p) => p.rack?.size)]
+};
+const COMMON = [col('size', 'Size', (p) => p.size), col('grade', 'Grade', (p) => p.grade || null), col('pw', 'Power', (p) => p.pw, false), col('cw', 'Heat', (p) => p.cw, false), col('mass', 'Mass', (p) => p.mass, false), col('price', 'aUEC', (p) => cheapest(p)?.price ?? null, false)];
+
+export const columnsFor = (type) => [...(SPEC[type] || []), ...COMMON];
+
+// Sort a copy of the list by a column; parts with no figure go last whichever way it runs. dir: 1 ascending, -1 descending.
+export function sortParts(list, column, dir = -1) {
+  const out = list.slice();
+  if (!column) return out;
+  return out.sort((a, b) => {
+    const x = column.get(a), y = column.get(b);
+    if (x == null && y == null) return a.name.localeCompare(b.name);
+    if (x == null) return 1;
+    if (y == null) return -1;
+    const c = typeof x === 'string' || typeof y === 'string' ? String(x).localeCompare(String(y)) : x - y;
+    return c * dir || a.name.localeCompare(b.name);
+  });
+}
+
+const GROUP_TITLE = { vehicle_weapon: 'Weapon', missile: 'Missile', shield: 'Shield', cooler: 'Cooler', power_plant: 'Power plant', quantum_drive: 'Quantum drive', jump_drive: 'Jump drive', radar: 'Radar', missile_rack: 'Missile rack', durability: 'Durability', distortion: 'Distortion', temperature: 'Temperature', emission: 'Emission', resource_network: 'Power and coolant' };
+export const humanKey = (k) => String(k).replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+export function fmtVal(v) {
+  if (typeof v === 'boolean') return v ? 'yes' : 'no';
+  if (typeof v !== 'number') return String(v);
+  if (!Number.isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a !== 0 && a < 0.001) return v.toExponential(2);
+  return v.toLocaleString('en-US', { maximumFractionDigits: a >= 10000 ? 0 : a >= 100 ? 1 : 3 });
+}
+
+// Every figure the data holds for a part (`part.x`, flattened as 'vehicle_weapon.damage.dps.physical'), grouped by the
+// part of the game data it came from, with readable labels: [{ title, rows: [[label, value]] }].
+export function detailGroups(part) {
+  const groups = new Map();
+  for (const [key, value] of Object.entries(part?.x || {})) {
+    const [root, ...rest] = key.split('.');
+    const title = GROUP_TITLE[root] || humanKey(root);
+    if (!groups.has(title)) groups.set(title, []);
+    groups.get(title).push([rest.map(humanKey).join(' › ') || humanKey(root), fmtVal(value)]);
+  }
+  return [...groups].map(([title, rows]) => ({ title, rows }));
 }
