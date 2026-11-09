@@ -3,11 +3,18 @@
 // art.js. The page is built with text nodes and SVG attributes only.
 import {
   indexParts, partsFor, totals, diff, upgradeCost, slotLabel, partLabel, TYPE_LABEL, TOTAL_ROWS, deltaClass, signed,
+<<<<<<< HEAD
   reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms, statSheet, STAT_GROUPS
 } from './builder-core.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
 import { riskOf } from './risk.js';
+=======
+  reduction, coolingLoad, damageSplit, changedSlots, encodeBuild, decodeBuild, num, dims, gm, kms
+} from './builder-core.js';
+import { icon, meter, ring, pips, duo } from './viz.js';
+import { shipArt, partArt } from './art.js';
+>>>>>>> origin/main
 
 const API = '/api/sc-builder';
 const SHOP_API = '/api/sc-shop';
@@ -31,6 +38,7 @@ const el = (tag, attrs = {}, ...kids) => {
   return e;
 };
 
+<<<<<<< HEAD
 const nrm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 // One entry per ship name and maker (the wiki lists event and skin copies under the same name), best-documented first,
 // and only ships that have stats. Pictures are required once the data carries them for a fair share of ships.
@@ -77,6 +85,12 @@ const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1
 const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? 0;
 const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive', 'MissileLauncher'];
 const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet', MissileLauncher: 'combat' };
+=======
+const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 });
+const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? 0;
+const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive'];
+const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet' };
+>>>>>>> origin/main
 
 export function initBuilder(host) {
   let data = null;
@@ -85,8 +99,11 @@ export function initBuilder(host) {
   let started = false;
   let saved = store.read(); // { ship, recent: [ids], builds: { shipId: { slotId: partId } }, named: [{ id, name, ship, ov, at }], cmp }
   let filter = '';
+<<<<<<< HEAD
   let hiddenShips = [];
   let armGaps = { placed: [], listed: [], none: [] };
+=======
+>>>>>>> origin/main
   let status = '';
 
   const persist = () => store.write(saved);
@@ -159,7 +176,10 @@ export function initBuilder(host) {
     const unit = p ? (p.shield?.hp != null ? 'shield HP' : p.gen != null ? 'power segments' : p.cool != null ? 'cooling' : '') : '';
     const c = el('div', { class: `part ${current !== slot.stock ? 'changed' : ''}`.trim() },
       el('span', { class: 'sz', text: size }),
+<<<<<<< HEAD
       photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
+=======
+>>>>>>> origin/main
       el('div', {}, el('div', { class: 'nm', text: p?.name || 'Unknown part' }), el('div', { class: 'mk', text: [p?.mfr, p?.grade && `grade ${p.grade}`, p?.cls].filter(Boolean).join(' · ') })),
       el('div', {}, el('div', { class: 'big', text: big }), el('div', { class: 'mk', text: unit })));
     if (p?.shield?.regen != null) c.append(el('div', { class: 'wide mk', text: `${fmt1(p.shield.regen)} HP/s regen` }));
@@ -172,7 +192,10 @@ export function initBuilder(host) {
     const p = partsById.get(current);
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
+<<<<<<< HEAD
       photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
+=======
+>>>>>>> origin/main
       el('div', {}, el('div', { class: 'nm', text: `S${slot.max} ${p?.name || 'Unknown'}` }),
         el('div', { class: 'mk', text: `${slotLabel(slot)}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
@@ -223,6 +246,7 @@ export function initBuilder(host) {
   function armamentPanel(s, ov) {
     const guns = s.slots.filter((x) => x.type === 'WeaponGun');
     const c = card('', title('combat', `Armament (${guns.length})`));
+<<<<<<< HEAD
     for (const g of guns) c.append(gunRow(s, g, ov));
     if (!guns.length) {
       const a = s.arm, st = s.stats?.missiles;
@@ -237,6 +261,10 @@ export function initBuilder(host) {
           el('ul', { class: 'small armlist' }, ...lines.map((t) => el('li', { text: t }))));
       } else c.append(el('p', { class: 'small muted', text: 'No weapons are recorded for this ship in the game data.' }));
     }
+=======
+    if (!guns.length) c.append(el('p', { class: 'small muted', text: 'No swappable guns on this ship.' }));
+    for (const g of guns) c.append(gunRow(s, g, ov));
+>>>>>>> origin/main
     return c;
   }
 
@@ -351,12 +379,17 @@ export function initBuilder(host) {
         el('span', { class: 'small', text: `${n.name} · ${sh.name} · ${Object.keys(n.ov).length} swap${Object.keys(n.ov).length === 1 ? '' : 's'}` }),
         el('span', { class: 'row' },
           el('button', { type: 'button', class: 'ghost', text: 'Load', onclick: () => { setShip(sh.id); setBuild(sh, { ...n.ov }); paint(); } }),
+<<<<<<< HEAD
           el('button', { type: 'button', class: 'ghost', text: 'Save to fleet', onclick: () => { addToHangar(sh, n.name, { ...n.ov }); } }),
+=======
+          el('button', { type: 'button', class: 'ghost', text: 'To hangar', onclick: () => { addToHangar(sh, n.name); } }),
+>>>>>>> origin/main
           el('button', { type: 'button', class: 'ghost', text: '✕', 'aria-label': `Delete ${n.name}`, onclick: () => { saved.named = saved.named.filter((x) => x.id !== n.id); persist(); paint(); } }))));
     }
     return c;
   }
 
+<<<<<<< HEAD
   // The hangar lives in app.js; it listens for this event and stores the ship, with the whole stat sheet and a
   // link back to this exact build, in the player's own hangar on the Fleet tab.
   function addToHangar(s, label, ov = overrides(s)) {
@@ -367,6 +400,15 @@ export function initBuilder(host) {
       stats: statSheet(s, partsById, ov), code: encodeBuild(s, ov), swaps: n, img: s.img || ''
     } }));
     status = `Saved "${s.name}${label ? ` (${label})` : ''}" to your fleet.`;
+=======
+  // The hangar lives in app.js; it listens for this event and stores the ship in the player's own hangar.
+  function addToHangar(s, label) {
+    const ag = s.stats?.agility || {};
+    window.dispatchEvent(new CustomEvent('arsenal:hangar-add', { detail: {
+      name: `${s.name}${label ? ` (${label})` : ''}`.slice(0, 60), role: s.role || '', scm: s.scm ?? null, nav: s.max ?? null, pitch: ag.pitch ?? null, yaw: ag.yaw ?? null, roll: ag.roll ?? null, accel: null
+    } }));
+    status = 'Added to your hangar on the Fleet tab.';
+>>>>>>> origin/main
     paint();
   }
 
@@ -390,13 +432,17 @@ export function initBuilder(host) {
       catch { status = link(); }
       paint();
     } });
+<<<<<<< HEAD
     const toFleet = el('button', { type: 'button', class: 'primary', text: 'Save to fleet', onclick: () => addToHangar(s, changedSlots(s, overrides(s)).length ? 'custom build' : 'stock') });
+=======
+>>>>>>> origin/main
     const reset = el('button', { type: 'button', class: 'ghost', text: 'Reset to stock', onclick: () => { setBuild(s, {}); status = ''; paint(); } });
     const tabs = el('div', { class: 'tabs' });
     for (const id of saved.recent || []) {
       const x = data.ships.find((y) => y.id === id);
       if (x) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
     }
+<<<<<<< HEAD
     const names = (a) => a.slice().sort((x, y) => x.localeCompare(y)).join(', ');
     const why = hiddenShips.length || armGaps.listed.length || armGaps.none.length ? el('details', { class: 'hiddenships' },
       el('summary', { class: 'small muted', text: `${data.ships.length} ships listed. Missing one, or a weapon? ${hiddenShips.length} left out, ${armGaps.listed.length + armGaps.none.length} without swappable guns: see why.` }),
@@ -407,6 +453,9 @@ export function initBuilder(host) {
       armGaps.none.length ? el('p', { class: 'small m0 mt8', text: `No weapons recorded at all (${armGaps.none.length}). Unarmed ships, or a data gap:` }) : null,
       armGaps.none.length ? el('p', { class: 'small muted', text: names(armGaps.none) }) : null) : null;
     return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
+=======
+    return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, share, reset)), tabs.childNodes.length ? tabs : null,
+>>>>>>> origin/main
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
 
@@ -414,6 +463,7 @@ export function initBuilder(host) {
     const hp = delta(base.shieldHp, mine.shieldHp), bu = delta(base.burstDps, mine.burstDps);
     const bits = [s.role, s.career, s.size != null ? `size ${s.size}` : '', s.crew?.max ? `crew ${s.crew.min ?? 1}–${s.crew.max}` : '', s.cargo ? `${s.cargo} SCU` : ''].filter(Boolean);
     const n = changedSlots(s, ov).length;
+<<<<<<< HEAD
     return el('div', { class: 'card accent shipcard' }, photo(s.img, s.name, shipArt(s), 'photo ship'),
       el('div', {}, el('div', { class: 'lbl', text: s.mfr }), el('h3', { class: 'big', text: s.name }),
         el('div', { class: 'tagrow' }, ...bits.map((b) => el('span', { class: 'tag2', text: b })), n ? el('span', { class: 'tag2', text: `${n} swap${n === 1 ? '' : 's'}` }) : null),
@@ -444,6 +494,12 @@ export function initBuilder(host) {
       el('div', { class: 'lbl mt8', text: e.rent.length ? `Rent in game · from ${aUEC(e.rent[0].p)}` : 'Rent in game' }),
       list(e.rent, 'No rental listed.'),
       el('p', { class: 'small muted mt8', text: 'Prices as recorded by players on UEX Corp. Check the shop terminal before you commit.' }));
+=======
+    return el('div', { class: 'card accent shipcard' }, shipArt(s),
+      el('div', {}, el('div', { class: 'lbl', text: s.mfr }), el('h3', { class: 'big', text: s.name }),
+        el('div', { class: 'tagrow' }, ...bits.map((b) => el('span', { class: 'tag2', text: b })), n ? el('span', { class: 'tag2', text: `${n} swap${n === 1 ? '' : 's'}` }) : null),
+        s.msrp ? el('p', { class: 'small muted mt8', text: `Pledge price from ${num(s.msrp)} USD. In-game prices are not in the wiki data for most ships.` }) : null));
+>>>>>>> origin/main
   }
 
   function summaryCard(base, mine, s) {
@@ -461,7 +517,11 @@ export function initBuilder(host) {
     const base = summaryOf(s, {});
     const mine = summaryOf(s, ov);
     host.append(topBar(s));
+<<<<<<< HEAD
     host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), acquireCard(s), summaryCard(base, mine, s)));
+=======
+    host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), summaryCard(base, mine, s)));
+>>>>>>> origin/main
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
     host.append(el('div', { class: 'calc-cols' },
       el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
@@ -499,7 +559,10 @@ export function initBuilder(host) {
       if (tidy.alias.has(saved.ship)) saved.ship = tidy.alias.get(saved.ship);
       saved.recent = [...new Set((saved.recent || []).map((id) => tidy.alias.get(id) || id))];
       partsById = indexParts(data.parts);
+<<<<<<< HEAD
       loadShop();
+=======
+>>>>>>> origin/main
       if (!data.ships.some((x) => x.id === saved.ship)) saved.ship = (data.ships.find((x) => x.name === 'Cutlass Black') || data.ships.find((x) => x.name === 'Gladius') || data.ships[0]).id;
       applyLink();
       paint();

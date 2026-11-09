@@ -71,7 +71,10 @@ const PART = {
   QuantumDrive: (s) => add(s, C(42, 20, 6, 'f1'), P('M16 20h16M52 20h16', 'l1'), C(42, 20, 14, 'l2')),
   JumpDrive: (s) => add(s, C(42, 20, 14, 'l2'), C(42, 20, 7, 'f1'), P('M42 3v8M42 29v8', 'l1')),
   Radar: (s) => add(s, P('M42 34 42 20', 'l1'), P('M24 20a18 18 0 0 1 36 0', 'l1'), P('M31 20a11 11 0 0 1 22 0', 'l2'), C(42, 20, 2.5, 'dot')),
+<<<<<<< HEAD
   MissileLauncher: (s) => add(s, R(16, 10, 52, 20, 'f1'), L(28, 10, 28, 30, 'l2'), L(42, 10, 42, 30, 'l2'), L(56, 10, 56, 30, 'l2'), P('M68 20h10', 'l1')),
+=======
+>>>>>>> origin/main
   WeaponGun: (s) => add(s, R(14, 17, 40, 8, 'f1'), P('M54 19h24v4H54Z', 'l1'), R(24, 25, 10, 8, 'l1'), L(78, 21, 82, 21, 'l2'))
 };
 
@@ -80,6 +83,7 @@ export function partArt(type) {
   (PART[type] || PART.WeaponGun)(s);
   return s;
 }
+<<<<<<< HEAD
 
 // A picture from the Star Citizen wiki's media server. It is asked for through this site's own image route first
 // (/api/sc-img, cached); if that fails the browser asks the wiki directly (the page's security policy allows only
@@ -101,3 +105,5 @@ export function photo(path, alt, fallback, cls = 'photo') {
   img.src = `/api/sc-img?p=${encodeURIComponent(path)}`;
   return img;
 }
+=======
+>>>>>>> origin/main

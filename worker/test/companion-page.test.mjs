@@ -71,7 +71,11 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
 
 test('the drawing helpers build SVG with attributes only and reach no other origin', () => {
   assert.doesNotMatch(viz + art, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\.|fetch\(/);
+<<<<<<< HEAD
   assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg|media\.starcitizen\.tools\/)/);
+=======
+  assert.doesNotMatch(viz + art, /https?:\/\/(?!www\.w3\.org\/2000\/svg)/);
+>>>>>>> origin/main
   assert.doesNotMatch(builder, /\bhref\s*=|<img|src\s*=/);
 });
 

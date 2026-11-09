@@ -199,6 +199,7 @@ export const dims = (a) => (Array.isArray(a) && a.every((x) => x != null) ? a.ma
 // Distances: the wiki gives metres; show Gm for jump distances and km/s for quantum speed.
 export const gm = (m) => (m == null ? '—' : `${num(m / 1e9, 1)} Gm`);
 export const kms = (ms) => (ms == null ? '—' : `${num(ms / 1000)} km/s`);
+<<<<<<< HEAD
 
 // ---------------------------------------------------------------- full stat sheet
 // Every number worth comparing for one build, grouped for the page. [key, label, higherIsBetter, unit].
@@ -232,3 +233,5 @@ export function statSheet(ship, partsById, overrides = {}) {
     sigIr: pos(st.sig?.ir), sigEm: pos(st.sig?.em)
   };
 }
+=======
+>>>>>>> origin/main

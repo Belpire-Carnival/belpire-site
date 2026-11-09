@@ -3,6 +3,7 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
+<<<<<<< HEAD
 import { icon, bars, duo } from './viz.js';
 import { heroArt, photo } from './art.js';
 import { STAT_GROUPS, STAT_KEYS } from './builder-core.js';
@@ -12,6 +13,10 @@ import { initOutfits } from './outfits.js';
 import { normalize as normLoadout } from './loadouts.js';
 import * as M from './market.js';
 import { learnZones } from './risk.js';
+=======
+import { icon, bars } from './viz.js';
+import { heroArt } from './art.js';
+>>>>>>> origin/main
 
 const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const el = (tag, attrs = {}, ...kids) => {
@@ -61,9 +66,15 @@ const Store = {
 
 // ---------------- routing ----------------
 const NAV = [
+<<<<<<< HEAD
   ['Command', [['ops', 'OmniOps'], ['contracts', 'TacBoard'], ['log', 'OmniLog']]],
   ['Industry', [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']]],
   ['Hangar & combat', [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix'], ['fleet', 'Hangar Command']]],
+=======
+  ['Command', [['ops', 'Operations'], ['contracts', 'Contracts'], ['log', 'Ops Log']]],
+  ['Industry', [['salvage', 'Salvage'], ['mining', 'Mining'], ['trade', 'Trade'], ['cargo', 'Cargo Grid']]],
+  ['Combat & fleet', [['calc', 'Calculator'], ['combat', 'Armory'], ['fleet', 'Fleet']]],
+>>>>>>> origin/main
   ['Reference', [['manual', 'Field Manual']]],
 ];
 const VIEWS = NAV.flatMap(([, items]) => items);
@@ -74,6 +85,7 @@ for (const [group, items] of NAV) {
   for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
 }
 for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
+<<<<<<< HEAD
 // Bottom bar: every module as an icon tab, the signed-in user pinned at the right end.
 {
   const dock = $('#dock');
@@ -101,14 +113,20 @@ function setMenu(open) {
 }
 $('#menuBtn').addEventListener('click', () => setMenu(!$('header.top').classList.contains('open')));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+=======
+>>>>>>> origin/main
 function route() {
   const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
   document.body.dataset.v = v;
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
+<<<<<<< HEAD
   for (const d of $$('#dock a')) { if (d.dataset.d === v) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current'); }
   for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
   { const cur = $('a[data-v="' + v + '"]', nav); $('#menuNow').textContent = cur ? cur.textContent : 'Menu'; setMenu(false); }
+=======
+  for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
+>>>>>>> origin/main
   if (v === 'fleet') drawRadar();
   if (v === 'calc') builder.show();
   window.scrollTo(0, 0);
@@ -119,6 +137,7 @@ window.addEventListener('arsenal:hangar-add', (e) => {
   const d = e.detail || {}; const name = String(d.name || '').slice(0, 60); if (!name) return;
   const ship = { name, role: String(d.role || '').slice(0, 40) };
   for (const k of ['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel']) ship[k] = C.nOrNull(d[k]);
+<<<<<<< HEAD
   // A build from the calculator also brings its whole stat sheet, a link back to the build and its picture.
   if (d.stats && typeof d.stats === 'object') {
     ship.stats = {};
@@ -129,6 +148,10 @@ window.addEventListener('arsenal:hangar-add', (e) => {
   const pic = cleanImg(d.img); if (pic) ship.img = pic;
   S.fleet = [...S.fleet.filter((x) => x.name !== ship.name), ship].slice(0, 60);
   Store.saveFleet(); renderFleet(); toast('Saved to your fleet');
+=======
+  S.fleet = [...S.fleet.filter((x) => x.name !== ship.name), ship].slice(0, 60);
+  Store.saveFleet(); renderFleet(); toast('Added to your hangar');
+>>>>>>> origin/main
 });
 const P = C.PATCH;
 function paintPatch(live) {

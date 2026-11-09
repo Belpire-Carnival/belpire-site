@@ -370,6 +370,7 @@ test('ship silhouettes follow the ship\'s role', () => {
   assert.equal(shipKind({ role: 'Heavy Salvage', career: 'Industrial' }), 'tool');
   assert.equal(shipKind({}), 'fighter');
 });
+<<<<<<< HEAD
 
 // ---------------------------------------------------------------- guns the wiki does not list as child ports
 import { pilotGunSlots, turretGunSlots } from '../sc-builder.js';
@@ -447,3 +448,5 @@ test('slimArmament keeps the stock armament summary, and a hardware-locked gimba
   const slots = pilotGunSlots([{ name: 'hp_gun_1', type: 'Turret', editable: false, sizes: { min: 5, max: 5 }, compatible_types: [{ type: 'WeaponGun' }], ports: [] }], [{ name: 'Panther' }]);
   assert.equal(slots.length, 1); assert.equal(slots[0].stockName, 'Panther');
 });
+=======
+>>>>>>> origin/main
