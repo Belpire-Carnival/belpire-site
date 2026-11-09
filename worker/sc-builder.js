@@ -26,7 +26,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 3;
+export const SCHEMA = 4;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -160,7 +160,8 @@ export function pilotGunSlots(ports, fixedWeapons) {
     for (const p of Array.isArray(list) ? list : []) {
       if (!p || typeof p !== 'object') continue;
       const kids = Array.isArray(p.ports) ? p.ports.length : 0;
-      if (p.type === 'Turret' && p.editable && !kids && holdsGun(p)) mounts.push(p);
+      // A hardware-locked gimbal still carries swappable guns, so the mount's own `editable` flag is not required.
+      if (p.type === 'Turret' && !kids && holdsGun(p)) mounts.push(p);
       walk(p.ports);
     }
   };
@@ -242,6 +243,29 @@ export function slimStats(v) {
   };
 }
 
+// The ship's stock armament as the game data summarises it, kept apart from the swappable slots. It lets the page
+// show what a ship carries even when its hardpoints could not be turned into gun slots.
+export function slimArmament(v) {
+  const w = v?.weaponry || {}, t = v?.turrets || {};
+  const pilot = (Array.isArray(w.fixed_weapons?.weapons) ? w.fixed_weapons.weapons : []).slice(0, 12).map((x) => ({ name: str(x?.name, 60), dps: r2(x?.dps, 0) })).filter((x) => x.name);
+  const turrets = [];
+  for (const kind of ['manned', 'remote', 'pdc']) {
+    for (const x of Array.isArray(t[kind]) ? t[kind] : []) {
+      const mounts = Array.isArray(x?.mounts) ? x.mounts.length : 0;
+      const gun = Array.isArray(x?.weapons) && x.weapons[0] ? str(x.weapons[0].name, 60) : '';
+      turrets.push({ kind, mounts, gun, size: num(x?.size) ?? num(x?.mounts?.[0]?.weapon_sizes?.[0]) });
+      if (turrets.length >= 16) break;
+    }
+  }
+  return {
+    pilot, turrets,
+    pilotDps: r2(w.fixed_weapons?.dps_total ?? w.pilot_dps, 0),
+    turretDps: r2(w.turret_dps ?? w.turrets?.dps_total ?? t.dps_total, 0),
+    missiles: r2(w.missiles?.count, 0),
+    gunners: num(v?.crew?.weapon)
+  };
+}
+
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
@@ -264,6 +288,7 @@ export function slimShip(v) {
     buy: slimPrices(v.uex_prices),
     slots,
     stats: slimStats(v),
+    arm: slimArmament(v),
     api: {
       shieldHp: num(v.shield?.hp),
       shieldRegen: num(v.shield?.regeneration),

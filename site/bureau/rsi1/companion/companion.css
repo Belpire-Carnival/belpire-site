@@ -515,3 +515,5 @@ canvas.holo:active{cursor:grabbing}
 .area.risk-edge-low{border-left-color:var(--ok)}.area.risk-edge-med{border-left-color:var(--bronze)}.area.risk-edge-high{border-left-color:var(--warn)}
 .area-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:820px){.area-cols{grid-template-columns:1fr}}
+
+.armlist{margin:6px 0 0;padding-left:18px;line-height:1.5}

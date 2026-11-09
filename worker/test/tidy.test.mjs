@@ -19,3 +19,14 @@ test('tidy: ships without stats are dropped and say why; a picture-less ship sta
   assert.ok(t.dropped.some((d) => d.name === 'Ghost' && /no flight stats/.test(d.why)));
   assert.ok(t.dropped.some((d) => d.name === 'Cutlass Black Steel' && /variant/.test(d.why)));
 });
+
+import { armamentGaps } from '../../site/bureau/rsi1/companion/builder.js';
+test('armament audit separates placed guns, listed-only armament and no weapons', () => {
+  const g = (name, extra = {}) => ({ name, slots: [], stats: {}, arm: { pilot: [], turrets: [] }, ...extra });
+  const r = armamentGaps([
+    g('Gladius', { slots: [{ type: 'WeaponGun' }] }),
+    g('Centaurus', { arm: { pilot: [{ name: 'Gun', dps: 100 }], turrets: [{ kind: 'remote', mounts: 4 }] } }),
+    g('Hull C', {}), g('Carrack', { stats: { missiles: { count: 8 } } })
+  ]);
+  assert.deepEqual(r, { placed: ['Gladius'], listed: ['Centaurus', 'Carrack'], none: ['Hull C'] });
+});

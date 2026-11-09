@@ -34,6 +34,19 @@ const el = (tag, attrs = {}, ...kids) => {
 const nrm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 // One entry per ship name and maker (the wiki lists event and skin copies under the same name), best-documented first,
 // and only ships that have stats. Pictures are required once the data carries them for a fair share of ships.
+// Armament audit. A ship should either have swappable gun slots, or at least a stock armament in the game data.
+// `listed` are ships whose weapons exist in the data but did not become slots; `none` have no weapons recorded at all
+// (true for unarmed ships, a data gap for anything that should be armed).
+export function armamentGaps(ships) {
+  const out = { placed: [], listed: [], none: [] };
+  for (const x of ships) {
+    if (x.slots.some((g) => g.type === 'WeaponGun')) { out.placed.push(x.name); continue; }
+    const a = x.arm;
+    (a && ((a.pilot?.length || 0) + (a.turrets?.length || 0) > 0 || a.pilotDps > 0 || a.turretDps > 0 || a.missiles > 0 || x.stats?.missiles?.count > 0) ? out.listed : out.none).push(x.name);
+  }
+  return out;
+}
+
 export function tidyShips(ships) {
   const has = (x) => (x.scm > 0 || x.stats?.hull > 0 || x.api?.shieldHp > 0 || x.cargo > 0) && x.slots?.length;
   const score = (x) => (x.img ? 4 : 0) + (x.stats?.hull > 0 ? 2 : 0) + (x.api?.shieldHp > 0 ? 1 : 0) + (x.scm > 0 ? 1 : 0) + Math.min(x.slots?.length || 0, 60) * 0.01 + (x.buy?.length ? 0.5 : 0);
@@ -73,6 +86,7 @@ export function initBuilder(host) {
   let saved = store.read(); // { ship, recent: [ids], builds: { shipId: { slotId: partId } }, named: [{ id, name, ship, ov, at }], cmp }
   let filter = '';
   let hiddenShips = [];
+  let armGaps = { placed: [], listed: [], none: [] };
   let status = '';
 
   const persist = () => store.write(saved);
@@ -209,8 +223,20 @@ export function initBuilder(host) {
   function armamentPanel(s, ov) {
     const guns = s.slots.filter((x) => x.type === 'WeaponGun');
     const c = card('', title('combat', `Armament (${guns.length})`));
-    if (!guns.length) c.append(el('p', { class: 'small muted', text: 'No swappable guns on this ship.' }));
     for (const g of guns) c.append(gunRow(s, g, ov));
+    if (!guns.length) {
+      const a = s.arm, st = s.stats?.missiles;
+      const lines = [
+        ...(a?.pilot || []).map((g) => `Pilot gun: ${g.name}${g.dps ? ` · ${num(g.dps)} DPS` : ''}`),
+        ...(a?.turrets || []).map((t) => `${{ manned: 'Manned', remote: 'Remote', pdc: 'Point-defence' }[t.kind] || 'Turret'} turret${t.mounts ? `: ${t.mounts} mount${t.mounts === 1 ? '' : 's'}` : ''}${t.size ? `, size ${t.size}` : ''}${t.gun ? ` · ${t.gun}` : ''}`),
+        a?.pilotDps ? `Pilot weapons total: ${num(a.pilotDps)} DPS` : '', a?.turretDps ? `Turrets total: ${num(a.turretDps)} DPS` : '',
+        st?.count ? `Missiles: ${num(st.count)}${st.damage ? ` · ${num(st.damage)} total damage` : ''}` : (a?.missiles ? `Missiles: ${num(a.missiles)}` : '')
+      ].filter(Boolean);
+      if (lines.length) {
+        c.append(el('p', { class: 'small muted', text: 'The game data lists this armament, but not as swappable guns here. Stock loadout, read-only:' }),
+          el('ul', { class: 'small armlist' }, ...lines.map((t) => el('li', { text: t }))));
+      } else c.append(el('p', { class: 'small muted', text: 'No weapons are recorded for this ship in the game data.' }));
+    }
     return c;
   }
 
@@ -371,8 +397,15 @@ export function initBuilder(host) {
       const x = data.ships.find((y) => y.id === id);
       if (x) tabs.append(el('button', { type: 'button', 'aria-pressed': String(id === saved.ship), text: x.name, onclick: () => { setShip(id); status = ''; paint(); } }));
     }
-    const why = hiddenShips.length ? el('details', { class: 'hiddenships' }, el('summary', { class: 'small muted', text: `${data.ships.length} ships listed. Missing one? ${hiddenShips.length} were left out: see why.` }),
-      el('ul', { class: 'small muted' }, ...hiddenShips.slice().sort((x, y) => x.name.localeCompare(y.name)).slice(0, 150).map((h) => el('li', { text: `${h.mfr ? `${h.mfr} ` : ''}${h.name}: ${h.why}` })))) : null;
+    const names = (a) => a.slice().sort((x, y) => x.localeCompare(y)).join(', ');
+    const why = hiddenShips.length || armGaps.listed.length || armGaps.none.length ? el('details', { class: 'hiddenships' },
+      el('summary', { class: 'small muted', text: `${data.ships.length} ships listed. Missing one, or a weapon? ${hiddenShips.length} left out, ${armGaps.listed.length + armGaps.none.length} without swappable guns: see why.` }),
+      hiddenShips.length ? el('p', { class: 'small m0 mt8', text: 'Left out of the list' }) : null,
+      hiddenShips.length ? el('ul', { class: 'small muted' }, ...hiddenShips.slice().sort((x, y) => x.name.localeCompare(y.name)).slice(0, 150).map((h) => el('li', { text: `${h.mfr ? `${h.mfr} ` : ''}${h.name}: ${h.why}` }))) : null,
+      armGaps.listed.length ? el('p', { class: 'small m0 mt8', text: `Armament in the game data but no swappable gun slots (${armGaps.listed.length}). Shown read-only on the ship page:` }) : null,
+      armGaps.listed.length ? el('p', { class: 'small muted', text: names(armGaps.listed) }) : null,
+      armGaps.none.length ? el('p', { class: 'small m0 mt8', text: `No weapons recorded at all (${armGaps.none.length}). Unarmed ships, or a data gap:` }) : null,
+      armGaps.none.length ? el('p', { class: 'small muted', text: names(armGaps.none) }) : null) : null;
     return el('div', { class: 'card' }, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
@@ -462,6 +495,7 @@ export function initBuilder(host) {
       const tidy = tidyShips(data.ships);
       data.ships = tidy.ships;
       hiddenShips = tidy.dropped;
+      armGaps = armamentGaps(tidy.ships);
       if (tidy.alias.has(saved.ship)) saved.ship = tidy.alias.get(saved.ship);
       saved.recent = [...new Set((saved.recent || []).map((id) => tidy.alias.get(id) || id))];
       partsById = indexParts(data.parts);

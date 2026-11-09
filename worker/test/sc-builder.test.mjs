@@ -438,3 +438,12 @@ test('the Cutlass\'s stock burst damage adds up to the wiki\'s own 2,797.8 for t
   assert.equal(split.turret.guns, 2);
   assert.equal(Math.round(split.turret.burst * 10) / 10, 1091.2);
 });
+
+import { slimArmament } from "../sc-builder.js";
+test('slimArmament keeps the stock armament summary, and a hardware-locked gimbal still gives gun slots', () => {
+  const a = slimArmament({ weaponry: { fixed_weapons: { dps_total: 900, weapons: [{ name: 'Panther', dps: 450 }, { name: 'Panther', dps: 450 }] }, turret_dps: 300, missiles: { count: 32 } }, turrets: { remote: [{ hardpoint_name: 'top', mounts: [{}, {}, {}, {}], weapons: [{ name: 'CF-337' }] }] }, crew: { weapon: 2 } });
+  assert.deepEqual(a.pilot.map((x) => x.name), ['Panther', 'Panther']);
+  assert.equal(a.turrets[0].mounts, 4); assert.equal(a.pilotDps, 900); assert.equal(a.missiles, 32); assert.equal(a.gunners, 2);
+  const slots = pilotGunSlots([{ name: 'hp_gun_1', type: 'Turret', editable: false, sizes: { min: 5, max: 5 }, compatible_types: [{ type: 'WeaponGun' }], ports: [] }], [{ name: 'Panther' }]);
+  assert.equal(slots.length, 1); assert.equal(slots[0].stockName, 'Panther');
+});
