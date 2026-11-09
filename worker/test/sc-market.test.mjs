@@ -137,10 +137,18 @@ test('rows without a system or place are filled from the terminals list, by id o
   assert.equal(parseTerminals(null).size, 0);
 });
 
-test('an old snapshot without the schema is rebuilt on the next request, once', async () => {
+test('an old snapshot is served at once and rebuilt in the background, and a failing rebuild never breaks the endpoint', async () => {
   const env = { SC_DATA: memoryKV(), UEX_API_TOKEN: 't' };
   env.SC_DATA.store.set('sc:market', JSON.stringify({ updatedAt: 'x', checkedAt: new Date().toISOString(), version: '4.0', prices: [{ commodity: 'Old', terminal: 'T', system: '', place: '' }], errors: [] }));
-  const body = await handleMarket(env, { waitUntil() {} });
-  assert.equal(body.prices.length, 3); assert.equal(body.prices[1].system, 'Pyro');
+  const jobs = [];
+  const body = await handleMarket(env, { waitUntil: (p) => jobs.push(p) });
+  assert.equal(body.prices.length, 1, 'the old snapshot is served straight away');
+  await Promise.all(jobs);
+  const fresh = await handleMarket(env, { waitUntil() {} });
+  assert.equal(fresh.prices.length, 3); assert.equal(fresh.prices[1].system, 'Pyro');
   const n = calls.length; await handleMarket(env, { waitUntil() {} }); assert.equal(calls.length, n);
+  // a store that throws on write must not take the endpoint down
+  const bad = { SC_DATA: { ...memoryKV(), async put() { throw new Error('KV PUT failed: 429'); } }, UEX_API_TOKEN: 't' };
+  const out = await handleMarket(bad, { waitUntil() {} });
+  assert.equal(out.enabled, true); assert.deepEqual(out.prices, []);
 });

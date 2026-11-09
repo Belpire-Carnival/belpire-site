@@ -168,16 +168,24 @@ export async function refreshMarket(env, { force = false } = {}) {
   return market;
 }
 
+// A rebuild must never take the endpoint down: one at a time per isolate, and any failure falls back to the stored snapshot.
+let inFlight = null;
+async function safeRefresh(env, opts) {
+  if (!inFlight) inFlight = refreshMarket(env, opts).catch((e) => { console.warn('Market rebuild failed:', e?.message || e); return null; }).finally(() => { inFlight = null; });
+  return inFlight;
+}
+
 // GET /api/sc-market
 export async function handleMarket(env, ctx) {
   if (!env.UEX_API_TOKEN) return { enabled: false, prices: [], version: null, updatedAt: null };
   let market = await readJson(env.SC_DATA, MARKET_KEY);
-  if (!market || market.schema !== MARKET_SCHEMA) market = (await refreshMarket(env, { force: true })) ?? market;
-  else if (Date.now() - Date.parse(market.checkedAt || 0) > STALE_MS) ctx.waitUntil(refreshMarket(env, { force: true }));
+  if (!market) market = await safeRefresh(env);
+  // An old or stale snapshot is served as it is while a new one is built in the background.
+  else if (market.schema !== MARKET_SCHEMA || Date.now() - Date.parse(market.checkedAt || 0) > STALE_MS) ctx.waitUntil(safeRefresh(env, { force: true }));
   if (!market) return { enabled: true, prices: [], version: null, updatedAt: null };
   // `errors` can name upstream fields; the page only needs to know whether data is fresh.
   const { errors, ...pub } = market;
-  return { enabled: true, ...pub, partial: errors.length > 0 };
+  return { enabled: true, ...pub, partial: (errors || []).length > 0 };
 }
 
 // ------------------------------------------------------------------ ship lookup (Star Citizen Wiki API)
