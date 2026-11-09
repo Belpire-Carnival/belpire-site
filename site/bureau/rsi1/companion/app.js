@@ -72,13 +72,12 @@ for (const [group, items] of NAV) {
   for (const [id, label] of items) nav.append(el('a', { href: '#' + id, 'data-v': id }, icon(id), label));
 }
 for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
-// Phone dock: the five tabs used most, plus the full menu.
-const DOCK = [['ops', 'Ops'], ['contracts', 'Jobs'], ['calc', 'Avionics'], ['combat', 'Ballistics']];
+// Bottom bar: every module as an icon tab, the signed-in user pinned at the right end.
 {
   const dock = $('#dock');
-  for (const [id, label] of DOCK) dock.append(el('a', { href: '#' + id, 'data-d': id }, icon(id), el('span', { text: label })));
-  dock.append(el('button', { type: 'button', id: 'dockMore', 'aria-label': 'Open the full menu' }, icon('manual'), el('span', { text: 'More' })));
-  $('#dockMore').addEventListener('click', () => $('#menuBtn').click());
+  const tabs = el('div', { class: 'dock-tabs', role: 'presentation' });
+  for (const [id, label] of VIEWS) tabs.append(el('a', { href: '#' + id, 'data-d': id }, icon(id), el('span', { text: label })));
+  dock.append(tabs, $('#acct'));
 }
 // Honest status line: what the page can actually tell about itself.
 function paintStatus() {
@@ -104,7 +103,7 @@ function route() {
   const id = (location.hash || '#ops').slice(1).split('?')[0];
   const v = VIEWS.some(([k]) => k === id) ? id : 'ops';
   for (const s of $$('section.view')) s.classList.toggle('on', s.id === 'v-' + v);
-  for (const d of $$('#dock a')) { if (d.dataset.d === v) d.setAttribute('aria-current', 'page'); else d.removeAttribute('aria-current'); }
+  for (const d of $$('#dock a')) { if (d.dataset.d === v) { d.setAttribute('aria-current', 'page'); d.scrollIntoView({ inline: 'center', block: 'nearest' }); } else d.removeAttribute('aria-current'); }
   for (const a of $$('a[data-v]', nav)) { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }
   { const cur = $('a[data-v="' + v + '"]', nav); $('#menuNow').textContent = cur ? cur.textContent : 'Menu'; setMenu(false); }
   if (v === 'fleet') drawRadar();
@@ -558,6 +557,25 @@ $('#flAdd').addEventListener('click', () => {
 // basic figures typed in by hand.
 const AX = [['scm', 'SCM'], ['max', 'NAV'], ['burst', 'DPS'], ['shieldHp', 'Shield'], ['hull', 'Hull'], ['cargo', 'Cargo'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['qtRange', 'QT range']];
 const stat = (s, k) => { const v = s?.stats?.[k] ?? (k === 'max' ? s?.nav : s?.[k]); return C.nOrNull(v); };
+// Right-click (or long-press) a ship to remove it. A small menu, no browser dialogs.
+const ctxSheet = new CSSStyleSheet(); document.adoptedStyleSheets = [...document.adoptedStyleSheets, ctxSheet];
+function ctxRemove(target, ship) {
+  target.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    for (const m of $$('.ctxmenu')) m.remove();
+    const m = el('div', { class: 'ctxmenu', role: 'menu' });
+    const del = el('button', { type: 'button', role: 'menuitem', class: 'danger', text: 'Remove ' + ship.name + ' from fleet' });
+    const no = el('button', { type: 'button', role: 'menuitem', text: 'Cancel' });
+    const close = () => { m.remove(); document.removeEventListener('pointerdown', away, true); };
+    const away = (ev) => { if (!m.contains(ev.target)) close(); };
+    del.addEventListener('click', () => { close(); S.fleet = S.fleet.filter((x) => x !== ship); Store.saveFleet(); renderFleet(); toast('Removed ' + ship.name); });
+    no.addEventListener('click', close);
+    m.append(del, no); document.body.append(m);
+    const x = Math.max(8, Math.min(e.clientX, window.innerWidth - m.offsetWidth - 8)), y = Math.max(8, Math.min(e.clientY, window.innerHeight - m.offsetHeight - 8));
+    ctxSheet.replaceSync(`.ctxmenu{left:${Math.round(x)}px;top:${Math.round(y)}px}`);
+    document.addEventListener('pointerdown', away, true); del.focus();
+  });
+}
 function renderFleet() {
   const tb = $('#flList'); tb.textContent = '';
   if (!S.fleet.length) tb.append(el('tr', {}, el('td', { colspan: '11', class: 'muted small', text: 'No ships yet. Save a build from the Calculator, or add one here.' })));
@@ -566,10 +584,11 @@ function renderFleet() {
     del.addEventListener('click', () => { S.fleet = S.fleet.filter((x) => x !== s); Store.saveFleet(); renderFleet(); });
     const open = s.code ? el('a', { class: 'btnlink', href: `#calc?b=${s.code}`, text: 'Open' }) : null;
     const nm = el('td', {}, el('div', { class: 'row' }, photo(s.img, '', el('span', { class: 'photo thumb none' }), 'photo thumb'), el('span', {}, el('b', { text: s.name }), s.swaps ? el('span', { class: 'chip', text: `${s.swaps} swap${s.swaps === 1 ? '' : 's'}` }) : null)));
-    tb.append(el('tr', {}, nm, el('td', { class: 'num', text: C.fmt(stat(s, 'scm')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'max')) }),
+    const row = el('tr', { title: 'Right-click to remove' }, nm, el('td', { class: 'num', text: C.fmt(stat(s, 'scm')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'max')) }),
       el('td', { class: 'num', text: [s.pitch, s.yaw, s.roll].map((v) => C.fmt(v)).join(' / ') }), el('td', { class: 'num', text: C.fmt(stat(s, 'burst')) }),
       el('td', { class: 'num', text: C.fmt(stat(s, 'shieldHp')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'hull')) }), el('td', { class: 'num', text: C.fmt(stat(s, 'cargo')) }),
-      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, open), el('td', {}, del)));
+      el('td', { class: 'small muted', text: s.role || '' }), el('td', {}, open), el('td', {}, del));
+    ctxRemove(row, s); tb.append(row);
   }
   for (const [id, i] of [['#flA', 0], ['#flB', 1]]) {
     const sel = $(id), prev = sel.value; sel.textContent = '';
@@ -601,8 +620,10 @@ function renderStatTable(ships) {
   const host = $('#flStats'); host.textContent = '';
   if (!ships.length) return;
   const [a, b] = ships;
+  const head = (sh) => { const t = el('th', { class: 'num', text: sh.name, title: 'Right-click to remove' }); ctxRemove(t, sh); return t; };
   for (const [group, rows] of STAT_GROUPS) {
     const body = el('tbody');
+    const thA = head(a), thB = b ? head(b) : null;
     for (const [k, label, better, unit] of rows) {
       const va = stat(a, k), vb = b ? stat(b, k) : null;
       if (va == null && vb == null) continue;
@@ -612,7 +633,7 @@ function renderStatTable(ships) {
         b ? el('td', { class: 'w-num' }, duo(va ?? 0, vb ?? 0)) : null));
     }
     if (!body.childNodes.length) continue;
-    host.append(el('h3', { class: 'mt12', text: group }), el('div', { class: 'scrollx' }, el('table', { class: 'cmp' }, el('thead', {}, el('tr', {}, el('th', { text: 'Stat' }), el('th', { class: 'num', text: a.name }), b ? el('th', { class: 'num', text: b.name }) : null, b ? el('th', { text: '' }) : null)), body)));
+    host.append(el('h3', { class: 'mt12', text: group }), el('div', { class: 'scrollx' }, el('table', { class: 'cmp' }, el('thead', {}, el('tr', {}, el('th', { text: 'Stat' }), thA, thB, b ? el('th', { text: '' }) : null)), body)));
   }
 }
 
