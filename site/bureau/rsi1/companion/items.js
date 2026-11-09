@@ -9,12 +9,12 @@ export const cleanImg = (p) => (typeof p === 'string' && IMG_OK.test(p) ? p : ''
 const cache = new Map();
 let ctl = null;
 
-async function search(q) {
-  const key = q.toLowerCase();
+async function search(q, type = '') {
+  const key = `${type}:${q.toLowerCase()}`;
   if (cache.has(key)) return cache.get(key);
   ctl?.abort();
   ctl = new AbortController();
-  const res = await fetch(`/api/sc-item?q=${encodeURIComponent(q)}`, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+  const res = await fetch(`/api/sc-item?q=${encodeURIComponent(q)}${type ? `&type=${type}` : ''}`, { signal: ctl.signal, headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(String(res.status));
   const j = await res.json();
   const items = Array.isArray(j.items) ? j.items : [];
@@ -23,7 +23,7 @@ async function search(q) {
 }
 
 // Adds a suggestion list under a text input. onPick({ name, img }) runs when an entry is chosen.
-export function attachPicker(input, onPick) {
+export function attachPicker(input, onPick, { type = '' } = {}) {
   const box = document.createElement('div');
   box.className = 'picklist';
   box.hidden = true;
@@ -40,7 +40,7 @@ export function attachPicker(input, onPick) {
     timer = setTimeout(async () => {
       note('Searching…');
       try {
-        const items = await search(q);
+        const items = await search(q, type);
         if (input.value.trim() !== q) return;
         if (!items.length) return note('No match. Your own text is kept.');
         box.textContent = '';
@@ -54,7 +54,7 @@ export function attachPicker(input, onPick) {
           t.append(n, m);
           b.append(photo(cleanImg(it.img), '', (() => { const s = document.createElement('span'); s.className = 'photo thumb none'; return s; })(), 'photo thumb'), t);
           b.addEventListener('mousedown', (e) => e.preventDefault());
-          b.addEventListener('click', () => { input.value = it.name; onPick({ name: it.name, img: cleanImg(it.img), info: String(it.info || '').slice(0, 220) }); close(); });
+          b.addEventListener('click', () => { input.value = it.name; onPick({ name: it.name, img: cleanImg(it.img), info: String(it.info || '').slice(0, 220), wpn: it.wpn || null }); close(); });
           box.append(b);
         }
         box.hidden = false;

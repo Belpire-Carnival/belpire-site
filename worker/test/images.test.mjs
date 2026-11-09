@@ -71,3 +71,13 @@ test('item search builds a stat line from the record, and the CSP allows only th
   assert.match(headers, /img-src 'self' data: blob: [^;]*https:\/\/media\.starcitizen\.tools;/);
   assert.doesNotMatch(headers, /(?:script|connect|default)-src[^;]*media\.starcitizen\.tools/);
 });
+
+test('weaponStats maps a wiki weapon record onto the Ballistics Matrix fields', async () => {
+  const { weaponStats, slimItem } = await import('../sc-img.js');
+  const it = { uuid: 'u', name: 'Test Pistol', personal_weapon: { capacity: 30, pellets_per_shot: 1, rpm: 700, fire_mode: 'Burst', modes: [{ mode: 'Burst', type: 'burst', rpm: 700, shot_count: 3, cooldown_time: 0.1 }, { mode: 'Single', type: 'single', rpm: 500 }] }, damage: { alpha: { physical: 0, energy: 18 } } };
+  assert.deepEqual(weaponStats(it), { phys: 0, energy: 18, pellets: 1, rpm: 700, mag: 30, mode: 'BURST', burst: 3, cooldown: 0.1 });
+  const shotgun = { personal_weapon: { capacity: 8, pellets_per_shot: 8, fire_mode: 'Single', modes: [{ mode: 'Single', type: 'single', rpm: 60 }] }, damage: { alpha: { physical: 80 } } };
+  assert.deepEqual(weaponStats(shotgun), { phys: 10, energy: 0, pellets: 8, rpm: 60, mag: 8, mode: 'AUTO', burst: null, cooldown: null });
+  assert.equal(weaponStats({ name: 'Helmet' }), null);
+  assert.equal(slimItem({ name: 'Test Pistol', ...it }).wpn.mag, 30);
+});

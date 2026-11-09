@@ -6,7 +6,7 @@ import { initBuilder } from './builder.js';
 import { icon, bars, duo } from './viz.js';
 import { heroArt, photo } from './art.js';
 import { STAT_GROUPS, STAT_KEYS } from './builder-core.js';
-import { cleanImg } from './items.js';
+import { cleanImg, attachPicker } from './items.js';
 import { initLoadouts } from './loadouts.js';
 import { initOutfits } from './outfits.js';
 import { normalize as normLoadout } from './loadouts.js';
@@ -500,6 +500,15 @@ fields($('#tkFields'), [
   { k: 'burst', label: 'Shots / burst', step: '1' }, { k: 'cooldown', label: 'Burst cooldown (s)' },
   { k: 'hp', label: 'Target health' }, { k: 'zone', label: 'Hit-zone multiplier' },
 ], tk, () => { ls.set('tk.inputs', tk); calcTTK(); });
+// Type two letters of a weapon and pick it: its damage, rate of fire, magazine and fire mode fill the form from the item database.
+attachPicker($('#tkFields [data-k="name"]'), ({ name, wpn }) => {
+  tk.name = name;
+  if (!wpn) { ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name']); return toast('No weapon numbers for that item. Enter them by hand.'); }
+  const o = { phys: wpn.phys, energy: wpn.energy, pellets: wpn.pellets, rpm: wpn.rpm ?? '', mag: wpn.mag ?? '', mode: wpn.mode, burst: wpn.burst ?? '', cooldown: wpn.cooldown ?? '' };
+  Object.assign(tk, o);
+  ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name', ...Object.keys(o)]); calcTTK();
+  toast(tk.reload ? 'Filled from the item database' : 'Filled from the item database. Reload time is not listed: enter it.');
+}, { type: 'weapon' });
 const AC = ['NONE', 'LIGHT', 'MEDIUM', 'HEAVY'];
 for (const a of AC) {
   tk.armor[a] = tk.armor[a] || {};

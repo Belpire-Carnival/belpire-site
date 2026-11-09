@@ -59,19 +59,39 @@ export function itemInfo(it) {
   if (buys.length) bits.push(`from ${Math.min(...buys).toLocaleString('en-US')} aUEC`);
   return bits.join(' · ').slice(0, 220);
 }
+// A personal weapon's numbers in the shape the Ballistics Matrix form takes. Damage is per projectile (the wiki
+// lists alpha damage per shot, so it is divided by the projectiles per shot). The wiki has no reload time.
+const r3 = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v) * 1000) / 1000 : null);
+export function weaponStats(it) {
+  const pw = it?.personal_weapon;
+  if (!pw || typeof pw !== 'object') return null;
+  const pellets = Math.max(1, Math.round(Number(pw.pellets_per_shot) || 1));
+  const alpha = (it.damage || pw.damage)?.alpha || {};
+  const modes = Array.isArray(pw.modes) ? pw.modes : [];
+  const m = modes.find((x) => x?.mode === pw.fire_mode) || modes[0] || {};
+  const burst = m.type === 'burst';
+  const per = (v) => { const n = r3(Number(v) / pellets); return n && n > 0 ? n : 0; };
+  const out = {
+    phys: per(alpha.physical), energy: per(alpha.energy), pellets,
+    rpm: r3(m.rpm ?? pw.rpm), mag: r3(pw.capacity ?? pw.magazine_size ?? it.magazine?.max_ammo_count),
+    mode: burst ? 'BURST' : 'AUTO', burst: burst ? r3(m.shot_count) : null, cooldown: burst ? r3(m.cooldown_time) : null,
+  };
+  return out.phys || out.energy ? out : null;
+}
 export function slimItem(it) {
   if (!it || typeof it !== 'object' || !it.name) return null;
   const s = (v, n) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim().slice(0, n));
-  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it) };
+  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it), wpn: weaponStats(it) };
 }
 
 export async function handleItem(url, env, ctx) {
   const q = (url.searchParams.get('q') || '').replace(/\s+/g, ' ').trim().slice(0, 60);
   if (q.length < 2) return { status: 400, body: { error: 'type at least two letters' } };
   const base = String(env.SC_WIKI_API || WIKI_API).replace(/\/+$/, '');
-  const target = `${base}/items?filter%5Bname%5D=${encodeURIComponent(q)}&page%5Bsize%5D=12`;
+  const weapon = url.searchParams.get('type') === 'weapon';
+  const target = `${base}/items?filter%5Bname%5D=${encodeURIComponent(q)}${weapon ? '&filter%5Btype%5D=WeaponPersonal' : ''}&page%5Bsize%5D=12`;
   const cache = typeof caches !== 'undefined' ? caches.default : null;
-  const key = new Request(`https://item.cache.invalid/${encodeURIComponent(q.toLowerCase())}`);
+  const key = new Request(`https://item.cache.invalid/${weapon ? 'w/' : ''}${encodeURIComponent(q.toLowerCase())}`);
   const hit = cache ? await cache.match(key) : null;
   let json;
   if (hit) json = await hit.json();
