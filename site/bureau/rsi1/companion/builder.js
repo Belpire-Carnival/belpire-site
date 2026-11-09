@@ -9,6 +9,7 @@ import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
 
 const API = '/api/sc-builder';
+const SHOP_API = '/api/sc-shop';
 const KEY = 'arsenal.builder';
 const MAX_SAVED = 40;
 const MAX_NAMED = 30;
@@ -29,6 +30,27 @@ const el = (tag, attrs = {}, ...kids) => {
   return e;
 };
 
+const nrm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+// One entry per ship name and maker (the wiki lists event and skin copies under the same name), best-documented first,
+// and only ships that have stats. Pictures are required once the data carries them for a fair share of ships.
+export function tidyShips(ships) {
+  const has = (x) => (x.scm > 0 || x.stats?.hull > 0 || x.api?.shieldHp > 0 || x.cargo > 0) && x.slots?.length;
+  const score = (x) => (x.img ? 4 : 0) + (x.stats?.hull > 0 ? 2 : 0) + (x.api?.shieldHp > 0 ? 1 : 0) + (x.scm > 0 ? 1 : 0) + Math.min(x.slots?.length || 0, 60) * 0.01 + (x.buy?.length ? 0.5 : 0);
+  const withImg = ships.filter((x) => x.img).length;
+  const needImg = withImg >= ships.length * 0.25;
+  const best = new Map(), alias = new Map();
+  for (const x of ships) {
+    if (!has(x)) continue;
+    const k = nrm(x.mfr) + '|' + nrm(x.name);
+    const cur = best.get(k);
+    if (!cur) best.set(k, x);
+    else if (score(x) > score(cur)) { alias.set(cur.id, x.id); best.set(k, x); } else alias.set(x.id, cur.id);
+  }
+  if (needImg) for (const [k, x] of best) if (!x.img) best.delete(k);
+  return { ships: [...best.values()], alias, hidden: ships.length - best.size };
+}
+const aUEC = (v) => `${Number(v).toLocaleString('en-US')} aUEC`;
+
 const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 });
 const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? 0;
 const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive', 'MissileLauncher'];
@@ -36,6 +58,7 @@ const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar:
 
 export function initBuilder(host) {
   let data = null;
+  let shop = null; // { <ship name>: { buy: [...], rent: [...] } } from /api/sc-shop
   let partsById = new Map();
   let started = false;
   let saved = store.read(); // { ship, recent: [ids], builds: { shipId: { slotId: partId } }, named: [{ id, name, ship, ov, at }], cmp }
@@ -349,7 +372,26 @@ export function initBuilder(host) {
     return el('div', { class: 'card accent shipcard' }, photo(s.img, s.name, shipArt(s), 'photo ship'),
       el('div', {}, el('div', { class: 'lbl', text: s.mfr }), el('h3', { class: 'big', text: s.name }),
         el('div', { class: 'tagrow' }, ...bits.map((b) => el('span', { class: 'tag2', text: b })), n ? el('span', { class: 'tag2', text: `${n} swap${n === 1 ? '' : 's'}` }) : null),
-        s.msrp ? el('p', { class: 'small muted mt8', text: `Pledge price from ${num(s.msrp)} USD. In-game prices are not in the wiki data for most ships.` }) : null));
+        s.msrp ? el('p', { class: 'small muted mt8', text: `Pledge price from ${num(s.msrp)} USD.` }) : null,
+        shopBlock(s)));
+  }
+
+  // Where the ship is sold and rented in game (UEX Corp price lists, joined by ship name).
+  function shopBlock(s) {
+    if (!shop) return el('p', { class: 'small muted mt8', text: 'Loading in-game prices…' });
+    const e = shop[nrm(s.name)] || shop[nrm(`${s.mfr} ${s.name}`)] || { buy: [], rent: [] };
+    const list = (rows, none) => {
+      if (!rows.length) return el('p', { class: 'small muted', text: none });
+      const t = el('table', { class: 'shoptbl' });
+      for (const r of rows) t.append(el('tr', {}, el('td', { class: 'num', text: aUEC(r.p) }), el('td', {}, el('b', { text: r.at }), el('div', { class: 'small muted', text: [r.where, r.near && r.near !== r.where ? r.near : '', r.sys].filter(Boolean).join(' · ') }))));
+      return t;
+    };
+    return el('div', { class: 'shopbox mt8' },
+      el('div', { class: 'lbl', text: e.buy.length ? `Buy in game · from ${aUEC(e.buy[0].p)}` : 'Buy in game' }),
+      list(e.buy, 'Not sold for aUEC that UEX has recorded. It may be pledge-only or not on sale in the current patch.'),
+      el('div', { class: 'lbl mt8', text: e.rent.length ? `Rent in game · from ${aUEC(e.rent[0].p)}` : 'Rent in game' }),
+      list(e.rent, 'No rental listed.'),
+      el('p', { class: 'small muted mt8', text: 'Prices as recorded by players on UEX Corp. Check the shop terminal before you commit.' }));
   }
 
   function summaryCard(base, mine, s) {
@@ -398,7 +440,12 @@ export function initBuilder(host) {
       const json = await res.json();
       if (!json.ready) { started = false; return message('Ship data is still being collected. Check back in a little while.', true); }
       data = json;
+      const tidy = tidyShips(data.ships);
+      data.ships = tidy.ships;
+      if (tidy.alias.has(saved.ship)) saved.ship = tidy.alias.get(saved.ship);
+      saved.recent = [...new Set((saved.recent || []).map((id) => tidy.alias.get(id) || id))];
       partsById = indexParts(data.parts);
+      loadShop();
       if (!data.ships.some((x) => x.id === saved.ship)) saved.ship = (data.ships.find((x) => x.name === 'Cutlass Black') || data.ships.find((x) => x.name === 'Gladius') || data.ships[0]).id;
       applyLink();
       paint();
@@ -406,6 +453,15 @@ export function initBuilder(host) {
       started = false;
       message('The ship data could not be loaded.', true);
     }
+  }
+
+  async function loadShop() {
+    try {
+      const res = await fetch(SHOP_API, { headers: { Accept: 'application/json' } });
+      const j = res.ok ? await res.json() : null;
+      shop = j && j.ready ? j.ships : {};
+    } catch { shop = {}; }
+    if (data) paint();
   }
 
   return { show };

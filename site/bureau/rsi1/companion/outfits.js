@@ -3,6 +3,7 @@
 // Saved in this browser and, when signed in, on the player's profile (everything under "arsenal.*").
 import { svgEl } from './viz.js';
 import { attachPicker, cleanImg, thumbStrip } from './items.js';
+import { createViewer, boxPart } from './viewer3d.js';
 
 const KEY = 'arsenal.outfits';
 const MAX = 40;
@@ -11,6 +12,11 @@ export const PIECES = [['undersuit', 'Undersuit'], ['helmet', 'Helmet'], ['core'
 // A fixed swatch set, so a saved colour can never be anything but one of these.
 export const SWATCHES = [['Graphite', '#3a3f45'], ['Steel', '#8b97a3'], ['Bone', '#d8d2c0'], ['Desert', '#b59a62'], ['Olive', '#5f6b3c'], ['Forest', '#2f5a3e'], ['Navy', '#27415f'], ['Azure', '#3f8fc4'], ['Crimson', '#9c2f2f'], ['Rust', '#b4572f'], ['Bronze', '#c49a4a'], ['Violet', '#6b4c8f']];
 const HEX = new Set(SWATCHES.map((s) => s[1]));
+// Which of the three legacy colours each slot's dye maps to, and which mannequin parts each slot lights up.
+const TINT_IDX = { undersuit: 0, arms: 0, core: 1, legs: 1, helmet: 2, boots: 2, backpack: 2 };
+export const SLOT_PARTS = { undersuit: ['Torso', 'ArmL', 'ArmR', 'LegL', 'LegR'], helmet: ['Head', 'Neck'], core: ['Torso'], arms: ['ArmL', 'ArmR', 'HandL', 'HandR'], legs: ['LegL', 'LegR'], boots: ['FootL', 'FootR'], backpack: ['Pack'] };
+export const partsFor = (pieces) => [...new Set(PIECES.flatMap(([k]) => (pieces[k] ? SLOT_PARTS[k] : [])))];
+const PACK = boxPart(-0.17, 1.0, -0.24, 0.17, 1.45, -0.11);
 
 const read = () => { try { const v = JSON.parse(localStorage.getItem(KEY)); return Array.isArray(v) ? v : []; } catch { return []; } };
 const write = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
@@ -31,7 +37,12 @@ export function normalize(o) {
   const imgs = {}, infos = {};
   for (const [k] of PIECES) { imgs[k] = pieces[k] ? cleanImg(o?.imgs?.[k]) : ''; infos[k] = pieces[k] ? clean(o?.infos?.[k], 220) : ''; }
   const colors = [0, 1, 2].map((i) => (HEX.has(o?.colors?.[i]) ? o.colors[i] : SWATCHES[[0, 3, 10][i]][1]));
+  const tints = {};
+  for (const [k] of PIECES) tints[k] = HEX.has(o?.tints?.[k]) ? o.tints[k] : colors[TINT_IDX[k]];
+  if (o?.tints) { colors[0] = tints.undersuit; colors[1] = tints.core; colors[2] = tints.helmet; }
   return {
+    sex: o?.sex === 'female' ? 'female' : 'male',
+    tints,
     id: clean(o?.id, 30) || `o${Date.now().toString(36)}${Math.floor(Math.random() * 1e3)}`,
     name: clean(o?.name, 50) || 'Untitled outfit',
     style: STYLES.includes(o?.style) ? o.style : 'Other',
@@ -64,12 +75,12 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
   let editing = null;
   const persist = () => write(list);
 
-  function swatchPicker(o, i, onPick) {
-    const wrap = el('div', { class: 'swatches', role: 'radiogroup', 'aria-label': ['Base colour', 'Armor colour', 'Accent colour'][i] });
+  function swatchRow(cur, onPick, label) {
+    const wrap = el('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label });
     for (const [name, hex] of SWATCHES) {
-      const b = el('button', { type: 'button', class: `sw${o.colors[i] === hex ? ' sel' : ''}`, role: 'radio', 'aria-checked': o.colors[i] === hex ? 'true' : 'false', 'aria-label': name, title: name, 'data-hex': hex });
-      b.append(svgEl('svg', { viewBox: '0 0 16 16', width: '18', height: '18' }, svgEl('rect', { width: '16', height: '16', rx: '3', fill: hex })));
-      b.addEventListener('click', () => { o.colors[i] = hex; onPick(); });
+      const b = el('button', { type: 'button', class: `sw${cur === hex ? ' sel' : ''}`, role: 'radio', 'aria-checked': cur === hex ? 'true' : 'false', 'aria-label': name, title: name, 'data-hex': hex });
+      b.append(svgEl('svg', { viewBox: '0 0 16 16', width: '16', height: '16' }, svgEl('rect', { width: '16', height: '16', rx: '3', fill: hex })));
+      b.addEventListener('click', () => onPick(hex));
       wrap.append(b);
     }
     return wrap;
@@ -82,35 +93,57 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
     style.value = o.style;
     const lo = el('select', { 'aria-label': 'Linked loadout' }, el('option', { value: '', text: 'No linked loadout' }), ...getLoadouts().map((l) => el('option', { value: l.id, text: l.name })));
     lo.value = o.loadout;
-    const ins = {};
-    const fields = PIECES.map(([k, label]) => {
-      ins[k] = el('input', { type: 'text', maxlength: '80', value: o.pieces[k], 'aria-label': label, autocomplete: 'off' });
-      let picked = o.pieces[k];
-      ins[k].addEventListener('input', () => { o.pieces[k] = clean(ins[k].value); if (ins[k].value !== picked) { o.imgs[k] = ''; o.infos[k] = ''; } preview(); });
-      const f = el('label', { class: 'f' }, label, ins[k]);
-      attachPicker(ins[k], ({ name, img, info }) => { picked = name; o.pieces[k] = name; o.imgs[k] = img; o.infos[k] = info || ''; preview(); });
-      return f;
-    });
     const notes = el('textarea', { rows: '2', maxlength: '400', 'aria-label': 'Notes', placeholder: 'Where you got it, dye, what it goes with' });
     notes.value = o.notes;
-    const pv = el('div', { class: 'mq-wrap' });
-    const preview = () => { pv.textContent = ''; pv.append(mannequin(o)); };
-    const pickers = el('div', {});
-    const drawPickers = () => {
-      pickers.textContent = '';
-      ['Base', 'Armor', 'Accent'].forEach((label, i) => pickers.append(el('div', { class: 'mt6' }, el('span', { class: 'small muted', text: label }), swatchPicker(o, i, () => { drawPickers(); preview(); }))));
+
+    // Left: the holographic viewport
+    const canvas = el('canvas', { class: 'holo', 'aria-label': 'Rotating wireframe mannequin. Drag to rotate, scroll to zoom.' });
+    const fallback = el('div', { class: 'mq-wrap' });
+    const viewport = el('div', { class: 'viewport' }, canvas);
+    let viewer = null;
+    const showModel = () => {
+      if (!viewer) return;
+      viewer.load(`models/${o.sex}.glb`, { Pack: PACK }).then(() => viewer.setActive(partsFor(o.pieces))).catch(() => { viewport.replaceChildren(fallback); fallback.replaceChildren(mannequin(o)); });
     };
-    drawPickers(); preview();
-    const grab = () => normalize({ ...o, imgs: o.imgs, infos: o.infos, pieces: o.pieces, name: name.value, style: style.value, loadout: lo.value, notes: notes.value });
+    const sync = () => { if (viewer) viewer.setActive(partsFor(o.pieces)); else { fallback.replaceChildren(mannequin(o)); } };
+    const sexBtns = ['male', 'female'].map((sx) => el('button', { type: 'button', class: `ghost${o.sex === sx ? ' on' : ''}`, 'aria-pressed': String(o.sex === sx), text: sx === 'male' ? 'Male' : 'Female', onclick: () => { o.sex = sx; sexBtns.forEach((b, i) => { const on = ['male', 'female'][i] === sx; b.className = `ghost${on ? ' on' : ''}`; b.setAttribute('aria-pressed', String(on)); }); showModel(); } }));
+    const vp = el('div', { class: 'holo-col' }, viewport, el('div', { class: 'row holo-bar' }, ...sexBtns, el('span', { class: 'small muted', text: 'Drag to rotate · scroll to zoom · double-click to reset' })));
+
+    // Right: the equipment matrix, one angular card per slot with its own dye row
+    const grid = el('div', { class: 'slots' });
+    const cards = {};
+    const drawSlot = (k, label) => {
+      const c = cards[k]; c.textContent = '';
+      const filled = !!o.pieces[k];
+      c.className = `slot${filled ? ' filled' : ''}`;
+      const input = el('input', { type: 'text', maxlength: '80', value: o.pieces[k], placeholder: `${label}…`, 'aria-label': label, autocomplete: 'off' });
+      let picked = o.pieces[k];
+      input.addEventListener('input', () => {
+        o.pieces[k] = clean(input.value);
+        if (input.value !== picked) { o.imgs[k] = ''; o.infos[k] = ''; }
+        c.classList.toggle('filled', !!o.pieces[k]); sync();
+      });
+      const pic = o.imgs[k] ? el('img', { src: o.imgs[k], alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : el('span', { class: 'ph', 'aria-hidden': 'true', text: label[0] });
+      const dye = el('span', { class: 'dye' }, swatchRow(o.tints[k], (hex) => { o.tints[k] = hex; o.colors[0] = o.tints.undersuit; o.colors[1] = o.tints.core; o.colors[2] = o.tints.helmet; drawSlot(k, label); }, `${label} dye`));
+      c.append(el('div', { class: 'slot-top' }, el('div', { class: 'slot-pic' }, pic), el('div', { class: 'slot-body' }, el('span', { class: 'slot-label', text: label }), input)),
+        ...(o.infos[k] ? [el('p', { class: 'slot-stats', text: o.infos[k] })] : []), dye);
+      attachPicker(input, ({ name: nm, img, info }) => { picked = nm; o.pieces[k] = nm; o.imgs[k] = img; o.infos[k] = info || ''; drawSlot(k, label); sync(); });
+    };
+    for (const [k, label] of PIECES) { cards[k] = el('div', { class: 'slot' }); grid.append(cards[k]); drawSlot(k, label); }
+
+    const grab = () => normalize({ ...o, name: name.value, style: style.value, loadout: lo.value, notes: notes.value });
+    const stop = () => { if (viewer) { viewer.destroy(); viewer = null; } };
     const save = el('button', { type: 'button', class: 'primary', text: 'Save outfit', onclick: () => {
-      const n = grab(); n.at = Date.now();
+      const n = grab(); n.at = Date.now(); stop();
       list = [n, ...list.filter((x) => x.id !== n.id)].slice(0, MAX); persist(); editing = null; toast('Outfit saved'); paint();
     } });
-    return el('div', { class: 'card accent' }, el('h3', { text: list.some((x) => x.id === o.id) ? 'Edit outfit' : 'New outfit' }),
-      el('div', { class: 'wardrobe-edit' }, pv, el('div', {},
-        el('div', { class: 'fields' }, el('label', { class: 'f' }, 'Name', name), el('label', { class: 'f' }, 'Style', style), el('label', { class: 'f' }, 'Linked loadout', lo)),
-        el('div', { class: 'fields mt10' }, ...fields), pickers, el('div', { class: 'mt10' }, el('label', { class: 'f' }, 'Notes', notes)))),
-      el('div', { class: 'row mt10' }, save, el('button', { type: 'button', class: 'ghost', text: 'Cancel', onclick: () => { editing = null; paint(); } })));
+    const root = el('div', { class: 'card accent building' }, el('h3', { text: list.some((x) => x.id === o.id) ? 'Edit outfit' : 'New outfit' }),
+      el('div', { class: 'fields' }, el('label', { class: 'f' }, 'Name', name), el('label', { class: 'f' }, 'Style', style), el('label', { class: 'f' }, 'Linked loadout', lo)),
+      el('div', { class: 'bb mt10' }, vp, grid),
+      el('div', { class: 'mt10' }, el('label', { class: 'f' }, 'Notes', notes)),
+      el('div', { class: 'row mt10' }, save, el('button', { type: 'button', class: 'ghost', text: 'Cancel', onclick: () => { stop(); editing = null; paint(); } })));
+    queueMicrotask(() => { try { viewer = createViewer(canvas); } catch { viewer = null; } if (viewer) showModel(); else { viewport.replaceChildren(fallback); sync(); } });
+    return root;
   }
 
   function card(o) {

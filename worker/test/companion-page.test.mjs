@@ -61,6 +61,8 @@ test('the ship builder only reads our own /api/sc-builder, builds its page with 
   assert.deepEqual(urls, []); // the endpoint is a named constant, checked below
   assert.match(builder, /const API = '\/api\/sc-builder';/);
   assert.match(builder, /fetch\(API,/);
+  assert.match(builder, /const SHOP_API = '\/api\/sc-shop';/);
+  assert.match(builder, /fetch\(SHOP_API,/);
   assert.doesNotMatch(builder + builderCore, /innerHTML|insertAdjacentHTML|XMLHttpRequest|WebSocket|sendBeacon|eval\(|new Function|setAttribute\(\s*['"]style['"]|\.style\./);
   assert.doesNotMatch(builder + builderCore, /https?:\/\//);
   assert.match(html, /id="builder"/);
