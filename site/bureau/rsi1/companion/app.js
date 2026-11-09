@@ -505,10 +505,12 @@ attachPicker($('#tkFields [data-k="name"]'), ({ name, wpn }) => {
   tk.name = name;
   if (!wpn) { ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name']); return toast('No weapon numbers for that item. Enter them by hand.'); }
   const o = { phys: wpn.phys, energy: wpn.energy, pellets: wpn.pellets, rpm: wpn.rpm ?? '', mag: wpn.mag ?? '', mode: wpn.mode, burst: wpn.burst ?? '', cooldown: wpn.cooldown ?? '' };
+  if (!tk.hp) o.hp = 100;
   Object.assign(tk, o);
   ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, ['name', ...Object.keys(o)]); calcTTK();
-  const missing = [!o.rpm && 'RPM', !tk.reload && 'reload time', !tk.hp && 'target health'].filter(Boolean);
-  toast(missing.length ? `Filled from the item database. Still to enter: ${missing.join(', ')}.` : 'Filled from the item database');
+  const missing = [!o.rpm && 'RPM', !tk.reload && 'reload time'].filter(Boolean);
+  toast(`Filled from the item database${wpn.rpmFrom ? ` (RPM from ${wpn.rpmFrom} mode)` : ''}${o.hp === 100 ? '; target health 100' : ''}.${missing.length ? ` Still to enter: ${missing.join(', ')}.` : ''}`);
+  loadArmor(false);
 }, { type: 'weapon' });
 const AC = ['NONE', 'LIGHT', 'MEDIUM', 'HEAVY'];
 for (const a of AC) {
@@ -530,6 +532,24 @@ function calcTTK() {
     : 'Enter damage, RPM and target health to fill the matrix.';
 }
 calcTTK();
+// Typical armor multipliers per class (middle of the wiki's torso pieces). Fills the Light, Medium and Heavy rows;
+// on page load only when they are still empty, and from the "Fill armor" button always.
+async function loadArmor(force) {
+  const rows = ['LIGHT', 'MEDIUM', 'HEAVY'];
+  if (!force && rows.some((a) => tk.armor[a].phys || tk.armor[a].energy)) return;
+  try {
+    const r = await fetch('/api/sc-armor', { headers: { Accept: 'application/json' } });
+    const j = r.ok ? await r.json() : null;
+    if (!j?.classes) throw new Error('none');
+    for (const a of rows) { const c = j.classes[a[0] + a.slice(1).toLowerCase()]; if (c) tk.armor[a] = { phys: c.phys, energy: c.energy }; }
+    ls.set('tk.inputs', tk);
+    for (const a of rows) for (const k of ['phys', 'energy']) { const i = $('#tkArmor').querySelector(`[aria-label="${a} ${k}"]`); if (i) i.value = tk.armor[a][k] ?? ''; }
+    calcTTK();
+    if (force) toast('Armor multipliers filled from the item database');
+  } catch { if (force) toast('Armor values are unavailable right now. Enter them by hand.'); }
+}
+$('#tkArmorFill').addEventListener('click', () => loadArmor(true));
+loadArmor(false);
 const bd = ls.get('bd.inputs', { doses: [] });
 fields($('#bdFields'), [{ k: 'perDose', label: 'BDL per dose' }, { k: 'decay', label: 'Decay per second' }, { k: 'overdose', label: 'Overdose threshold' }],
   bd, () => { ls.set('bd.inputs', bd); tickBDL(); });

@@ -79,12 +79,15 @@ export function weaponStats(it) {
   const hit = (k) => (num(alpha[k]) ? r3(num(alpha[k]) / pellets) : num(listed[k]) || num(ammo.impact_damage_map?.[k]) || 0);
   // Rate of fire: the mode's, the weapon's, or the "Rate Of Fire 550 rpm" line of its description data.
   const line = (Array.isArray(it.description_data) ? it.description_data : []).find((d) => /rate of fire/i.test(String(d?.name ?? '')));
-  const rpm = num(m.rpm) || num(pw.rpm) || num(String(line?.value ?? '').replace(/[^\d.]/g, ''));
+  let rpm = num(m.rpm) || num(pw.rpm) || num(String(line?.value ?? '').replace(/[^\d.]/g, ''));
+  let rpmFrom = '';
+  if (!rpm) { const alt = modes.find((x) => num(x?.rpm)); if (alt) { rpm = num(alt.rpm); rpmFrom = String(alt.mode || '').slice(0, 20); } }
   const out = {
     phys: hit('physical'), energy: hit('energy'), pellets,
     rpm: rpm ? r3(rpm) : null, mag: r3(num(pw.capacity) || num(pw.magazine_size) || num(it.magazine?.max_ammo_count)) || null,
     mode: burst ? 'BURST' : 'AUTO', burst: burst ? r3(m.shot_count) : null, cooldown: burst ? r3(m.cooldown_time) : null,
   };
+  if (rpmFrom) out.rpmFrom = rpmFrom;
   return out.phys || out.energy ? out : null;
 }
 export function slimItem(it) {
