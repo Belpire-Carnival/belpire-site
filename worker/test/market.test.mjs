@@ -56,3 +56,10 @@ test('areaBoard keeps the best run that leaves the system apart from the ranking
   assert.equal(lev.score, 0);
   assert.equal(lev.jump.otherSystem, 'Pyro'); assert.equal(lev.jump.margin, 30);
 });
+
+import { runRisk } from '../../site/bureau/rsi1/companion/risk.js';
+test('run risk: worst end sets the level, both ends add up to a score out of 10', () => {
+  const r = runRisk(riskOf('Stanton', 'Admin - Lorville'), riskOf('Pyro', 'Rustville'));
+  assert.equal(r.level, 'high'); assert.equal(r.score, 6); assert.equal(r.max, 10);
+  assert.equal(runRisk(riskOf('Terra', 'a'), riskOf('Terra', 'b')).score, 4);
+});

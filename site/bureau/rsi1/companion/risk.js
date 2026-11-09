@@ -3,7 +3,9 @@
 // lawless systems) and where players commonly ambush haulers. Check the room before you commit a hold.
 // On top of the rules, the wiki page for each place is read (/api/sc-zones): a page that says the site is an Armistice Zone
 // makes it SAFE, and one that says it is NOT an Armistice Zone raises it to at least Medium.
-export const LEVELS = { unknown: { label: 'Unknown', rank: 0 }, safe: { label: 'Safe', rank: 1 }, low: { label: 'Low', rank: 2 }, med: { label: 'Medium', rank: 3 }, high: { label: 'High', rank: 4 } };
+// pts feeds the run score: each end of a run counts, so a run scores 0 (both ends safe) to 10 (both ends high).
+// A place we know nothing about counts as 2 so an unknown is never mistaken for safe.
+export const LEVELS = { unknown: { label: 'Unknown', rank: 0, pts: 2 }, safe: { label: 'Safe', rank: 1, pts: 0 }, low: { label: 'Low', rank: 2, pts: 1 }, med: { label: 'Medium', rank: 3, pts: 3 }, high: { label: 'High', rank: 4, pts: 5 } };
 
 // First match wins. The text tested is the terminal, place and system names joined and lower-cased.
 const RULES = [
@@ -74,3 +76,9 @@ export function riskOf(system, ...names) {
   return { level, label: LEVELS[level].label, note: `Wiki: ${z.name} is not an Armistice Zone, so anyone can shoot you here. ${level === r.level ? r.note : ''}`.trim(), wiki: 'open' };
 }
 export const worst = (...rs) => rs.reduce((a, b) => (LEVELS[b.level].rank > LEVELS[a.level].rank ? b : a), rs[0] || riskOf(''));
+
+// Risk of a whole run: the worse end sets the level, both ends add up to the score out of 10.
+export function runRisk(buy, sell) {
+  const w = worst(buy, sell), score = LEVELS[buy.level].pts + LEVELS[sell.level].pts;
+  return { ...w, score, max: 10, note: `Buy end: ${buy.label}. Sell end: ${sell.label}. Score ${score}/10 (Safe 0, Low 1, Unknown 2, Medium 3, High 5 per end).` };
+}

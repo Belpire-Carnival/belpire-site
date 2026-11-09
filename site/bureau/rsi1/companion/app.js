@@ -843,6 +843,7 @@ function paintLiveChip() {
 }
 
 const riskChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label}` });
+const runChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.note, text: `PvP ${r.label} · ${r.score}/${r.max}` });
 let mkSys = ls.get('mk.sys', '');
 function paintSystemTabs(systems) {
   const tabs = $('#mkSys'); tabs.textContent = '';
@@ -889,11 +890,11 @@ function renderRoutes() {
       if (tr.legs.length === 1 && !Object.values(tr.legs[0]).some(Boolean)) tr.legs[0] = leg; else tr.legs.push(leg);
       ls.set('tr.inputs', tr); renderLegs(); toast(r.cross ? 'Leg added. This run crosses systems: check the jump and the price in game' : 'Leg added: check the price in game before you buy');
     });
-    tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small', text: where(r.from) }), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
-      el('td', { class: 'small', text: where(r.to) }), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, riskChip(r.risk)), el('td', {}, use)));
+    tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small' }, where(r.from), el('div', {}, riskChip(r.buyRisk))), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
+      el('td', { class: 'small' }, where(r.to), el('div', {}, riskChip(r.sellRisk))), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, runChip(r.risk)), el('td', {}, use)));
   }
   wrap.append(el('div', { class: 'scrollx' }, el('table', {},
-    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'PvP risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'Run risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
 }
 
 // Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab).

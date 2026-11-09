@@ -1,6 +1,6 @@
 // Trade planning over the live UEX price rows: best runs, and the best areas inside each star system.
 // Pure functions (no DOM) so they can be tested. A row is { commodity, terminal, system, place, buy, sell, scuBuy, scuSell, at }.
-import { riskOf, worst, LEVELS } from './risk.js';
+import { riskOf, worst, LEVELS, runRisk } from './risk.js';
 
 export const SYSTEM_ORDER = ['Stanton', 'Pyro', 'Nyx'];
 const DAY = 864e5;
@@ -36,7 +36,7 @@ export function bestRuns(rows, opts = {}) {
   const out = [];
   for (const c of byCommodity(scope(rows, opts)).values()) {
     const b = c.buys[0], s = b && c.sells.find((x) => x.terminal !== b.terminal);
-    if (b && s && s.sell > b.buy) out.push({ commodity: c.name, from: b, to: s, margin: s.sell - b.buy, cross: b.system !== s.system, risk: worst(riskOfRow(b), riskOfRow(s)) });
+    if (b && s && s.sell > b.buy) out.push({ commodity: c.name, from: b, to: s, margin: s.sell - b.buy, cross: b.system !== s.system, risk: runRisk(riskOfRow(b), riskOfRow(s)), buyRisk: riskOfRow(b), sellRisk: riskOfRow(s) });
   }
   return out.sort((a, b) => b.margin - a.margin);
 }
@@ -81,4 +81,4 @@ export function areaBoard(rows, system, opts = {}) {
   }
   return list.sort((x, y) => y.score - x.score || x.name.localeCompare(y.name));
 }
-export { riskOf, worst, LEVELS };
+export { riskOf, worst, LEVELS, runRisk };
