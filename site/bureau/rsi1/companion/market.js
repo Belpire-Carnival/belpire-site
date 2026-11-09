@@ -28,8 +28,8 @@ function byCommodity(rows) {
   for (const c of m.values()) { c.buys.sort((a, b) => a.buy - b.buy); c.sells.sort((a, b) => b.sell - a.sell); }
   return m;
 }
-const scope = (rows, { system = '', q = '', avoidHigh = false } = {}) => rows.filter((r) =>
-  (!system || r.system === system) && (!q || r.commodity.toLowerCase().includes(q)) && (!avoidHigh || riskOfRow(r).level !== 'high'));
+const scope = (rows, { system = '', q = '', avoidHigh = false, onlySafe = false } = {}) => rows.filter((r) =>
+  (!system || r.system === system) && (!q || r.commodity.toLowerCase().includes(q)) && (!avoidHigh || riskOfRow(r).level !== 'high') && (!onlySafe || riskOfRow(r).level === 'safe'));
 
 // Best buy-to-sell pair for each commodity inside the chosen scope.
 export function bestRuns(rows, opts = {}) {
@@ -40,6 +40,10 @@ export function bestRuns(rows, opts = {}) {
   }
   return out.sort((a, b) => b.margin - a.margin);
 }
+
+// Best runs where both ends are Safe (inside an armistice zone), so nobody can shoot you at the shop or the pad.
+// The trip between them is not covered: quantum travel and the approach are still open.
+export const safeRuns = (rows, opts = {}) => bestRuns(rows, { ...opts, onlySafe: true });
 
 // Every area (a city, station, outpost or moon) in one system, ranked by the best run that starts or ends there.
 // An area's "out" list is what to buy here and where it sells best in the system; its "in" list is what sells well here.

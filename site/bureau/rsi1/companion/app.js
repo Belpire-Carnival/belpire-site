@@ -865,7 +865,7 @@ function areaCard(a, rank) {
 }
 function renderRoutes() {
   const wrap = $('#mkRoutes'), areasEl = $('#mkAreas'); wrap.textContent = ''; areasEl.textContent = '';
-  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); $('#mkSys').textContent = ''; return; }
+  if (!MK.prices.length) { wrap.append(el('p', { class: 'small muted', text: 'No live data yet.' })); $('#mkSys').textContent = ''; $('#mkSafeRoutes').textContent = ''; $('#mkSafeHead').textContent = ''; return; }
   const rows = M.freshRows(MK.prices);
   const systems = M.systemsIn(rows);
   paintSystemTabs(systems);
@@ -881,7 +881,12 @@ function renderRoutes() {
   }
   $('#mkRunsHead').textContent = mkSys ? `Best runs inside ${mkSys}` : 'Best runs, any system';
   const list = M.bestRuns(rows, { ...opts, system: mkSys }).slice(0, 12);
-  if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); return; }
+  if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); renderSafeRuns(rows, systems, opts); return; }
+  wrap.append(runsTable(list));
+  renderSafeRuns(rows, systems, opts);
+}
+
+function runsTable(list) {
   const tb = el('tbody');
   for (const r of list) {
     const use = el('button', { type: 'button', class: 'ghost', text: 'Use as leg' });
@@ -893,8 +898,21 @@ function renderRoutes() {
     tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small' }, where(r.from), el('div', {}, riskChip(r.buyRisk))), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
       el('td', { class: 'small' }, where(r.to), el('div', {}, riskChip(r.sellRisk))), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, runChip(r.risk)), el('td', {}, use)));
   }
-  wrap.append(el('div', { class: 'scrollx' }, el('table', {},
+  return (el('div', { class: 'scrollx' }, el('table', {},
     el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'Run risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+}
+
+// PvP-free runs: both the buy end and the sell end are Safe. One short list per system.
+function renderSafeRuns(rows, systems, opts) {
+  const head = $('#mkSafeHead'), box = $('#mkSafeRoutes'); box.textContent = '';
+  head.textContent = mkSys ? `Best PvP-free runs inside ${mkSys}` : 'Best PvP-free runs, by system';
+  box.append(el('p', { class: 'small muted m0', text: 'Both ends are Safe: an armistice zone at the shop and the pad. The flight between them is still open to attack.' }));
+  for (const sys of mkSys ? [mkSys] : systems) {
+    const list = M.safeRuns(rows, { q: opts.q, system: sys }).slice(0, mkSys ? 12 : 4);
+    box.append(el('div', { class: 'lbl mt8', text: sys }));
+    if (list.length) box.append(runsTable(list));
+    else box.append(el('p', { class: 'small muted m0', text: sys === 'Pyro' ? 'Nothing PvP-free in Pyro: every place there counts as PvP risk.' : `No profitable run between two Safe places in ${sys} right now.` }));
+  }
 }
 
 // Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab).

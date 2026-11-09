@@ -65,3 +65,19 @@ test('run risk: worst end sets the level, both ends add up to a score out of 10'
   assert.equal(r.level, 'high'); assert.equal(r.score, 5); assert.equal(r.max, 10);
   assert.equal(runRisk(riskOf('Terra', 'a'), riskOf('Terra', 'b')).score, 4);
 });
+
+import { safeRuns } from '../../site/bureau/rsi1/companion/market.js';
+test('safeRuns only pairs places that are Safe at both ends, and finds nothing in Pyro', () => {
+  const now = Date.now() / 1000;
+  const r = (commodity, terminal, system, place, buy, sell) => ({ commodity, terminal, system, place, buy, sell, scuBuy: 10, scuSell: 10, at: now });
+  const rows = [
+    r('Gold', 'Admin - Lorville', 'Stanton', 'Lorville', 100, null), r('Gold', 'TDD - Area 18', 'Stanton', 'Area18', null, 150),
+    r('Gold', 'Shepherd Outpost', 'Stanton', 'Shepherd Outpost', 50, null), // cheaper, but not safe
+    r('Gold', 'Rustville', 'Pyro', 'Rustville', 10, null), r('Gold', 'Checkmate', 'Pyro', 'Checkmate', null, 500)
+  ];
+  const stanton = safeRuns(rows, { system: 'Stanton' });
+  assert.equal(stanton.length, 1);
+  assert.equal(stanton[0].from.terminal, 'Admin - Lorville'); assert.equal(stanton[0].to.terminal, 'TDD - Area 18');
+  assert.equal(stanton[0].buyRisk.level, 'safe'); assert.equal(stanton[0].sellRisk.level, 'safe'); assert.equal(stanton[0].risk.score, 0);
+  assert.deepEqual(safeRuns(rows, { system: 'Pyro' }), []);
+});
