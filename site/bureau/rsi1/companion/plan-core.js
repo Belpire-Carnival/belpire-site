@@ -97,3 +97,21 @@ export const patchWish = (list, id, patch) => cleanWishlist(list).map((w) => (w.
 export const removeWish = (list, id) => cleanWishlist(list).filter((w) => w.id !== id);
 // Open items first, highest priority (1) first, then newest.
 export const sortWish = (list) => cleanWishlist(list).sort((a, b) => a.got - b.got || a.prio - b.prio || (b.at || 0) - (a.at || 0));
+
+// ------------------------------------------------------------ catalog (the wiki's list of every blueprint)
+// A catalog row is owned when the player's fabricator scan (or hand list) has its output name, or when the game gives it to
+// every player at the start (is_available_by_default). Names are matched the way the fabricator prints them, so a name the
+// wiki words differently will show as not owned until it is added by hand.
+export const ownedState = (bp, row) => (bp.owned[keyOf(row.name)] ? 'owned' : row.def ? 'start' : 'missing');
+export const catalogTypes = (list) => [...new Set((Array.isArray(list) ? list : []).map((r) => r.type).filter(Boolean))].sort();
+export function catalogView(list, bp, { q = '', type = '', status = 'all' } = {}) {
+  const state = cleanBp(bp), needle = keyOf(q);
+  return (Array.isArray(list) ? list : []).filter((r) => {
+    if (type && r.type !== type) return false;
+    if (needle && !(keyOf(r.name).includes(needle) || (r.ing || []).some((i) => keyOf(i.n).includes(needle)))) return false;
+    const s = ownedState(state, r);
+    return status === 'all' || (status === 'have' ? s !== 'missing' : s === status);
+  });
+}
+export const craftTime = (sec) => (!Number.isFinite(sec) ? '—' : sec < 60 ? `${Math.round(sec)} s` : sec < 3600 ? `${Math.round(sec / 60)} min` : `${Math.round(sec / 360) / 10} h`);
+export const recipeText = (ing) => (Array.isArray(ing) ? ing : []).map((i) => (i.scu != null ? `${i.n} ${i.scu} SCU` : i.q != null ? `${i.n} ×${i.q}` : i.n)).join(' · ');

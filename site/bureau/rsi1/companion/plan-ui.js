@@ -1,6 +1,9 @@
 // Plan hub panes: the Wishlist and the Blueprints list. Text nodes only; choices live in this browser's localStorage
 // (arsenal.plan.*, which the companion profile sync carries between devices). The maths is in plan-core.js.
-import { WISH_KINDS, keyOf, cleanBp, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleLabel, cleanWishlist, addWish, patchWish, removeWish, sortWish } from './plan-core.js';
+import { WISH_KINDS, keyOf, cleanBp, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleLabel, cleanWishlist, addWish, patchWish, removeWish, sortWish, ownedState, catalogTypes, catalogView, craftTime, recipeText } from './plan-core.js';
+
+const API_LIST = '/api/sc-blueprints';
+const API_ONE = '/api/sc-blueprint';
 
 const K_BP = 'arsenal.plan.bp';
 const K_WISH = 'arsenal.plan.wish';
@@ -128,4 +131,68 @@ export function initBlueprints(host, { toast = () => {} } = {}) {
       return res;
     }
   };
+}
+
+// ---------------------------------------------------------------- catalog
+// Every blueprint the wiki knows, against what you own. Opening one loads its unlock missions.
+export function initCatalog(host, { toast = () => {} } = {}) {
+  if (!host) return null;
+  const q = el('input', { type: 'search', placeholder: 'Search by item or material', 'aria-label': 'Search the catalog' });
+  const type = el('select', { 'aria-label': 'Type' });
+  const status = el('select', { 'aria-label': 'Status' }, ...[['all', 'All'], ['missing', 'Not owned'], ['have', 'Owned or starting'], ['start', 'Starting set only']].map(([v, t]) => el('option', { value: v, text: t })));
+  const note = el('div', { class: 'small muted mt8', role: 'status', text: 'Loading the blueprint list…' });
+  const list = el('div', { class: 'mt8' }), more = el('button', { type: 'button', class: 'ghost', text: 'Show more', hidden: '' });
+  const open = el('div', { class: 'card mt12', hidden: '' });
+  host.append(el('div', { class: 'row pfrow' }, field('Search', q), field('Type', type), field('Show', status)), note, list, el('div', { class: 'row mt8' }, more), open,
+    el('p', { class: 'small muted mt8' }, 'Blueprint data: ', el('a', { href: 'https://api.star-citizen.wiki/', target: '_blank', rel: 'noopener', text: 'Star Citizen Wiki API' }), ' (community data from the game files).'));
+  let all = [], shown = 50, version = '';
+  const bp = () => cleanBp(read(K_BP, null));
+  const rows = () => catalogView(all, bp(), { q: q.value, type: type.value, status: status.value });
+
+  function draw() {
+    const have = bp(), r = rows();
+    note.textContent = `${r.length} of ${all.length} blueprints${version ? ` · game build ${version}` : ''}`;
+    list.replaceChildren();
+    const tb = el('tbody');
+    for (const b of r.slice(0, shown)) {
+      const st = ownedState(have, b);
+      const go = el('button', { type: 'button', class: 'ghost', text: 'Open', 'aria-label': `Open ${b.name}` });
+      go.addEventListener('click', () => show(b));
+      tb.append(el('tr', {}, el('td', {}, el('b', { text: b.name }), el('div', { class: 'small muted', text: recipeText(b.ing) })), el('td', { text: b.type || '—' }), el('td', { text: craftTime(b.sec) }),
+        el('td', {}, el('span', { class: st === 'missing' ? 'chip' : 'chip ok', text: st === 'owned' ? 'owned' : st === 'start' ? 'starting' : 'not owned' })), el('td', {}, go)));
+    }
+    if (r.length) list.append(el('div', { class: 'scrollx' }, el('table', {}, el('thead', {}, el('tr', {}, ...['Blueprint', 'Type', 'Craft time', 'You', ''].map((t) => el('th', { text: t })))), tb)));
+    more.hidden = r.length <= shown;
+  }
+  async function show(b) {
+    open.hidden = false; open.replaceChildren(el('h3', { text: b.name }), el('p', { class: 'small muted', text: 'Loading unlock sources…' }));
+    open.scrollIntoView({ block: 'nearest' });
+    const want = el('button', { type: 'button', class: 'primary', text: 'Add to wishlist' });
+    want.addEventListener('click', () => { write(K_WISH, addWish(read(K_WISH, []), { kind: 'Blueprint', name: b.name })); changed(); toast('Added to your wishlist'); });
+    let d = null;
+    try { const r = await fetch(`${API_ONE}?id=${encodeURIComponent(b.id)}`); const j = await r.json(); d = r.ok && j && j.ready ? j.blueprint : null; } catch { d = null; }
+    const kids = [el('h3', { text: b.name }), el('p', { class: 'small muted', text: `${b.type || 'Item'} · ${craftTime(b.sec)} · ${recipeText(b.ing)}` })];
+    if (b.def) kids.push(el('p', { class: 'small', text: 'Every player starts with this blueprint.' }));
+    if (!d) kids.push(el('p', { class: 'small muted', text: 'The unlock details could not be loaded right now.' }));
+    else if (d.missions.length) {
+      kids.push(el('h3', { class: 'mt8', text: 'Unlocked by' }));
+      for (const g of d.missions) kids.push(el('p', { class: 'small' }, el('b', { text: `${g.label}${g.chance != null && g.chance < 1 ? ` (${Math.round(g.chance * 100)}%)` : ''}: ` }), g.list.map((m) => `${m.title}${m.scope ? ` (${m.scope})` : ''}`).join(' · ')));
+      kids.push(el('p', { class: 'small muted', text: 'Mission pools rotate between patches. Check the in-game reward before you chase one.' }));
+    } else if (!b.def) kids.push(el('p', { class: 'small muted', text: 'The wiki lists no unlocking mission for this one.' }));
+    kids.push(el('div', { class: 'row mt8' }, want));
+    open.replaceChildren(...kids);
+  }
+  [q, type, status].forEach((c) => c.addEventListener(c === q ? 'input' : 'change', () => { shown = 50; draw(); }));
+  more.addEventListener('click', () => { shown += 100; draw(); });
+  window.addEventListener('arsenal:plan', draw);
+  (async () => {
+    try {
+      const r = await fetch(API_LIST); const j = await r.json();
+      if (!r.ok || !j || !j.ready) throw new Error('not ready');
+      all = j.blueprints; version = j.version || '';
+      type.replaceChildren(el('option', { value: '', text: 'All types' }), ...catalogTypes(all).map((t) => el('option', { value: t, text: t })));
+      draw();
+    } catch { note.textContent = 'The blueprint list could not be loaded right now. Your own list above still works.'; }
+  })();
+  return { redraw: draw };
 }
