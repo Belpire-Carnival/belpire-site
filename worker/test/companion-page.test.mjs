@@ -91,9 +91,9 @@ test('every navigation item has an icon and a view', () => {
   for (const v of views) { assert.ok(icons.includes(v), `icon for ${v}`); assert.ok(nav.includes(v), `nav for ${v}`); }
 });
 
-test('six hubs hold every view once, and each hub keeps old links working', () => {
+test('seven hubs hold every view once, and each hub keeps old links working', () => {
   const hubs = [...app.matchAll(/\{ id: '([a-z]+)', label: '[^']+', icon: '([a-z]+)', blurb: '[^']+', panes: \[(.*?)\] \}/g)];
-  assert.equal(hubs.length, 6);
+  assert.equal(hubs.length, 7);
   const panes = hubs.flatMap((m) => [...m[3].matchAll(/\['([a-z]+)', '[^']+'\]/g)].map((x) => x[1]));
   const views = [...html.matchAll(/<section class="view" id="v-([a-z]+)"/g)].map((m) => m[1]);
   assert.deepEqual([...panes].sort(), [...views].sort());

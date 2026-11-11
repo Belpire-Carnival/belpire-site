@@ -3,6 +3,8 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
+import { initWishlist, initBlueprints } from './plan-ui.js';
+import { staleLabel, cleanBp } from './plan-core.js';
 import { initRankings } from './rank-ui.js';
 import { icon, bars, duo } from './viz.js';
 import { heroArt, photo } from './art.js';
@@ -61,11 +63,12 @@ const Store = {
 };
 
 // ---------------- routing ----------------
-// Six hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
+// Seven hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
 // belong together and shows them as sub-tabs. A hub id as the address (#earn) opens the view last used in that hub.
 const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'ops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
   { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
+  { id: 'plan', label: 'Plan', icon: 'plan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints']] },
   { id: 'armory', label: 'Armory', icon: 'calc', blurb: 'Build loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
   { id: 'earn', label: 'Earn', icon: 'trade', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
   { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
@@ -78,6 +81,8 @@ const lastPane = {};
 const builder = initBuilder($('#builder'));
 const rankingsShip = initRankings($('#rankingsShip'), { kind: 'ship' });
 const rankingsFps = initRankings($('#rankingsFps'), { kind: 'fps' });
+initWishlist($('#wishlist'));
+const blueprints = initBlueprints($('#blueprintList'), { toast: (m) => toast(m) });
 const nav = $('#nav');
 for (const h of HUBS) {
   const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));
@@ -240,6 +245,7 @@ const PREFLIGHT = [
   'Ship stocked: fuel, ammo, medpens, MedGel, repair canisters.',
   'Note your shard (<span class="mono">r_displaySessionInfo 1</span>) if you’re grouping up.',
   'Plan where you’ll sell or store before you log off.',
+  'Update your manual imports before you play: <a href="#blueprints">re-scan the Item Fabricator</a> <span class="muted small" id="bpStale"></span>',
 ];
 function checklist(ul, items, key) {
   const st = ls.get(key, {});
@@ -254,6 +260,12 @@ function checklist(ul, items, key) {
   });
 }
 checklist($('#preflight'), PREFLIGHT, 'chk.preflight');
+function paintStale() {
+  const t = $('#bpStale'); if (!t) return;
+  let raw = null; try { raw = JSON.parse(localStorage.getItem('arsenal.plan.bp')); } catch { /* unreadable */ }
+  t.textContent = '(' + staleLabel(cleanBp(raw).scannedAt) + ')';
+}
+paintStale(); window.addEventListener('arsenal:plan', paintStale);
 const LINKS = [
   ['Server status', 'https://status.robertsspaceindustries.com/'],
   ['Patch notes', 'https://robertsspaceindustries.com/patch-notes'],
@@ -1304,7 +1316,7 @@ scanner('#scan-cargo', { kind: 'cargo', title: 'cargo manifest',
   } });
 
 // Weapon stats
-scanner('#scan-weapon', { kind: 'combat', title: 'weapon stats',
+scanner('#scan-weapon', { kind: 'weapon', title: 'weapon stats',
   hint: 'A weapon’s stats on CStone, Erkul or the in-game item panel.',
   render: (d, res) => review(res, d, [['name', 'Weapon', 'text'], ['phys', 'Physical dmg'], ['energy', 'Energy dmg'], ['pellets', 'Projectiles / shot'], ['rpm', 'RPM'], ['mag', 'Magazine'], ['reload', 'Reload (s)'], ['burst', 'Shots / burst']], (o) => {
     Object.assign(tk, o); if (o.burst && C.n(o.burst) > 1 && !tk.mode) tk.mode = 'BURST';
@@ -1312,12 +1324,33 @@ scanner('#scan-weapon', { kind: 'combat', title: 'weapon stats',
   }) });
 
 // Ship stats
-scanner('#scan-ship', { kind: 'fleet', title: 'ship stats',
+scanner('#scan-ship', { kind: 'ship', title: 'ship stats',
   hint: 'A ship page on SPViewer or Erkul.',
   render: (d, res) => review(res, d, [['name', 'Ship', 'text'], ['role', 'Role', 'text'], ['scm', 'SCM'], ['nav', 'NAV'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['accel', 'Fwd accel']], (o) => {
     Object.assign(fl, o); setInputs($('#flFields'), fl, Object.keys(o));
   }, 'Fill the form (then Save ship)') });
 
+
+// Item Fabricator blueprint list -> the Blueprints pane
+scanner('#scan-fab', { kind: 'fabricator', view: 'blueprints', title: 'Item Fabricator blueprint list',
+  hint: 'Open the Item Fabricator, pick a category and scroll its blueprint list. Scan one category at a time, or record a short slow scroll.',
+  render: (d, res) => {
+    const rows = (Array.isArray(d.rows) ? d.rows : []).filter((r) => r && r.name);
+    const usable = rows.filter((r) => r.owned !== false);
+    if (!usable.length) { res.append(el('p', { class: 'small muted', text: 'No blueprints found on that screenshot. Crop to the list and try again.' })); return; }
+    const tb = el('tbody');
+    for (const r of usable.slice(0, 60)) tb.append(el('tr', {}, el('td', { text: r.name }), el('td', { text: r.category || d.category || '—' }), el('td', { text: r.tier || '—' })));
+    const done = (replace) => {
+      const out = blueprints.importRows(usable.map((r) => ({ ...r, category: r.category || d.category || null })), replace);
+      toast(`${out.added} new, ${out.kept} already owned`);
+      res.replaceChildren(el('p', { class: 'small', text: `Imported: ${out.added} new, ${out.kept} already on your list.` }));
+    };
+    const rep = el('button', { class: 'primary', type: 'button', text: 'Replace these categories' });
+    const addb = el('button', { class: 'ghost', type: 'button', text: 'Only add new ones' });
+    rep.addEventListener('click', () => done(true)); addb.addEventListener('click', () => done(false));
+    res.append(el('p', { class: 'small muted', text: `${usable.length} blueprint${usable.length === 1 ? '' : 's'} read${rows.length > usable.length ? `, ${rows.length - usable.length} locked row${rows.length - usable.length === 1 ? '' : 's'} skipped` : ''}. Check the names, then import. “Replace” treats this scan as the full list for the categories it shows; “Only add” never removes anything.` }),
+      el('div', { class: 'scrollx' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Blueprint' }), el('th', { text: 'Category' }), el('th', { text: 'Tier' }))), tb)), el('div', { class: 'row mt8' }, rep, addb));
+  } });
 
 scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any mission or contract',
   hint: 'The FinTac OmniGlass contract details, or the contract list.',
