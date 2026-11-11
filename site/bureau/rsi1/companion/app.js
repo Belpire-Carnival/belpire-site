@@ -3,7 +3,7 @@
 import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
-import { initWishlist, initBlueprints } from './plan-ui.js';
+import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
 import { initRankings } from './rank-ui.js';
 import { icon, bars, duo } from './viz.js';
@@ -83,6 +83,7 @@ const rankingsShip = initRankings($('#rankingsShip'), { kind: 'ship' });
 const rankingsFps = initRankings($('#rankingsFps'), { kind: 'fps' });
 initWishlist($('#wishlist'));
 const blueprints = initBlueprints($('#blueprintList'), { toast: (m) => toast(m) });
+initCatalog($('#blueprintCatalog'), { toast: (m) => toast(m) });
 const nav = $('#nav');
 for (const h of HUBS) {
   const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));

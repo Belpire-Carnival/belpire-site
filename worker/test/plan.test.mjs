@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keyOf, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleDays, staleLabel, addWish, patchWish, removeWish, sortWish, cleanBp, betterTier, cleanWishlist } from '../../site/bureau/rsi1/companion/plan-core.js';
+import { catalogView, catalogTypes, ownedState, craftTime, recipeText, keyOf, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleDays, staleLabel, addWish, patchWish, removeWish, sortWish, cleanBp, betterTier, cleanWishlist } from '../../site/bureau/rsi1/companion/plan-core.js';
 
 const T0 = Date.UTC(2026, 10, 10);
 
@@ -58,6 +58,26 @@ test('wishlist: add without duplicates, edit, sort and remove', () => {
 import { readFileSync } from 'node:fs';
 test('the plan pane builds its page from text nodes and talks to nobody', () => {
   const ui = readFileSync(new URL('../../site/bureau/rsi1/companion/plan-ui.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(ui, /innerHTML|insertAdjacentHTML|\.style\.|fetch\(|XMLHttpRequest|eval\(|https?:\/\//);
+  assert.doesNotMatch(ui, /innerHTML|insertAdjacentHTML|\.style\.|XMLHttpRequest|eval\(/);
+  for (const m of ui.matchAll(/fetch\(\s*([^,)]+)/g)) assert.match(m[1], /^`?\$\{API_ONE\}|^API_LIST|^API_ONE/, m[1]);
+  assert.deepEqual([...ui.matchAll(/https?:\/\/[^'"`\s]+/g)].map((m) => m[0]), ['https://api.star-citizen.wiki/']);
   assert.match(ui, /arsenal\.plan\.bp/); assert.match(ui, /arsenal\.plan\.wish/);
+});
+
+test('the catalog marks owned, starting and missing blueprints and filters them', () => {
+  const list = [
+    { id: 'a', name: 'Gallant Rifle', type: 'Weapon Personal', def: false, sec: 90, ing: [{ n: 'Agricium', k: 'resource', scu: 0.36, q: null }] },
+    { id: 'b', name: 'Basic Tool', type: 'Tool', def: true, sec: 30, ing: [] },
+    { id: 'c', name: 'Railgun', type: 'Weapon Personal', def: false, sec: 4000, ing: [{ n: 'Hadanite', k: 'item', scu: null, q: 7 }] }
+  ];
+  const bp = addOwned(cleanBp(null), 'gallant rifle!', 'Weapons', T0);
+  assert.deepEqual(list.map((r) => ownedState(bp, r)), ['owned', 'start', 'missing']);
+  assert.deepEqual(catalogView(list, bp, { status: 'missing' }).map((r) => r.id), ['c']);
+  assert.deepEqual(catalogView(list, bp, { status: 'have' }).map((r) => r.id), ['a', 'b']);
+  assert.deepEqual(catalogView(list, bp, { status: 'start' }).map((r) => r.id), ['b']);
+  assert.deepEqual(catalogView(list, bp, { q: 'hadanite' }).map((r) => r.id), ['c']);
+  assert.deepEqual(catalogView(list, bp, { type: 'Tool' }).map((r) => r.id), ['b']);
+  assert.deepEqual(catalogTypes(list), ['Tool', 'Weapon Personal']);
+  assert.equal(craftTime(30), '30 s'); assert.equal(craftTime(540), '9 min'); assert.equal(craftTime(7200), '2 h'); assert.equal(craftTime(null), '—');
+  assert.equal(recipeText(list[2].ing), 'Hadanite ×7'); assert.equal(recipeText(list[0].ing), 'Agricium 0.36 SCU');
 });
