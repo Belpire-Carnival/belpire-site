@@ -179,7 +179,7 @@ export function initCatalog(host, { toast = () => {} } = {}) {
       for (const g of d.missions) kids.push(el('p', { class: 'small' }, el('b', { text: `${g.label}${g.chance != null && g.chance < 1 ? ` (${Math.round(g.chance * 100)}%)` : ''}: ` }), g.list.map((m) => `${m.title}${m.scope ? ` (${m.scope})` : ''}`).join(' · ')));
       kids.push(el('p', { class: 'small muted', text: 'Mission pools rotate between patches. Check the in-game reward before you chase one.' }));
     } else if (!b.def) kids.push(el('p', { class: 'small muted', text: 'The wiki lists no unlocking mission for this one.' }));
-    kids.push(el('div', { class: 'row mt8' }, want));
+    kids.push(el('div', { class: 'row mt8' }, want, el('a', { class: 'ghost btnlink', href: `#fabricator?b=${encodeURIComponent(b.id)}`, text: 'Plan the craft' })));
     open.replaceChildren(...kids);
   }
   [q, type, status].forEach((c) => c.addEventListener(c === q ? 'input' : 'change', () => { shown = 50; draw(); }));

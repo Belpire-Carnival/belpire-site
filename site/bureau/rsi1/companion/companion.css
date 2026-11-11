@@ -638,3 +638,7 @@ nav .subs a[aria-current=location]{color:var(--hi);border-left-color:var(--bronz
 tr.gotrow td{opacity:.6}
 #blueprintList details summary{cursor:pointer;color:var(--info);font:11px var(--display);letter-spacing:.14em;text-transform:uppercase}
 .pf input[type=text]{min-width:220px}
+.btnlink{display:inline-block;padding:7px 12px;border:1px solid var(--line2);border-radius:3px;text-decoration:none}
+.slot{padding:8px 0;border-bottom:1px dashed var(--line)}
+.slot input[type=range]{min-width:180px}
+.chip.bad{border-color:#b8504a;color:#e8918b}
