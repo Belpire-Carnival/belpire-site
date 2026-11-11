@@ -5,6 +5,7 @@ import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
+import { initFabricator } from './fab-ui.js';
 import { initRankings } from './rank-ui.js';
 import { icon, bars, duo } from './viz.js';
 import { heroArt, photo } from './art.js';
@@ -68,7 +69,7 @@ const Store = {
 const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'ops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
   { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
-  { id: 'plan', label: 'Plan', icon: 'plan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints']] },
+  { id: 'plan', label: 'Plan', icon: 'plan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator']] },
   { id: 'armory', label: 'Armory', icon: 'calc', blurb: 'Build loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
   { id: 'earn', label: 'Earn', icon: 'trade', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
   { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
@@ -84,6 +85,7 @@ const rankingsFps = initRankings($('#rankingsFps'), { kind: 'fps' });
 initWishlist($('#wishlist'));
 const blueprints = initBlueprints($('#blueprintList'), { toast: (m) => toast(m) });
 initCatalog($('#blueprintCatalog'), { toast: (m) => toast(m) });
+const fabricator = initFabricator($('#fabricatorHost'), { toast: (m) => toast(m) });
 const nav = $('#nav');
 for (const h of HUBS) {
   const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));
@@ -150,6 +152,7 @@ function route() {
   if (pane === 'fleet') drawRadar();
   if (pane === 'calc') { builder.show(); rankingsShip.show(); }
   if (pane === 'combat') rankingsFps.show();
+  if (pane === 'fabricator') fabricator.show(new URLSearchParams(location.hash.split('?')[1] || '').get('b'));
   window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', route);
