@@ -87,6 +87,23 @@
   
 </section>
 
+<!-- ================= PLAN ================= -->
+<section class="view" id="v-wishlist" aria-labelledby="h-wishlist">
+  <div class="hero"><div><h2 id="h-wishlist">Wishlist</h2><span class="daemon">sys://plan.wishlist</span><p class="tag">Ships, components, weapons, armor and blueprints you are after, in priority order.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="wishlist"></div></div>
+  <div class="card"><h3>What you want</h3>
+    <p class="small muted">Everything here is typed by you. Blueprints you add on the Blueprints tab appear here too, and tick themselves off once an Item Fabricator scan shows you own them.</p>
+    <div id="wishlist"></div></div>
+</section>
+
+<section class="view" id="v-blueprints" aria-labelledby="h-blueprints">
+  <div class="hero"><div><h2 id="h-blueprints">Blueprints</h2><span class="daemon">sys://plan.blueprints</span><p class="tag">The crafting blueprints your character owns, imported from the Item Fabricator.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="blueprints"></div></div>
+  <div class="card"><h3>Import from the Item Fabricator</h3>
+    <p class="small muted">The fabricator only lists what your character can craft, so a scan is the source of truth for what you own. Blueprints stay with your account through death. They are not consumed when you craft.</p>
+    <div id="scan-fab"></div></div>
+  <div class="card mt12"><h3>Your blueprints</h3><div id="blueprintList"></div></div>
+  <div class="note info mt12">There is no game API for blueprints, so this list is only as current as your last scan. Where a blueprint comes from changes between patches: check the in-game mission rewards before you chase one.</div>
+</section>
+
 <!-- ================= CONTRACTS ================= -->
 <section class="view" id="v-contracts" aria-labelledby="h-contracts">
   <div class="hero"><div><h2 id="h-contracts">TacBoard</h2><span class="daemon">sys://contracts.scan</span><p class="tag">Scan a contract from your FinTac OmniGlass, check it, and keep every open job in one place.</p><div class="kpis"><div class="kpi"><div class="lbl">Open contracts</div><div class="val" data-k="contracts.open">—</div></div><div class="kpi"><div class="lbl">Open payout</div><div class="val" data-k="contracts.payout">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="contracts"></div></div>
@@ -369,6 +386,9 @@
     <div class="card"><h3>Hangar</h3>
       <p class="small"><b>Hangar Command</b> is the ships you own or follow, with a radar that compares two of them. Ships saved from the Avionics Lab bring their damage, shields, hull and range with them; ships you type in by hand only carry the flight figures you enter.</p>
       <p class="small muted">Data: Star Citizen Wiki ship records plus what you enter. Stored in this browser, or your profile when signed in.</p></div>
+    <div class="card"><h3>Plan</h3>
+      <p class="small"><b>Wishlist</b> is what you want (ships, components, weapons, armor, blueprints) with a priority. <b>Blueprints</b> lists the crafting blueprints you own. Scan the Item Fabricator's blueprint list, one category at a time or as a short scroll clip, then check the names and import. A new scan replaces the categories it shows, so blueprints you no longer see there drop off.</p>
+      <p class="small muted">Data: only what you scan or type. There is no game API for blueprints, so re-scan before you play; OmniOps' checklist shows how old your last import is.</p></div>
     <div class="card"><h3>Armory</h3>
       <p class="small"><b>Avionics Lab</b> builds a loadout: pick a ship, click any part to see every figure the wiki has for it, swap it from a sortable table (green is better than what is fitted, red is worse), and see damage, defence, power and flight totals against stock. Under the builder, <b>Ship weapon rankings</b> orders ship guns by time to destroy a reference ship. <b>Ballistics Matrix</b> holds the FPS time-to-kill calculator and <b>FPS weapon rankings</b>, plus medpen tracking, ground loadouts and the wardrobe.</p>
       <p class="small muted">Data: Star Citizen Wiki item database through our own snapshot. It is only as current as the wiki and the last snapshot rebuild.</p></div>

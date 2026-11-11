@@ -45,6 +45,9 @@ export const PROMPTS = {
   ship:
     '{"seen":"...","notes":[],"name":null,"role":null,"scm":null,"nav":null,"pitch":null,"yaw":null,"roll":null,"accel":null}\n' +
     'scm and nav = max speeds in m/s; pitch/yaw/roll = SCM rotation rates in deg/s; accel = forward acceleration in m/s^2 (if shown in G, multiply by 9.81 and note it).',
+  fabricator:
+    '{"seen":"...","notes":[],"category":null,"rows":[{"name":null,"category":null,"tier":null,"owned":null}]}\n' +
+    'This is the Item Fabricator blueprint list. One row per blueprint listed. name = the item name exactly as written; category = the tab or section it sits under (weapons, armor, components and so on) if visible, else the top-level category; tier = the quality, grade or level label shown for that blueprint, copied as written, else null; owned = true when the blueprint is shown as available to craft, false when it is greyed out, locked or marked unavailable, null when you cannot tell. Do not invent rows for items you cannot read.',
   contracts:
     '{"seen":"...","notes":[],"contracts":[{"title":null,"type":"HAULING|SALVAGE|MINING|BOUNTY|MERCENARY|DELIVERY|INVESTIGATION|RESCUE|ESCORT|RACING|OTHER","giver":null,"payout":null,"bonus":null,"reputation":null,"deadline":null,"maxContainerScu":null,"totalScu":null,"threat":null,"cargo":[{"commodity":null,"scu":null,"from":null,"to":null}],"locations":[],"objectives":[],"requirements":[]}]}\n' +
     'One entry per contract visible. payout = reward in aUEC; bonus = any bonus condition as written; reputation = rep reward or required standing; deadline = time limit or expiry as written; maxContainerScu = largest box size allowed; cargo = each pickup/drop-off line; locations = every named place; objectives = the steps as written, shortened; requirements = ship size, rank, crime status or similar; threat = hostility or difficulty if stated. Use empty arrays when there is nothing.'
@@ -83,6 +86,10 @@ const SHAPES = {
   }),
   weapon: (d) => ({ name: text(d.name, 60), ...Object.fromEntries(['phys', 'energy', 'pellets', 'rpm', 'mag', 'reload', 'burst'].map((k) => [k, num(d[k])])) }),
   ship: (d) => ({ name: text(d.name, 60), role: text(d.role, 40), ...Object.fromEntries(['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel'].map((k) => [k, num(d[k])])) }),
+  fabricator: (d) => ({
+    category: text(d.category, 60),
+    rows: list(d.rows, 120, (r) => (r && typeof r === 'object' && r.name ? { name: text(r.name, 80), category: text(r.category, 60), tier: text(r.tier, 30), owned: r.owned === true ? true : r.owned === false ? false : null } : null))
+  }),
   contracts: (d) => ({
     contracts: list(d.contracts, 10, (c) => {
       if (!c || typeof c !== 'object' || (!c.title && c.payout == null)) return null;
@@ -199,7 +206,7 @@ export async function handleScan(request, env) {
         { role: 'system', content: PREFIX + PROMPTS[kind] },
         { role: 'user', content: [{ type: 'text', text: 'Read these Star Citizen screenshots.' }, ...images.map((i) => ({ type: 'image_url', image_url: { url: `data:${i.mime};base64,${toBase64(i.bytes)}` } }))] }
       ],
-      max_tokens: 1400,
+      max_tokens: kind === 'fabricator' ? 3000 : 1400,
       temperature: 0
     });
     const data = cleanScan(kind, extractJson(out));

@@ -23,8 +23,16 @@ function scanRequest({ kind = 'salvage', files = [JPEG], origin = 'https://burea
 }
 const env = (ai) => ({ AI: ai, SC_DATA: memoryKV() });
 
+test('the fabricator list is cleaned to names, categories, tiers and an owned flag', () => {
+  const f = cleanScan('fabricator', { seen: 'list', category: 'Weapons', rows: [{ name: 'Gallant Rifle', category: 'Weapons', tier: 'Q3', owned: true }, { name: 'Locked One', owned: 'no' }, { nothing: 1 }, { name: 'x'.repeat(200) }] });
+  assert.equal(f.rows.length, 3);
+  assert.deepEqual(f.rows[0], { name: 'Gallant Rifle', category: 'Weapons', tier: 'Q3', owned: true });
+  assert.equal(f.rows[1].owned, null);
+  assert.equal(f.rows[2].name.length, 80);
+});
+
 test('every kind has a prompt and a shape', () => {
-  assert.deepEqual(KINDS.sort(), ['cargo', 'contracts', 'mining', 'salvage', 'ship', 'trade', 'weapon']);
+  assert.deepEqual(KINDS.sort(), ['cargo', 'contracts', 'fabricator', 'mining', 'salvage', 'ship', 'trade', 'weapon']);
   for (const k of KINDS) assert.ok(PROMPTS[k].includes('"seen"'), k);
 });
 

@@ -631,3 +631,10 @@ nav .subs a[aria-current=location]{color:var(--hi);border-left-color:var(--bronz
 .gloss{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:0}
 .gloss dt{font:600 12px var(--mono);color:var(--bronze-hi)}
 .gloss dd{margin:0}
+/* Plan hub */
+.pfrow{align-items:flex-end;gap:10px}
+.pf{display:flex;flex-direction:column;gap:3px;min-width:120px}
+.pf input,.pf select{min-width:0}
+tr.gotrow td{opacity:.6}
+#blueprintList details summary{cursor:pointer;color:var(--info);font:11px var(--display);letter-spacing:.14em;text-transform:uppercase}
+.pf input[type=text]{min-width:220px}
