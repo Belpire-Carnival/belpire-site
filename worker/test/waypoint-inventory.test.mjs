@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlaces, systemsOf, bodiesOf, findHere, rank, tierOf, tierCounts, TIERS } from '../../site/bureau/rsi1/companion/near-core.js';
+import { CATEGORIES, LOCATION_KINDS, SERVICES, buildPlaces, systemsOf, bodiesOf, findHere, rank, tierOf, tierCounts, TIERS } from '../../site/bureau/rsi1/companion/near-core.js';
 import { cleanItem, cleanInv, addItem, setQty, removeItem, importRows, search, places, whereIs, MAX_ITEMS } from '../../site/bureau/rsi1/companion/inv-core.js';
 
 const rows = [
@@ -75,4 +75,29 @@ test('Waypoint and Inventory are panes with their own views, icons and art', () 
     assert.match(app, new RegExp(`\\['${id}', '${label}'\\]`)); assert.match(html, new RegExp(`id="v-${id}"`)); assert.match(html, new RegExp(`id="h-${id}"`));
     assert.match(readFileSync(new URL('viz.js', dir), 'utf8'), new RegExp(`^\\s{2}${id}:\\s*\\[`, 'm')); assert.match(readFileSync(new URL('art.js', dir), 'utf8'), new RegExp(`^\\s{2}${id}:`, 'm'));
   }
+});
+
+test('services add places and filter results, with prices still searchable beside them', () => {
+  const services = [{ name: 'Admin Refinery', place: 'Area18', system: 'Stanton', body: 'ArcCorp', svc: ['refinery', 'dock'] }, { name: 'Far Dock', place: 'Ruin Station', system: 'Pyro', body: 'Pyro IV', svc: ['refuel'] }];
+  const p = buildPlaces([...rows.filter(Boolean)], services);
+  assert.equal(p.length, 6); assert.deepEqual(p.find((x) => x.name === 'Area18').svc, ['dock', 'refinery']);
+  const here = p.find((x) => x.name === 'Lorville');
+  const r = rank(p, here, { service: 'refinery' });
+  assert.deepEqual(r.map((x) => x.place.name), ['Area18']); assert.equal(r[0].tier, 2); assert.deepEqual(rank(p, here, { service: 'refuel' }).map((x) => x.tier), [3]);
+  assert.equal(rank(p, here, { service: 'medical' }).length, 0); assert.ok(SERVICES.length >= 10);
+  assert.ok(rank(p, here, { service: 'refinery', q: 'laranite' }).length === 0);
+});
+
+test('the category filters combine, and a search can be shared through the address', async () => {
+  const services = [{ name: 'Admin Refinery', place: 'Area18', system: 'Stanton', body: 'ArcCorp', kind: 'City', svc: ['refinery', 'dock'] }, { name: 'Everus Harbor', place: 'Everus Harbor', system: 'Stanton', body: 'Hurston', kind: 'Space station', svc: ['refinery'] }];
+  const p = buildPlaces(rows.filter(Boolean).map((r) => (r.place === 'Everus Harbor' ? { ...r, kind: 'Space station' } : r)), services);
+  const names = (o) => rank(p, null, o).map((x) => x.place.name).sort();
+  assert.deepEqual(names({ cats: ['refinery'] }), ['Area18', 'Everus Harbor']); assert.deepEqual(names({ cats: ['refinery', 'dock'] }), ['Area18']);
+  assert.deepEqual(names({ cats: ['refinery'], planet: 'Hurston' }), ['Everus Harbor']); assert.deepEqual(names({ kind: 'City' }), ['Area18']);
+  assert.deepEqual(names({ cats: ['trade'], planet: 'Hurston' }), ['Everus Harbor', 'Lorville']); assert.deepEqual(names({ cats: ['vretrieve'] }), names({}));
+  assert.ok(CATEGORIES.filter((c) => !c.has).length >= 10 && LOCATION_KINDS.includes('City'));
+  const { readHash, writeHash } = await import('../../site/bureau/rsi1/companion/near-ui.js');
+  const st = { cats: ['refinery', 'dock'], planet: 'Hurston', kind: 'City', q: 'ore', mode: 'sell' };
+  assert.deepEqual(readHash(writeHash(st)), st); assert.deepEqual(readHash('#waypoint?cat=evil,refinery&kind=Nope'), { cats: ['refinery'], planet: '', kind: '', q: '', mode: 'any' });
+  assert.equal(writeHash({ cats: [], planet: '', kind: '', q: '', mode: 'any' }), '#waypoint');
 });

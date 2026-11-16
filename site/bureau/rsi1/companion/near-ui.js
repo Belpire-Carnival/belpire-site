@@ -1,6 +1,8 @@
-// Waypoint pane (OmniOps): pick where you are, then find the nearest place that sells, buys or has what you need.
-// Built from the live UEX terminal rows the page already loads. Text nodes and SVG attributes only. The maths is in near-core.js.
-import { buildPlaces, systemsOf, bodiesOf, findHere, rank, tierCounts, TIERS } from './near-core.js';
+// Waypoint pane (OmniOps): a location search. A filters panel of category toggles, four fields (planet, faction, location type,
+// keyword) and a list of matching places, with an optional "sort by distance from" step. Built from the live UEX terminal data the page
+// already loads; categories that need game-file data are shown switched off. Text nodes and SVG attributes only. Maths in near-core.js.
+// The choices are kept in the address (#waypoint?cat=refinery,dock&planet=Hurston&kind=City&q=...) so a search can be shared.
+import { buildPlaces, bodiesOf, findHere, rank, tierCounts, TIERS, CATEGORIES, LOCATION_KINDS, SERVICE_LABEL } from './near-core.js';
 import { svgEl } from './viz.js';
 
 const el = (tag, attrs = {}, ...kids) => {
@@ -16,33 +18,79 @@ const K_HERE = 'arsenal.near.here';
 const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
 const money = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-US'));
+const IDS = new Set(CATEGORIES.map((c) => c.id));
 
-export function initWaypoint(host, { getRows = () => [] } = {}) {
+// Choices out of the address, ignoring anything that is not one of ours.
+export function readHash(hash) {
+  const qs = String(hash || '').split('?')[1] || '';
+  const p = new URLSearchParams(qs);
+  return { cats: (p.get('cat') || '').split(',').filter((x) => IDS.has(x)), planet: (p.get('planet') || '').slice(0, 60), kind: LOCATION_KINDS.includes(p.get('kind')) ? p.get('kind') : '', q: (p.get('q') || '').slice(0, 60), mode: ['buy', 'sell'].includes(p.get('mode')) ? p.get('mode') : 'any' };
+}
+export function writeHash(st) {
+  const p = new URLSearchParams();
+  if (st.cats.length) p.set('cat', st.cats.join(','));
+  if (st.planet) p.set('planet', st.planet);
+  if (st.kind) p.set('kind', st.kind);
+  if (st.q) p.set('q', st.q);
+  if (st.mode !== 'any') p.set('mode', st.mode);
+  const s = p.toString();
+  return `#waypoint${s ? '?' + s : ''}`;
+}
+
+export function initWaypoint(host, { getRows = () => [], getServices = () => [] } = {}) {
   if (!host) return null;
-  let places = [], hereKey = read(K_HERE, ''), mode = 'any';
-  const sys = el('select', { 'aria-label': 'Star system' }), body = el('select', { 'aria-label': 'Moon or planet' }), plc = el('select', { 'aria-label': 'Where you are' });
+  let places = [], hereKey = read(K_HERE, '');
+  const st = { ...readHash(location.hash) };
+  const remember = () => { if (document.body.dataset.v === 'waypoint' || /^#waypoint/.test(location.hash)) { try { history.replaceState(null, '', writeHash(st)); } catch { /* ignore */ } } };
+
+  const count = el('p', { class: 'small muted', role: 'status' });
+  const catBar = el('div', { class: 'row fm-chips', role: 'group', 'aria-label': 'Categories' });
+  const planet = el('select', { 'aria-label': 'Planet or moon' }), kind = el('select', { 'aria-label': 'Location type' });
+  const faction = el('select', { 'aria-label': 'Faction', disabled: '', title: 'Faction needs game-file data this site does not have yet' }, el('option', { text: 'Faction (no data yet)' }));
+  const q = el('input', { type: 'text', maxlength: '60', placeholder: 'Keyword: a place, terminal or commodity', 'aria-label': 'Keyword' });
+  const modeBar = el('div', { class: 'row fm-chips', role: 'group', 'aria-label': 'Prices' });
+  const list = el('div', { class: 'mt12' });
+  // distance step
+  const sys = el('select', { 'aria-label': 'Star system' }), body = el('select', { 'aria-label': 'Moon or planet you are at' }), plc = el('select', { 'aria-label': 'Where you are' });
   const paste = el('input', { type: 'text', maxlength: '300', placeholder: 'Paste a /showlocation line, or a place name', 'aria-label': 'Paste your location' });
   const pasteBtn = el('button', { type: 'button', class: 'ghost', text: 'Find me' });
-  const q = el('input', { type: 'text', maxlength: '60', placeholder: 'A commodity, terminal or place (Laranite, Admin, Lorville...)', 'aria-label': 'What are you looking for' });
-  const chips = el('div', { class: 'row fm-chips' });
   const status = el('p', { class: 'small muted', role: 'status' });
-  const radar = el('div', { class: 'svgwrap' }), list = el('div', { class: 'mt12' }), dir = el('div', { class: 'mt12' });
-  host.append(el('div', { class: 'card' }, el('h3', { text: 'Where are you?' }),
-    el('div', { class: 'row fm-form' }, sys, body, plc), el('div', { class: 'row mt8 fm-form' }, paste, pasteBtn), status),
-    el('div', { class: 'card mt12' }, el('h3', { text: 'What do you need?' }), q, chips, radar, list),
-    el('div', { class: 'card mt12' }, el('h3', { text: 'Terminal directory' }), dir));
+  const radar = el('div', { class: 'svgwrap' });
+
+  host.append(
+    el('div', { class: 'card' }, el('h3', { text: 'Location search' }),
+      el('div', { class: 'row fm-form' }, planet, faction, kind, q), el('p', { class: 'small muted mt8', text: 'Prices' }), modeBar,
+      el('details', { class: 'fold mt12', open: '' }, el('summary', { text: 'Filters' }), catBar,
+        el('p', { class: 'small muted mt8', text: 'Switched-off filters need game-file data this site does not have yet (hangars, retrieval kiosks, landing pads, factions).' }))),
+    el('details', { class: 'fold card mt12' }, el('summary', { text: 'Sort by distance from where you are' }),
+      el('div', { class: 'row fm-form mt8' }, sys, body, plc), el('div', { class: 'row mt8 fm-form' }, paste, pasteBtn), status, radar),
+    el('div', { class: 'mt12' }, count, list));
 
   const here = () => places.find((p) => p.key === hereKey) || null;
-  const modes = [['any', 'Anything'], ['buy', 'Buy it here'], ['sell', 'Sell it here']];
-  for (const [m, label] of modes) {
-    const b = el('button', { type: 'button', class: 'chip fm-chip', text: label, 'aria-pressed': String(m === mode) });
-    b.addEventListener('click', () => { mode = m; for (const c of chips.children) c.setAttribute('aria-pressed', String(c === b)); drawResults(); });
-    chips.append(b);
+  const redraw = () => { remember(); drawResults(); };
+
+  for (const c of CATEGORIES) {
+    const on = !!c.has;
+    const b = el('button', { type: 'button', class: 'chip fm-chip', text: c.label, 'aria-pressed': String(st.cats.includes(c.id)), disabled: on ? null : '', title: on ? null : 'Needs game-file data this site does not have yet' });
+    if (on) b.addEventListener('click', () => { st.cats = st.cats.includes(c.id) ? st.cats.filter((x) => x !== c.id) : [...st.cats, c.id]; b.setAttribute('aria-pressed', String(st.cats.includes(c.id))); redraw(); });
+    catBar.append(b);
+  }
+  for (const [m, label] of [['any', 'Anything'], ['buy', 'Buy it here'], ['sell', 'Sell it here']]) {
+    const b = el('button', { type: 'button', class: 'chip fm-chip', text: label, 'aria-pressed': String(m === st.mode) });
+    b.addEventListener('click', () => { st.mode = m; for (const c of modeBar.children) c.setAttribute('aria-pressed', String(c === b)); redraw(); });
+    modeBar.append(b);
   }
   const fill = (select, items, cur, blank) => { select.replaceChildren(el('option', { value: '', text: blank }), ...items.map((i) => el('option', { value: i, text: i }))); select.value = items.includes(cur) ? cur : ''; };
+  planet.addEventListener('change', () => { st.planet = planet.value; redraw(); });
+  kind.addEventListener('change', () => { st.kind = kind.value; redraw(); });
+  q.value = st.q; q.addEventListener('input', () => { st.q = q.value.trim(); redraw(); });
+
   function drawPicker() {
     const h = here();
-    fill(sys, systemsOf(places), h?.system || sys.value, 'Any system');
+    fill(planet, bodiesOf(places, ''), st.planet, 'Planet or moon'); st.planet = planet.value;
+    fill(kind, LOCATION_KINDS.filter((k) => places.some((p) => p.kind === k)), st.kind, 'Location type'); st.kind = kind.value;
+    const systems = [...new Set(places.map((p) => p.system).filter(Boolean))].sort();
+    fill(sys, systems, h?.system || sys.value, 'Any system');
     fill(body, bodiesOf(places, sys.value), h?.body || body.value, 'Any moon or planet');
     const inBody = places.filter((p) => (!sys.value || p.system === sys.value) && (!body.value || p.body === body.value));
     plc.replaceChildren(el('option', { value: '', text: 'Pick a place' }), ...inBody.map((p) => el('option', { value: p.key, text: p.name })));
@@ -53,46 +101,53 @@ export function initWaypoint(host, { getRows = () => [] } = {}) {
   plc.addEventListener('change', () => { hereKey = plc.value; write(K_HERE, hereKey); drawResults(); });
   pasteBtn.addEventListener('click', () => {
     const p = findHere(paste.value, places);
-    if (!p) { status.textContent = 'No known place in that text. Pick it from the lists, or type a name that appears in the terminal directory below. A pasted line is matched by name; coordinates are not read yet.'; return; }
+    if (!p) { status.textContent = 'No known place in that text. Pick it from the lists. A pasted line is matched by place name; coordinates are not read yet.'; return; }
     hereKey = p.key; write(K_HERE, hereKey); status.textContent = `Found ${p.name} (${p.system}).`; drawPicker(); drawResults();
   });
   paste.addEventListener('keydown', (e) => { if (e.key === 'Enter') pasteBtn.click(); });
-  q.addEventListener('input', drawResults);
 
   function drawRadar(ranked) {
     const counts = tierCounts(ranked), W = 300, C = 150, svg = svgEl('svg', { viewBox: `0 0 ${W} ${W}`, class: 'radar svgmax', role: 'img', 'aria-label': 'Places by distance tier' });
     [120, 88, 56, 24].forEach((r, i) => {
       svg.append(svgEl('circle', { cx: C, cy: C, r, class: i === 3 ? 'fm-ring here' : 'fm-ring' }));
-      const n = counts[3 - i];
-      svg.append(svgEl('text', { x: C, y: C - r + 12, 'text-anchor': 'middle', class: 'fm-rl' }, `${TIERS[3 - i]}: ${n}`));
+      svg.append(svgEl('text', { x: C, y: C - r + 12, 'text-anchor': 'middle', class: 'fm-rl' }, `${TIERS[3 - i]}: ${counts[3 - i]}`));
     });
     radar.replaceChildren(svg);
   }
+
+  function card(r) {
+    const p = r.place, chips = (p.svc || []).map((k) => el('span', { class: 'chip', text: SERVICE_LABEL[k] || k }));
+    const priced = p.terminals.filter((t) => t.buys.length || t.sells.length);
+    if (priced.length) chips.unshift(el('span', { class: 'chip', text: 'Trade terminals' }));
+    const sub = [p.kind, p.body, p.system].filter(Boolean).join(' · ');
+    const lines = r.hits.slice(0, 4).map((x) => `${x.commodity} ${x.kind === 'buy' ? 'buy' : 'sell'} ${money(x.price)}`).join(' · ');
+    const more = el('details', { class: 'fold' }, el('summary', { text: `${p.terminals.length} terminal${p.terminals.length === 1 ? '' : 's'}` }));
+    for (const t of p.terminals) {
+      const goods = [...t.buys.map((x) => `${x.commodity} buy ${money(x.price)}`), ...t.sells.map((x) => `${x.commodity} sell ${money(x.price)}`)].slice(0, 12).join(' · ');
+      more.append(el('div', { class: 'small' }, el('b', { text: t.name }), goods ? el('div', { class: 'muted', text: goods }) : null));
+    }
+    return el('div', { class: 'card fm-hit' }, el('div', { class: 'row between' }, el('b', { text: p.name }), el('span', { class: 'small muted', text: sub })),
+      chips.length ? el('div', { class: 'row fm-chips' }, ...chips) : null, lines ? el('div', { class: 'small', text: lines }) : null, p.terminals.length ? more : null);
+  }
+
   function drawResults() {
-    const h = here(), ranked = rank(places, h, { mode, q: q.value, system: '' });
+    const h = here(), ranked = rank(places, h, { mode: st.mode, q: st.q, cats: st.cats, planet: st.planet, kind: st.kind });
     drawRadar(ranked);
     list.replaceChildren();
-    if (!places.length) { list.append(el('p', { class: 'small muted', text: 'Live price data has not arrived yet, so there are no places to search. Try again in a few minutes.' })); return; }
-    if (!h) list.append(el('p', { class: 'small muted', text: 'Pick where you are to order results by how close they are. Until then they are grouped by system.' }));
-    if (!ranked.length) { list.append(el('p', { class: 'small muted', text: 'Nothing matches. Try a shorter name, or switch to Anything.' })); return; }
+    if (!places.length) { count.textContent = ''; list.append(el('p', { class: 'small muted', text: 'Live price and terminal data has not arrived yet, so there are no places to search. Try again in a few minutes.' })); return; }
+    count.textContent = `${ranked.length} location${ranked.length === 1 ? '' : 's'}${h ? ` · nearest to ${h.name}` : ''}`;
+    if (!ranked.length) { list.append(el('p', { class: 'small muted', text: 'Nothing matches. Remove a filter or shorten the keyword.' })); return; }
     let tier = -1;
     for (const r of ranked.slice(0, 60)) {
-      if (r.tier !== tier) { tier = r.tier; list.append(el('h4', { class: 'fm-h', text: h ? TIERS[tier] : 'All places' })); }
-      const lines = r.hits.slice(0, 4).map((x) => `${x.commodity} ${x.kind === 'buy' ? 'buy' : 'sell'} ${money(x.price)}`).join(' · ');
-      list.append(el('div', { class: 'row between fm-hit' }, el('div', {}, el('b', { text: r.place.name }), el('span', { class: 'small muted', text: ` · ${[r.place.body, r.place.system].filter(Boolean).join(' · ')}` }), lines ? el('div', { class: 'small', text: lines }) : null)));
+      if (h && r.tier !== tier) { tier = r.tier; list.append(el('h4', { class: 'fm-h', text: TIERS[tier] })); }
+      list.append(card(r));
     }
     if (ranked.length > 60) list.append(el('p', { class: 'small muted', text: `${ranked.length - 60} more. Narrow the search.` }));
   }
-  function drawDir() {
-    dir.replaceChildren();
-    if (!places.length) return;
-    const tb = el('tbody');
-    for (const p of places.slice(0, 400)) tb.append(el('tr', {}, el('td', {}, el('b', { text: p.name })), el('td', { text: p.system || '—' }), el('td', { text: p.body || '—' }), el('td', { class: 'small', text: p.terminals.map((t) => t.name).join(', ') })));
-    dir.append(el('p', { class: 'small muted', text: `${places.length} places with a terminal in the live price data. Services that are not commodity terminals (refineries, repair, ASOP) are not in this data yet.` }),
-      el('div', { class: 'scrollx fm-dir' }, el('table', {}, el('thead', {}, el('tr', {}, ...['Place', 'System', 'Moon or planet', 'Terminals'].map((h) => el('th', { text: h })))), tb)));
-  }
-  function draw() { places = buildPlaces(getRows()); drawPicker(); drawResults(); drawDir(); }
+
+  function draw() { places = buildPlaces(getRows(), getServices()); drawPicker(); drawResults(); }
   window.addEventListener('arsenal:market', draw);
+  window.addEventListener('hashchange', () => { if (/^#waypoint/.test(location.hash) && location.hash !== writeHash(st)) { Object.assign(st, readHash(location.hash)); q.value = st.q; for (const [i, c] of CATEGORIES.entries()) if (c.has) catBar.children[i].setAttribute('aria-pressed', String(st.cats.includes(c.id))); drawPicker(); drawResults(); } });
   draw();
   return { draw };
 }

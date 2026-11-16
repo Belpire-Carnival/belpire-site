@@ -1,0 +1,323 @@
+diff --git a/site/bureau/rsi1/companion/app.js b/site/bureau/rsi1/companion/app.js
+--- a/site/bureau/rsi1/companion/app.js
++++ b/site/bureau/rsi1/companion/app.js
+@@ -873,7 +873,7 @@ function renderContracts() {
+ 
+ 
+ // ---------------- LIVE DATA (our own Worker; nothing leaves this origin) ----------------
+-const MK = { enabled: false, prices: [], updatedAt: null, version: null, partial: false, byName: new Map() };
++const MK = { enabled: false, prices: [], services: [], updatedAt: null, version: null, partial: false, byName: new Map() };
+ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+ const DAY = 864e5;
+ const tsMs = (t) => (t == null ? null : t < 1e12 ? t * 1000 : t);
+@@ -1047,7 +1047,7 @@ async function loadMarket() {
+     const r = await fetch('/api/sc-market', { cache: 'no-cache', headers: { Accept: 'application/json' } });
+     if (!r.ok) throw new Error(String(r.status));
+     const j = await r.json();
+-    MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial;
++    MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial; MK.services = Array.isArray(j.services) ? j.services : [];
+   } catch { MK.enabled = false; MK.prices = []; }
+   indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList(); paintStamp();
+   // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
+@@ -1378,7 +1378,7 @@ scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any m
+   } });
+ 
+ // Waypoint (OmniOps) and Inventory (Hangar)
+-initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices) });
++initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices), getServices: () => MK.services || [] });
+ const inventory = initInventory($('#inventoryHost'), { toast });
+ scanner('#scan-inv', { kind: 'inventory', view: 'inventory', title: 'a storage screen',
+   hint: 'A hangar or station item list, an item bank or a ship cargo list. One screen or a short scroll per place.',
+diff --git a/site/bureau/rsi1/companion/near-core.js b/site/bureau/rsi1/companion/near-core.js
+--- a/site/bureau/rsi1/companion/near-core.js
++++ b/site/bureau/rsi1/companion/near-core.js
+@@ -1,26 +1,39 @@
+ // Waypoint ("nearest to me") for OmniOps: from the live UEX terminal rows, find where a service or a commodity is,
+ // ordered by how close it is in the verse's hierarchy: same place, same moon or planet, same system, other systems.
+ // There are no coordinates in this data, so "close" is a tier, not a distance. Pure functions, no page access.
++export const SERVICES = [['refinery', 'Refinery'], ['refuel', 'Refuel'], ['repair', 'Repair'], ['shipbuy', 'Buy ships'], ['shiprent', 'Rent ships'], ['cargo', 'Cargo center'], ['freight', 'Freight elevator'], ['dock', 'Loading dock'], ['medical', 'Medical'], ['food', 'Food and drink'], ['fpsshop', 'Armor and weapons shop']];
++export const SERVICE_LABEL = Object.fromEntries(SERVICES);
+ export const TIERS = ['Here', 'Same moon or planet', 'Same system', 'Other systems'];
+ export const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+ const money = (n) => (Number.isFinite(n) ? Math.round(n * 100) / 100 : null);
+ 
+ // One entry per place: { key, name, system, body, terminals: [{ name, buys, sells }] }.
+ // buys = what you can buy there (price you pay); sells = what the terminal pays you for.
+-export function buildPlaces(rows) {
++export function buildPlaces(rows, services = []) {
+   const places = new Map();
++  const at = (system, name, body) => {
++    const key = `${norm(system)}|${norm(name)}`;
++    let p = places.get(key);
++    if (!p) places.set(key, (p = { key, name, system: system || '', body: body || '', terminals: new Map(), svc: new Set() }));
++    if (!p.body && body) p.body = body;
++    return p;
++  };
++  for (const s of Array.isArray(services) ? services : []) {
++    if (!s || !Array.isArray(s.svc)) continue;
++    const name = s.place || s.name; if (!name) continue;
++    const p = at(s.system, name, s.body);
++    for (const k of s.svc) if (SERVICE_LABEL[k]) p.svc.add(k);
++    if (s.name && s.name !== name && !p.terminals.has(s.name)) p.terminals.set(s.name, { name: s.name, buys: [], sells: [] });
++  }
+   for (const r of Array.isArray(rows) ? rows : []) {
+     if (!r || !r.terminal) continue;
+-    const name = r.place || r.terminal, key = `${norm(r.system)}|${norm(name)}`;
+-    let p = places.get(key);
+-    if (!p) places.set(key, (p = { key, name, system: r.system || '', body: r.body || '', terminals: new Map() }));
+-    if (!p.body && r.body) p.body = r.body;
++    const p = at(r.system, r.place || r.terminal, r.body);
+     let t = p.terminals.get(r.terminal);
+     if (!t) p.terminals.set(r.terminal, (t = { name: r.terminal, buys: [], sells: [] }));
+     if (r.buy > 0) t.buys.push({ commodity: r.commodity, price: money(r.buy), scu: r.scuBuy ?? null });
+     if (r.sell > 0) t.sells.push({ commodity: r.commodity, price: money(r.sell), scu: r.scuSell ?? null });
+   }
+-  return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)) }))
++  return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)), svc: [...p.svc].sort() }))
+     .sort((a, b) => a.system.localeCompare(b.system) || a.name.localeCompare(b.name));
+ }
+ 
+@@ -48,17 +61,19 @@ export const tierOf = (p, here) => {
+ 
+ // mode: 'any' | 'buy' (places where you can buy it) | 'sell' (places that pay you for it).
+ // q matches a commodity, terminal or place name. Without q, 'buy'/'sell' keep any place with something to buy/sell.
+-export function rank(places, here, { mode = 'any', q = '', system = '' } = {}) {
++export function rank(places, here, { mode = 'any', q = '', system = '', service = '' } = {}) {
+   const k = norm(q), out = [];
+   for (const p of places) {
+     if (system && p.system !== system) continue;
++    if (service && !(p.svc || []).includes(service)) continue;
+     const hits = [];
+-    for (const t of p.terminals) {
++    const wantHits = !service || k || mode !== 'any';
++    for (const t of wantHits ? p.terminals : []) {
+       const nameHit = k && (norm(t.name).includes(k) || norm(p.name).includes(k));
+       if (mode !== 'sell') for (const b of t.buys) if (!k || nameHit || norm(b.commodity).includes(k)) hits.push({ terminal: t.name, commodity: b.commodity, price: b.price, kind: 'buy' });
+       if (mode !== 'buy') for (const s of t.sells) if (!k || nameHit || norm(s.commodity).includes(k)) hits.push({ terminal: t.name, commodity: s.commodity, price: s.price, kind: 'sell' });
+     }
+-    if (!hits.length && !(k && (norm(p.name).includes(k) || p.terminals.some((t) => norm(t.name).includes(k))) && mode === 'any')) continue;
++    if (!hits.length && !(service && !k && mode === 'any') && !(k && (norm(p.name).includes(k) || p.terminals.some((t) => norm(t.name).includes(k))) && mode === 'any')) continue;
+     const best = mode === 'sell' ? Math.max(0, ...hits.map((h) => h.price || 0)) : Math.min(Infinity, ...hits.map((h) => h.price || Infinity));
+     out.push({ place: p, tier: tierOf(p, here), hits: hits.slice(0, 40), best: Number.isFinite(best) && best > 0 ? best : null });
+   }
+diff --git a/site/bureau/rsi1/companion/near-ui.js b/site/bureau/rsi1/companion/near-ui.js
+--- a/site/bureau/rsi1/companion/near-ui.js
++++ b/site/bureau/rsi1/companion/near-ui.js
+@@ -1,6 +1,6 @@
+ // Waypoint pane (OmniOps): pick where you are, then find the nearest place that sells, buys or has what you need.
+ // Built from the live UEX terminal rows the page already loads. Text nodes and SVG attributes only. The maths is in near-core.js.
+-import { buildPlaces, systemsOf, bodiesOf, findHere, rank, tierCounts, TIERS } from './near-core.js';
++import { buildPlaces, systemsOf, bodiesOf, findHere, rank, tierCounts, TIERS, SERVICES, SERVICE_LABEL } from './near-core.js';
+ import { svgEl } from './viz.js';
+ 
+ const el = (tag, attrs = {}, ...kids) => {
+@@ -17,19 +17,20 @@ const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); re
+ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
+ const money = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-US'));
+ 
+-export function initWaypoint(host, { getRows = () => [] } = {}) {
++export function initWaypoint(host, { getRows = () => [], getServices = () => [] } = {}) {
+   if (!host) return null;
+-  let places = [], hereKey = read(K_HERE, ''), mode = 'any';
++  let places = [], hereKey = read(K_HERE, ''), mode = 'any', service = '';
+   const sys = el('select', { 'aria-label': 'Star system' }), body = el('select', { 'aria-label': 'Moon or planet' }), plc = el('select', { 'aria-label': 'Where you are' });
+   const paste = el('input', { type: 'text', maxlength: '300', placeholder: 'Paste a /showlocation line, or a place name', 'aria-label': 'Paste your location' });
+   const pasteBtn = el('button', { type: 'button', class: 'ghost', text: 'Find me' });
+   const q = el('input', { type: 'text', maxlength: '60', placeholder: 'A commodity, terminal or place (Laranite, Admin, Lorville...)', 'aria-label': 'What are you looking for' });
+   const chips = el('div', { class: 'row fm-chips' });
++  const svcBar = el('div', { class: 'row fm-chips', role: 'group', 'aria-label': 'Service' });
+   const status = el('p', { class: 'small muted', role: 'status' });
+   const radar = el('div', { class: 'svgwrap' }), list = el('div', { class: 'mt12' }), dir = el('div', { class: 'mt12' });
+   host.append(el('div', { class: 'card' }, el('h3', { text: 'Where are you?' }),
+     el('div', { class: 'row fm-form' }, sys, body, plc), el('div', { class: 'row mt8 fm-form' }, paste, pasteBtn), status),
+-    el('div', { class: 'card mt12' }, el('h3', { text: 'What do you need?' }), q, chips, radar, list),
++    el('div', { class: 'card mt12' }, el('h3', { text: 'What do you need?' }), q, el('p', { class: 'small muted mt8', text: 'Service' }), svcBar, el('p', { class: 'small muted mt8', text: 'Prices' }), chips, radar, list),
+     el('div', { class: 'card mt12' }, el('h3', { text: 'Terminal directory' }), dir));
+ 
+   const here = () => places.find((p) => p.key === hereKey) || null;
+@@ -39,6 +40,11 @@ export function initWaypoint(host, { getRows = () => [] } = {}) {
+     b.addEventListener('click', () => { mode = m; for (const c of chips.children) c.setAttribute('aria-pressed', String(c === b)); drawResults(); });
+     chips.append(b);
+   }
++  for (const [k, label] of [['', 'Any'], ...SERVICES]) {
++    const b = el('button', { type: 'button', class: 'chip fm-chip', text: label, 'aria-pressed': String(k === service) });
++    b.addEventListener('click', () => { service = k; for (const c of svcBar.children) c.setAttribute('aria-pressed', String(c === b)); drawResults(); });
++    svcBar.append(b);
++  }
+   const fill = (select, items, cur, blank) => { select.replaceChildren(el('option', { value: '', text: blank }), ...items.map((i) => el('option', { value: i, text: i }))); select.value = items.includes(cur) ? cur : ''; };
+   function drawPicker() {
+     const h = here();
+@@ -69,7 +75,7 @@ export function initWaypoint(host, { getRows = () => [] } = {}) {
+     radar.replaceChildren(svg);
+   }
+   function drawResults() {
+-    const h = here(), ranked = rank(places, h, { mode, q: q.value, system: '' });
++    const h = here(), ranked = rank(places, h, { mode, q: q.value, system: '', service });
+     drawRadar(ranked);
+     list.replaceChildren();
+     if (!places.length) { list.append(el('p', { class: 'small muted', text: 'Live price data has not arrived yet, so there are no places to search. Try again in a few minutes.' })); return; }
+@@ -78,7 +84,7 @@ export function initWaypoint(host, { getRows = () => [] } = {}) {
+     let tier = -1;
+     for (const r of ranked.slice(0, 60)) {
+       if (r.tier !== tier) { tier = r.tier; list.append(el('h4', { class: 'fm-h', text: h ? TIERS[tier] : 'All places' })); }
+-      const lines = r.hits.slice(0, 4).map((x) => `${x.commodity} ${x.kind === 'buy' ? 'buy' : 'sell'} ${money(x.price)}`).join(' · ');
++      const lines = [(r.place.svc || []).map((k) => SERVICE_LABEL[k]).join(', '), r.hits.slice(0, 4).map((x) => `${x.commodity} ${x.kind === 'buy' ? 'buy' : 'sell'} ${money(x.price)}`).join(' · ')].filter(Boolean).join(' | ');
+       list.append(el('div', { class: 'row between fm-hit' }, el('div', {}, el('b', { text: r.place.name }), el('span', { class: 'small muted', text: ` · ${[r.place.body, r.place.system].filter(Boolean).join(' · ')}` }), lines ? el('div', { class: 'small', text: lines }) : null)));
+     }
+     if (ranked.length > 60) list.append(el('p', { class: 'small muted', text: `${ranked.length - 60} more. Narrow the search.` }));
+@@ -87,11 +93,11 @@ export function initWaypoint(host, { getRows = () => [] } = {}) {
+     dir.replaceChildren();
+     if (!places.length) return;
+     const tb = el('tbody');
+-    for (const p of places.slice(0, 400)) tb.append(el('tr', {}, el('td', {}, el('b', { text: p.name })), el('td', { text: p.system || '—' }), el('td', { text: p.body || '—' }), el('td', { class: 'small', text: p.terminals.map((t) => t.name).join(', ') })));
+-    dir.append(el('p', { class: 'small muted', text: `${places.length} places with a terminal in the live price data. Services that are not commodity terminals (refineries, repair, ASOP) are not in this data yet.` }),
++    for (const p of places.slice(0, 400)) tb.append(el('tr', {}, el('td', {}, el('b', { text: p.name })), el('td', { text: p.system || '—' }), el('td', { text: p.body || '—' }), el('td', { class: 'small', text: [(p.svc || []).map((k) => SERVICE_LABEL[k]).join(', '), p.terminals.map((t) => t.name).join(', ')].filter(Boolean).join(' | ') })));
++    dir.append(el('p', { class: 'small muted', text: `${places.length} places with a terminal in the live price data. Refineries, refuel, repair, ship shops and similar come from UEX's terminal list. Hangars and ASOP terminals are not in that list, so they cannot be searched yet.` }),
+       el('div', { class: 'scrollx fm-dir' }, el('table', {}, el('thead', {}, el('tr', {}, ...['Place', 'System', 'Moon or planet', 'Terminals'].map((h) => el('th', { text: h })))), tb)));
+   }
+-  function draw() { places = buildPlaces(getRows()); drawPicker(); drawResults(); drawDir(); }
++  function draw() { places = buildPlaces(getRows(), getServices()); drawPicker(); drawResults(); drawDir(); }
+   window.addEventListener('arsenal:market', draw);
+   draw();
+   return { draw };
+diff --git a/worker/sc-market.js b/worker/sc-market.js
+--- a/worker/sc-market.js
++++ b/worker/sc-market.js
+@@ -19,7 +19,7 @@ export const MARKET_EVERY_MS = 55 * 60 * 1000;
+ const STALE_MS = 3 * 60 * 60 * 1000;
+ const MAX_ROWS = 6000;
+ // Bump when the stored rows gain fields, so the next request rebuilds the snapshot instead of waiting out the hour.
+-const MARKET_SCHEMA = 3;
++const MARKET_SCHEMA = 4;
+ 
+ const num = (v) => {
+   const n = typeof v === 'string' ? Number(v.trim()) : v;
+@@ -84,6 +84,41 @@ export function parseTerminals(data) {
+   return map;
+ }
+ 
++// What each terminal offers besides prices: refineries, fuel, repair, ship shops, cargo centres, freight elevators and so on.
++// UEX describes a terminal with a `type` and yes/no flags; both are read, tolerantly, because the exact names are not pinned down here.
++// Hangars and ASOP terminals are not in UEX's terminal list, so they cannot appear.
++export const SERVICE_KEYS = ['refinery', 'refuel', 'repair', 'shipbuy', 'shiprent', 'cargo', 'freight', 'dock', 'medical', 'food', 'fpsshop'];
++export function servicesOf(t) {
++  const flag = (k) => t[k] === 1 || t[k] === true || t[k] === '1';
++  const type = lc(t.type).replace(/[\s-]+/g, '_');
++  const out = [];
++  if (flag('is_refinery') || type.includes('refinery')) out.push('refinery');
++  if (flag('is_refuel') || type === 'fuel' || type.includes('refuel')) out.push('refuel');
++  if (flag('is_repair') || type.includes('repair')) out.push('repair');
++  if (flag('is_shop_vehicle_buy') || type === 'vehicle_buy') out.push('shipbuy');
++  if (flag('is_shop_vehicle_rent') || type === 'vehicle_rent') out.push('shiprent');
++  if (flag('is_cargo_center') || type.includes('cargo_center')) out.push('cargo');
++  if (flag('has_freight_elevator')) out.push('freight');
++  if (flag('has_loading_dock')) out.push('dock');
++  if (flag('is_medical') || type === 'medical') out.push('medical');
++  if (flag('is_food') || type === 'food') out.push('food');
++  if (flag('is_shop_fps') || type === 'item') out.push('fpsshop');
++  return out;
++}
++export function parseServices(data) {
++  if (!Array.isArray(data)) return [];
++  const out = [];
++  for (const t of data) {
++    if (!t || typeof t !== 'object') continue;
++    const svc = servicesOf(t); if (!svc.length) continue;
++    const system = str(first(t, ['star_system_name', 'system_name']), 40);
++    const place = str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60);
++    if (!system && !place) continue;
++    out.push({ name: str(first(t, ['displayname', 'name', 'nickname']), 60), place, system, body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60), svc });
++  }
++  return out.slice(0, 2500);
++}
++
+ export function parsePrices(data, terminals) {
+   if (!Array.isArray(data)) throw new Error('prices: expected a list');
+   const rows = [];
+@@ -136,10 +171,12 @@ async function readJson(kv, key) {
+ 
+ export async function buildMarket(env, previous) {
+   const errors = [];
+-  const [prices, version, terms] = await Promise.allSettled([
++  const rawTerms = uex(env, 'terminals');
++  const [prices, version, terms, svcs] = await Promise.allSettled([
+     uex(env, 'commodities_prices_all'),
+     uex(env, 'game_versions').then(parseLiveVersion),
+-    uex(env, 'terminals').then(parseTerminals)
++    rawTerms.then(parseTerminals),
++    rawTerms.then(parseServices)
+   ]);
+   const terminals = terms.status === 'fulfilled' ? terms.value : null;
+   if (!terminals?.size) errors.push(terms.status === 'fulfilled' ? 'terminals: nothing recognised' : `terminals: ${terms.reason?.message}`);
+@@ -147,6 +184,8 @@ export async function buildMarket(env, previous) {
+   if (prices.status === 'fulfilled') { try { rows = parsePrices(prices.value, terminals); } catch (e) { prices.status = 'rejected'; prices.reason = e; } }
+   if (!rows) errors.push(prices.reason?.message || 'prices failed');
+   else if (terminals?.size && rows.every((r) => !r.system)) errors.push('terminals: no price row matched a terminal');
++  const services = svcs.status === 'fulfilled' && svcs.value.length ? svcs.value : previous?.services ?? [];
++  if (svcs.status === 'fulfilled' && !svcs.value.length) errors.push('terminals: no services recognised');
+   let live = previous?.version ?? null;
+   if (version.status === 'fulfilled' && version.value) live = version.value;
+   else errors.push(version.status === 'fulfilled' ? 'version: nothing recognised' : `version: ${version.reason?.message}`);
+@@ -156,6 +195,7 @@ export async function buildMarket(env, previous) {
+     source: 'UEX Corp',
+     version: live,
+     prices: rows ?? previous?.prices ?? [],
++    services,
+     schema: MARKET_SCHEMA,
+     errors
+   };
+diff --git a/worker/test/sc-market.test.mjs b/worker/test/sc-market.test.mjs
+--- a/worker/test/sc-market.test.mjs
++++ b/worker/test/sc-market.test.mjs
+@@ -1,7 +1,7 @@
+ import { test, beforeEach, afterEach } from 'node:test';
+ import assert from 'node:assert/strict';
+ import worker from '../index.js';
+-import { parseTerminals, parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
++import { parseServices, servicesOf, parseTerminals, parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
+ 
+ // These fixtures follow the field names UEX documents for commodities_prices_all; they are examples, not
+ // captured responses. The parser is tolerant, and a real response with different names fails loudly (see below).
+@@ -158,3 +158,15 @@ test('price rows pick up the moon or planet a terminal sits on from the terminal
+   const rows = parsePrices([{ commodity_name: 'Gold', terminal_name: 'TDD - Commons', id_terminal: 7, price_sell: 5000 }], terms);
+   assert.equal(rows[0].system, 'Stanton'); assert.equal(rows[0].place, 'Lorville'); assert.equal(rows[0].body, 'Hurston');
+ });
++
++test('terminal types and flags become services, and terminals with none are left out', () => {
++  assert.deepEqual(servicesOf({ type: 'refinery' }), ['refinery']);
++  assert.deepEqual(servicesOf({ type: 'commodity', is_refuel: 1, has_freight_elevator: true, has_loading_dock: '1' }).sort(), ['dock', 'freight', 'refuel']);
++  assert.deepEqual(servicesOf({ type: 'vehicle_buy' }), ['shipbuy']); assert.deepEqual(servicesOf({ type: 'Cargo Center' }), ['cargo']); assert.deepEqual(servicesOf({ type: 'commodity' }), []);
++  const list = parseServices([
++    { displayname: 'Refinery Deck', type: 'refinery', star_system_name: 'Stanton', city_name: 'Area18', planet_name: 'ArcCorp' },
++    { displayname: 'Plain Shop', type: 'commodity', star_system_name: 'Stanton', city_name: 'Area18' },
++    { type: 'refinery' }, null
++  ]);
++  assert.equal(list.length, 1); assert.deepEqual(list[0].svc, ['refinery']); assert.equal(list[0].place, 'Refinery Deck'); assert.equal(list[0].body, 'ArcCorp'); assert.deepEqual(parseServices('x'), []);
++});
+diff --git a/worker/test/waypoint-inventory.test.mjs b/worker/test/waypoint-inventory.test.mjs
+--- a/worker/test/waypoint-inventory.test.mjs
++++ b/worker/test/waypoint-inventory.test.mjs
+@@ -1,7 +1,7 @@
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
+ import { readFileSync } from 'node:fs';
+-import { buildPlaces, systemsOf, bodiesOf, findHere, rank, tierOf, tierCounts, TIERS } from '../../site/bureau/rsi1/companion/near-core.js';
++import { SERVICES, buildPlaces, systemsOf, bodiesOf, findHere, rank, tierOf, tierCounts, TIERS } from '../../site/bureau/rsi1/companion/near-core.js';
+ import { cleanItem, cleanInv, addItem, setQty, removeItem, importRows, search, places, whereIs, MAX_ITEMS } from '../../site/bureau/rsi1/companion/inv-core.js';
+ 
+ const rows = [
+@@ -76,3 +76,14 @@ test('Waypoint and Inventory are panes with their own views, icons and art', ()
+     assert.match(readFileSync(new URL('viz.js', dir), 'utf8'), new RegExp(`^\\s{2}${id}:\\s*\\[`, 'm')); assert.match(readFileSync(new URL('art.js', dir), 'utf8'), new RegExp(`^\\s{2}${id}:`, 'm'));
+   }
+ });
++
++test('services add places and filter results, with prices still searchable beside them', () => {
++  const services = [{ name: 'Admin Refinery', place: 'Area18', system: 'Stanton', body: 'ArcCorp', svc: ['refinery', 'dock'] }, { name: 'Far Dock', place: 'Ruin Station', system: 'Pyro', body: 'Pyro IV', svc: ['refuel'] }];
++  const p = buildPlaces([...rows.filter(Boolean)], services);
++  assert.equal(p.length, 6); assert.deepEqual(p.find((x) => x.name === 'Area18').svc, ['dock', 'refinery']);
++  const here = p.find((x) => x.name === 'Lorville');
++  const r = rank(p, here, { service: 'refinery' });
++  assert.deepEqual(r.map((x) => x.place.name), ['Area18']); assert.equal(r[0].tier, 2); assert.deepEqual(rank(p, here, { service: 'refuel' }).map((x) => x.tier), [3]);
++  assert.equal(rank(p, here, { service: 'medical' }).length, 0); assert.ok(SERVICES.length >= 10);
++  assert.ok(rank(p, here, { service: 'refinery', q: 'laranite' }).length === 0);
++});
