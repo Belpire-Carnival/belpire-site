@@ -730,3 +730,8 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
 .fm-dir{max-height:360px;overflow:auto}.fm-dir thead th{position:sticky;top:0;background:var(--bg,#05080d)}
 .fm-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fm-form>*{flex:1 1 150px;min-width:0}.fm-form>button{flex:0 0 auto}
 #v-waypoint .radar{max-height:250px;width:auto;margin:0 auto;display:block}
+
+/* inside OmniGlass Desktop: the local-data card shows, the Wardrobe designer (website only) is replaced by a link to the browser */
+#localGame, #wardrobeApp { display: none; }
+.in-app #localGame, .in-app #wardrobeApp { display: block; }
+.in-app #wardrobe { display: none; }
