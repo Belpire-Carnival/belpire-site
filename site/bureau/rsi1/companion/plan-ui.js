@@ -180,7 +180,7 @@ export function initCatalog(host, { toast = () => {} } = {}) {
       kids.push(el('h3', { class: 'mt8', text: 'Unlocked by' }));
       for (const g of d.missions) kids.push(el('p', { class: 'small' }, el('b', { text: `${g.label}${g.chance != null && g.chance < 1 ? ` (${Math.round(g.chance * 100)}%)` : ''}: ` }), g.list.map((m) => `${m.title}${m.scope ? ` (${m.scope})` : ''}`).join(' · ')));
       kids.push(el('p', { class: 'small muted', text: 'Mission pools rotate between patches. Check the in-game reward before you chase one.' }));
-    } else if (!b.def) kids.push(el('p', { class: 'small muted', text: 'The wiki lists no unlocking mission for this one.' }));
+    } else if (!b.def) kids.push(el('p', { class: 'small muted', text: 'No unlocking mission pool was found for this one.' }));
     const track = el('button', { type: 'button', text: 'Track as objective' });
     track.addEventListener('click', () => toast(trackUnlock({ name: b.name, bpId: b.id }) ? 'Added to your objectives' : 'Already in your objectives'));
     kids.push(el('div', { class: 'row mt8' }, want, ...(b.def ? [] : [track]), el('a', { class: 'ghost btnlink', href: `#fabricator?b=${encodeURIComponent(b.id)}`, text: 'Plan the craft' })));

@@ -1,7 +1,7 @@
 // Fabricator pane: pick a blueprint, set the quality of the material in each slot, see what that does to the crafted
 // item's stats, and get the material list for the number of crafts you want. Text nodes only; the maths is in fab-core.js.
 // Data comes from our own /api/sc-blueprints and /api/sc-blueprint.
-import { multiplier, qualityFor, pct, arrow, verdict, clampQuality, materialList, statRows, isLinear, START_QUALITY } from './fab-core.js';
+import { multiplier, qualityFor, pct, arrow, verdict, clampQuality, materialList, statRows, isModelled, START_QUALITY } from './fab-core.js';
 import { keyOf } from './plan-core.js';
 
 const API_LIST = '/api/sc-blueprints';
@@ -68,7 +68,7 @@ export function initFabricator(host, { toast = () => {}, onGoal = null } = {}) {
         const target = el('input', { type: 'number', step: '0.01', min: '0', placeholder: 'e.g. 1.05', 'aria-label': `Target multiplier for ${m.label}` });
         const need = el('span', { class: 'small muted' });
         target.addEventListener('input', () => {
-          if (!isLinear(m)) { need.textContent = ''; return; }
+          if (!isModelled(m)) { need.textContent = ''; return; }
           const n = qualityFor(m, Number(target.value));
           need.textContent = target.value === '' ? '' : n == null ? `outside ×${m.lo} to ×${m.hi}` : `needs quality ${n}`;
         });

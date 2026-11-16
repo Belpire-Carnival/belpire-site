@@ -6,9 +6,23 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const ok = (v) => Number.isFinite(v);
 
 export const isLinear = (m) => !!m && m.curve === 'linear' && ok(m.qmin) && ok(m.qmax) && m.qmax > m.qmin && ok(m.lo) && ok(m.hi);
+// Game-file blueprints can give a curve in segments: { curve: 'piecewise', ranges: [{ q0, q1, m0, m1 }] }, each a straight line.
+const segs = (m) => (Array.isArray(m.ranges) ? m.ranges.filter((r) => r && ok(r.q0) && ok(r.q1) && ok(r.m0) && ok(r.m1) && r.q1 >= r.q0) : []);
+export const isPiecewise = (m) => !!m && m.curve === 'piecewise' && segs(m).length > 0;
+export const isModelled = (m) => isLinear(m) || isPiecewise(m);
+const along = (r, q) => (r.q1 === r.q0 ? r.m1 : r.m0 + (r.m1 - r.m0) * clamp((q - r.q0) / (r.q1 - r.q0), 0, 1));
 
 // Stat multiplier a modifier gives at material quality q, or null when the curve is not a straight line.
 export function multiplier(m, q) {
+  if (isPiecewise(m) && ok(q)) {
+    const rs = segs(m), first = rs[0], last = rs[rs.length - 1];
+    if (q <= first.q0) return first.m0;
+    if (q >= last.q1) return last.m1;
+    const r = rs.find((x) => q >= x.q0 && q <= x.q1);
+    if (r) return along(r, q);
+    const i = rs.findIndex((x) => x.q0 > q); // between two segments: hold the earlier segment's end value
+    return i > 0 ? rs[i - 1].m1 : first.m0;
+  }
   if (!isLinear(m) || !ok(q)) return null;
   const t = clamp((q - m.qmin) / (m.qmax - m.qmin), 0, 1);
   return m.lo + (m.hi - m.lo) * t;
@@ -16,6 +30,14 @@ export function multiplier(m, q) {
 
 // Material quality needed for a wanted multiplier, or null when it is out of range (or the curve is not modelled).
 export function qualityFor(m, target) {
+  if (isPiecewise(m) && ok(target)) {
+    for (const r of segs(m)) {
+      const lo = Math.min(r.m0, r.m1), hi = Math.max(r.m0, r.m1);
+      if (r.m0 === r.m1 || target < lo - 1e-9 || target > hi + 1e-9) continue;
+      return Math.round(r.q0 + clamp((target - r.m0) / (r.m1 - r.m0), 0, 1) * (r.q1 - r.q0));
+    }
+    return null;
+  }
   if (!isLinear(m) || !ok(target) || m.hi === m.lo) return null;
   const t = (target - m.lo) / (m.hi - m.lo);
   if (t < -1e-9 || t > 1 + 1e-9) return null;
@@ -57,7 +79,7 @@ export function statRows(groups, quality) {
     for (const m of g.mods || []) {
       const q = ok(quality[g.key]) ? quality[g.key] : START_QUALITY;
       const mult = multiplier(m, q);
-      rows.push({ group: g.name, gkey: g.key, mod: m, q, mult, modelled: isLinear(m) });
+      rows.push({ group: g.name, gkey: g.key, mod: m, q, mult, modelled: isModelled(m) });
     }
   }
   return rows;
