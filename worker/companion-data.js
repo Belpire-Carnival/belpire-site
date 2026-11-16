@@ -1,16 +1,22 @@
 // Game data for the OmniGlass Desktop app, served read-only from the Worker bundle. Derived facts only (names, ranks,
 // numbers) taken from the game's own database by the desktop extractor; no user data, so no sign-in is needed.
 //
-//   GET /api/companion/data               → { v, build, files: { factions: { bytes }, 'app-blueprints': { bytes } } }
-//   GET /api/companion/data?name=factions → the reputation ladders file
-//   GET /api/companion/data?name=app-blueprints → the blueprint finder file
+//   GET /api/companion/data                          → manifest: { v: 2, channels: { live: { build, available, files }, ptu: { … } }, build, files }
+//                                                      (top-level build/files repeat LIVE for older clients)
+//   GET /api/companion/data?name=factions            → the reputation ladders file (LIVE)
+//   GET /api/companion/data?name=app-blueprints&channel=ptu → the blueprint finder file for the PTU
 //
-// Refresh after each game patch: run the extractors in the desktop repo, copy out/factions.json and out/app-blueprints.json
-// to worker/companion-data/, and deploy.
-import factions from './companion-data/factions.json' with { type: 'json' };
-import blueprints from './companion-data/app-blueprints.json' with { type: 'json' };
+// Refresh after each game patch: in the desktop repo run `node tools/extract/refresh.mjs live <version>` (and `ptu <version>`), then
+// run apply-data.mjs here (see its header). Nothing user-specific is stored.
+import liveFactions from './companion-data/live/factions.json' with { type: 'json' };
+import liveBlueprints from './companion-data/live/app-blueprints.json' with { type: 'json' };
+import ptuFactions from './companion-data/ptu/factions.json' with { type: 'json' };
+import ptuBlueprints from './companion-data/ptu/app-blueprints.json' with { type: 'json' };
 
-const FILES = { factions, 'app-blueprints': blueprints };
+const CHANNELS = {
+  live: { factions: liveFactions, 'app-blueprints': liveBlueprints },
+  ptu: { factions: ptuFactions, 'app-blueprints': ptuBlueprints }
+};
 const HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
   'Cache-Control': 'public, max-age=300',
@@ -18,18 +24,30 @@ const HEADERS = {
   'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'"
 };
 const text = new Map();
-const bodyOf = (name) => { if (!text.has(name)) text.set(name, JSON.stringify(FILES[name])); return text.get(name); };
+const bodyOf = (channel, name) => { const k = `${channel}/${name}`; if (!text.has(k)) text.set(k, JSON.stringify(CHANNELS[channel][name])); return text.get(k); };
 const reply = (body, status = 200, extra = {}) => new Response(body, { status, headers: { ...HEADERS, ...extra } });
 
+// A channel with no extracted build yet (an empty placeholder) is listed but marked unavailable, so the app can hide its toggle.
+function describe(channel) {
+  const files = CHANNELS[channel];
+  const builds = new Set(Object.values(files).map((f) => String(f?.build || '').slice(0, 40)));
+  const build = builds.size === 1 ? [...builds][0] : '';
+  return { build, available: build !== '', files: Object.fromEntries(Object.keys(files).map((n) => [n, { bytes: bodyOf(channel, n).length }])) };
+}
+
 export function manifest() {
-  const builds = new Set(Object.values(FILES).map((f) => String(f?.build || '').slice(0, 40)));
-  return { v: 1, build: builds.size === 1 ? [...builds][0] : '', files: Object.fromEntries(Object.keys(FILES).map((n) => [n, { bytes: bodyOf(n).length }])) };
+  const channels = Object.fromEntries(Object.keys(CHANNELS).map((c) => [c, describe(c)]));
+  return { v: 2, channels, build: channels.live.build, files: channels.live.files };
 }
 
 export function handleCompanionData(request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return reply(JSON.stringify({ error: 'method not allowed' }), 405, { Allow: 'GET, HEAD' });
-  const name = new URL(request.url).searchParams.get('name');
-  if (name === null) return reply(request.method === 'HEAD' ? null : JSON.stringify(manifest()));
-  if (!Object.hasOwn(FILES, name)) return reply(JSON.stringify({ error: 'unknown_file' }), 404);
-  return reply(request.method === 'HEAD' ? null : bodyOf(name));
+  const params = new URL(request.url).searchParams;
+  const name = params.get('name'), channel = (params.get('channel') ?? 'live').toLowerCase();
+  const head = request.method === 'HEAD';
+  if (name === null) return reply(head ? null : JSON.stringify(manifest()));
+  if (!Object.hasOwn(CHANNELS, channel)) return reply(JSON.stringify({ error: 'unknown_channel' }), 404);
+  if (!Object.hasOwn(CHANNELS[channel], name)) return reply(JSON.stringify({ error: 'unknown_file' }), 404);
+  if (!describe(channel).available) return reply(JSON.stringify({ error: 'channel_not_available' }), 404);
+  return reply(head ? null : bodyOf(channel, name));
 }
