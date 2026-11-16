@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlaces, rank, CATEGORIES, SERVICE_LABEL } from '../../site/bureau/rsi1/companion/near-core.js';
+import { buildPlaces, rank, authoritiesOf, CATEGORIES, SERVICE_LABEL } from '../../site/bureau/rsi1/companion/near-core.js';
 
 const rows = [{ system: 'Stanton', place: 'Gamma City', body: 'Beta Moon', kind: 'City', terminal: 'Gamma TDD', commodity: 'Gold', buy: 0, sell: 5 }];
 const game = [
@@ -44,4 +44,16 @@ test('every game service key has a label, so chips never show a raw key', () => 
 test('buildPlaces still works with no game data', () => {
   assert.equal(buildPlaces(rows).length, 1);
   assert.equal(buildPlaces(rows, [], null).length, 1);
+});
+
+test('jurisdiction and faction ride along and filter through rank()', () => {
+  const g = [
+    { n: 'Gamma City', s: 'Stanton', b: 'Beta Moon', k: 'City', j: 'Hurston Dynamics', svc: ['hangar'] },
+    { n: 'Outlaw Rock', s: 'Pyro', b: '', k: 'Outpost', j: '', f: 'Head Hunters', svc: ['pad'] },
+  ];
+  const places = buildPlaces(rows, [], g);
+  assert.deepEqual(authoritiesOf(places), ['Head Hunters', 'Hurston Dynamics']);
+  assert.deepEqual(rank(places, null, { auth: 'Hurston Dynamics' }).map((r) => r.place.name), ['Gamma City']);
+  assert.deepEqual(rank(places, null, { auth: 'Head Hunters' }).map((r) => r.place.name), ['Outlaw Rock']);
+  assert.equal(rank(places, null, { auth: 'Nobody' }).length, 0);
 });
