@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../index.js';
-import { parseTerminals, parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
+import { parseServices, servicesOf, parseTerminals, parsePriceRow, parsePrices, parseLiveVersion, unwrap, refreshMarket, handleMarket, cleanShipName, MARKET_EVERY_MS } from '../sc-market.js';
 
 // These fixtures follow the field names UEX documents for commodities_prices_all; they are examples, not
 // captured responses. The parser is tolerant, and a real response with different names fails loudly (see below).
@@ -42,7 +42,7 @@ afterEach(() => { globalThis.fetch = realFetch; });
 test('parsePriceRow keeps priced rows and drops unusable ones', () => {
   const rows = parsePrices(ROWS);
   assert.equal(rows.length, 3);
-  assert.deepEqual(rows[0], { commodity: 'Recycled Material Composite', terminal: 'TDD - Commons', system: 'Stanton', place: '', body: '', buy: null, sell: 6000, scuBuy: 0, scuSell: 0, at: 1793000000 });
+  assert.deepEqual(rows[0], { commodity: 'Recycled Material Composite', terminal: 'TDD - Commons', system: 'Stanton', place: '', body: '', kind: '', buy: null, sell: 6000, scuBuy: 0, scuSell: 0, at: 1793000000 });
   assert.equal(parsePriceRow({ commodity_name: 'X', terminal_name: 'Y', price_buy: 'abc' }), null);
 });
 
@@ -157,4 +157,16 @@ test('price rows pick up the moon or planet a terminal sits on from the terminal
   const terms = parseTerminals([{ id: 7, name: 'TDD - Commons', star_system_name: 'Stanton', city_name: 'Lorville', planet_name: 'Hurston' }]);
   const rows = parsePrices([{ commodity_name: 'Gold', terminal_name: 'TDD - Commons', id_terminal: 7, price_sell: 5000 }], terms);
   assert.equal(rows[0].system, 'Stanton'); assert.equal(rows[0].place, 'Lorville'); assert.equal(rows[0].body, 'Hurston');
+});
+
+test('terminal types and flags become services, and terminals with none are left out', () => {
+  assert.deepEqual(servicesOf({ type: 'refinery' }), ['refinery']);
+  assert.deepEqual(servicesOf({ type: 'commodity', is_refuel: 1, has_freight_elevator: true, has_loading_dock: '1' }).sort(), ['dock', 'freight', 'refuel']);
+  assert.deepEqual(servicesOf({ type: 'vehicle_buy' }), ['shipbuy']); assert.deepEqual(servicesOf({ type: 'Cargo Center' }), ['cargo']); assert.deepEqual(servicesOf({ type: 'commodity' }), []);
+  const list = parseServices([
+    { displayname: 'Refinery Deck', type: 'refinery', star_system_name: 'Stanton', city_name: 'Area18', planet_name: 'ArcCorp' },
+    { displayname: 'Plain Shop', type: 'commodity', star_system_name: 'Stanton', city_name: 'Area18' },
+    { type: 'refinery' }, null
+  ]);
+  assert.equal(list.length, 1); assert.deepEqual(list[0].svc, ['refinery']); assert.equal(list[0].place, 'Refinery Deck'); assert.equal(list[0].body, 'ArcCorp'); assert.deepEqual(parseServices('x'), []);
 });

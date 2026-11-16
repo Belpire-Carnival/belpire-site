@@ -873,7 +873,7 @@ function renderContracts() {
 
 
 // ---------------- LIVE DATA (our own Worker; nothing leaves this origin) ----------------
-const MK = { enabled: false, prices: [], updatedAt: null, version: null, partial: false, byName: new Map() };
+const MK = { enabled: false, prices: [], services: [], updatedAt: null, version: null, partial: false, byName: new Map() };
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const DAY = 864e5;
 const tsMs = (t) => (t == null ? null : t < 1e12 ? t * 1000 : t);
@@ -1047,7 +1047,7 @@ async function loadMarket() {
     const r = await fetch('/api/sc-market', { cache: 'no-cache', headers: { Accept: 'application/json' } });
     if (!r.ok) throw new Error(String(r.status));
     const j = await r.json();
-    MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial;
+    MK.enabled = !!j.enabled; MK.prices = Array.isArray(j.prices) ? j.prices : []; MK.updatedAt = j.updatedAt || null; MK.version = j.version || null; MK.partial = !!j.partial; MK.services = Array.isArray(j.services) ? j.services : [];
   } catch { MK.enabled = false; MK.prices = []; }
   indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList(); paintStamp();
   // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
@@ -1378,7 +1378,7 @@ scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any m
   } });
 
 // Waypoint (OmniOps) and Inventory (Hangar)
-initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices) });
+initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices), getServices: () => MK.services || [] });
 const inventory = initInventory($('#inventoryHost'), { toast });
 scanner('#scan-inv', { kind: 'inventory', view: 'inventory', title: 'a storage screen',
   hint: 'A hangar or station item list, an item bank or a ship cargo list. One screen or a short scroll per place.',

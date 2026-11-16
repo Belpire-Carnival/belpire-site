@@ -19,7 +19,7 @@ export const MARKET_EVERY_MS = 55 * 60 * 1000;
 const STALE_MS = 3 * 60 * 60 * 1000;
 const MAX_ROWS = 6000;
 // Bump when the stored rows gain fields, so the next request rebuilds the snapshot instead of waiting out the hour.
-const MARKET_SCHEMA = 3;
+const MARKET_SCHEMA = 5;
 
 const num = (v) => {
   const n = typeof v === 'string' ? Number(v.trim()) : v;
@@ -38,6 +38,9 @@ export function unwrap(json) {
   return json.data;
 }
 
+// What kind of place a terminal is in, from which of UEX's location fields it fills (the first one that is filled wins).
+export const kindOf = (r) => (first(r, ['city_name']) ? 'City' : first(r, ['space_station_name']) ? 'Space station' : first(r, ['outpost_name']) ? 'Outpost' : first(r, ['poi_name']) ? 'Point of interest' : first(r, ['moon_name', 'planet_name', 'orbit_name']) ? 'Moon or planet' : '');
+
 // One price row → { commodity, terminal, system, buy, sell, scuBuy, scuSell, at } or null.
 export function parsePriceRow(row) {
   if (!row || typeof row !== 'object') return null;
@@ -54,6 +57,7 @@ export function parsePriceRow(row) {
     system: str(first(row, ['star_system_name', 'system_name', 'star_system']), 40),
     place: str(first(row, ['city_name', 'space_station_name', 'outpost_name', 'planet_name', 'moon_name', 'orbit_name']), 60),
     body: str(first(row, ['moon_name', 'planet_name', 'orbit_name']), 60),
+    kind: kindOf(row),
     buy: buy > 0 ? buy : null,
     sell: sell > 0 ? sell : null,
     scuBuy: num(first(row, ['scu_buy', 'scu_buy_avg'])),
@@ -75,13 +79,49 @@ export function parseTerminals(data) {
       // displayname is the name players use ("Grim HEX", "Area18", "CRU-L4 Shallow Fields Station"); UEX's own station field can differ.
       place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60),
       // The moon or planet it sits on or orbits, so the page can tell what is close by.
-      body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60)
+      body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60),
+      kind: kindOf(t)
     };
     if (!loc.system && !loc.place) continue;
     if (t.id != null) map.set(`id:${t.id}`, loc);
     for (const k of ['name', 'nickname', 'code', 'displayname']) if (t[k]) map.set(`n:${lc(t[k])}`, loc);
   }
   return map;
+}
+
+// What each terminal offers besides prices: refineries, fuel, repair, ship shops, cargo centres, freight elevators and so on.
+// UEX describes a terminal with a `type` and yes/no flags; both are read, tolerantly, because the exact names are not pinned down here.
+// Hangars and ASOP terminals are not in UEX's terminal list, so they cannot appear.
+export const SERVICE_KEYS = ['refinery', 'refuel', 'repair', 'shipbuy', 'shiprent', 'cargo', 'freight', 'dock', 'medical', 'food', 'fpsshop'];
+export function servicesOf(t) {
+  const flag = (k) => t[k] === 1 || t[k] === true || t[k] === '1';
+  const type = lc(t.type).replace(/[\s-]+/g, '_');
+  const out = [];
+  if (flag('is_refinery') || type.includes('refinery')) out.push('refinery');
+  if (flag('is_refuel') || type === 'fuel' || type.includes('refuel')) out.push('refuel');
+  if (flag('is_repair') || type.includes('repair')) out.push('repair');
+  if (flag('is_shop_vehicle_buy') || type === 'vehicle_buy') out.push('shipbuy');
+  if (flag('is_shop_vehicle_rent') || type === 'vehicle_rent') out.push('shiprent');
+  if (flag('is_cargo_center') || type.includes('cargo_center')) out.push('cargo');
+  if (flag('has_freight_elevator')) out.push('freight');
+  if (flag('has_loading_dock')) out.push('dock');
+  if (flag('is_medical') || type === 'medical') out.push('medical');
+  if (flag('is_food') || type === 'food') out.push('food');
+  if (flag('is_shop_fps') || type === 'item') out.push('fpsshop');
+  return out;
+}
+export function parseServices(data) {
+  if (!Array.isArray(data)) return [];
+  const out = [];
+  for (const t of data) {
+    if (!t || typeof t !== 'object') continue;
+    const svc = servicesOf(t); if (!svc.length) continue;
+    const system = str(first(t, ['star_system_name', 'system_name']), 40);
+    const place = str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60);
+    if (!system && !place) continue;
+    out.push({ name: str(first(t, ['displayname', 'name', 'nickname']), 60), place, system, body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60), kind: kindOf(t), svc });
+  }
+  return out.slice(0, 2500);
 }
 
 export function parsePrices(data, terminals) {
@@ -92,7 +132,7 @@ export function parsePrices(data, terminals) {
     if (!r) continue;
     if (terminals?.size && (!r.system || !r.place)) {
       const loc = terminals.get(`id:${raw.id_terminal}`) || terminals.get(`n:${lc(r.terminal)}`);
-      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; r.body = r.body || loc.body; }
+      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; r.body = r.body || loc.body; r.kind = r.kind || loc.kind; }
     }
     rows.push(r);
   }
@@ -136,10 +176,12 @@ async function readJson(kv, key) {
 
 export async function buildMarket(env, previous) {
   const errors = [];
-  const [prices, version, terms] = await Promise.allSettled([
+  const rawTerms = uex(env, 'terminals');
+  const [prices, version, terms, svcs] = await Promise.allSettled([
     uex(env, 'commodities_prices_all'),
     uex(env, 'game_versions').then(parseLiveVersion),
-    uex(env, 'terminals').then(parseTerminals)
+    rawTerms.then(parseTerminals),
+    rawTerms.then(parseServices)
   ]);
   const terminals = terms.status === 'fulfilled' ? terms.value : null;
   if (!terminals?.size) errors.push(terms.status === 'fulfilled' ? 'terminals: nothing recognised' : `terminals: ${terms.reason?.message}`);
@@ -147,6 +189,8 @@ export async function buildMarket(env, previous) {
   if (prices.status === 'fulfilled') { try { rows = parsePrices(prices.value, terminals); } catch (e) { prices.status = 'rejected'; prices.reason = e; } }
   if (!rows) errors.push(prices.reason?.message || 'prices failed');
   else if (terminals?.size && rows.every((r) => !r.system)) errors.push('terminals: no price row matched a terminal');
+  const services = svcs.status === 'fulfilled' && svcs.value.length ? svcs.value : previous?.services ?? [];
+  if (svcs.status === 'fulfilled' && !svcs.value.length) errors.push('terminals: no services recognised');
   let live = previous?.version ?? null;
   if (version.status === 'fulfilled' && version.value) live = version.value;
   else errors.push(version.status === 'fulfilled' ? 'version: nothing recognised' : `version: ${version.reason?.message}`);
@@ -156,6 +200,7 @@ export async function buildMarket(env, previous) {
     source: 'UEX Corp',
     version: live,
     prices: rows ?? previous?.prices ?? [],
+    services,
     schema: MARKET_SCHEMA,
     errors
   };

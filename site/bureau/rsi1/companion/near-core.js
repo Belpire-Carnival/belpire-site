@@ -1,26 +1,52 @@
 // Waypoint ("nearest to me") for OmniOps: from the live UEX terminal rows, find where a service or a commodity is,
 // ordered by how close it is in the verse's hierarchy: same place, same moon or planet, same system, other systems.
 // There are no coordinates in this data, so "close" is a tier, not a distance. Pure functions, no page access.
+export const SERVICES = [['refinery', 'Refinery'], ['refuel', 'Refuel'], ['repair', 'Repair'], ['shipbuy', 'Buy ships'], ['shiprent', 'Rent ships'], ['cargo', 'Cargo center'], ['freight', 'Freight elevator'], ['dock', 'Loading dock'], ['medical', 'Medical'], ['food', 'Food and drink'], ['fpsshop', 'Armor and weapons shop']];
+// The filter panel. `has` is how a place qualifies: a service key from the terminal data, or 'trade' (a place with priced goods).
+// Entries with no `has` need game-file data this site does not have yet; they are shown, switched off.
+export const CATEGORIES = [
+  { id: 'trade', label: 'Trade terminals', has: 'trade' }, { id: 'refinery', label: 'Refinery', has: 'refinery' }, { id: 'cargo', label: 'Cargo deck', has: 'cargo' },
+  { id: 'freight', label: 'Freight elevators', has: 'freight' }, { id: 'dock', label: 'Ship docking', has: 'dock' }, { id: 'refuel', label: 'Refuel', has: 'refuel' },
+  { id: 'repair', label: 'Maintenance', has: 'repair' }, { id: 'medical', label: 'Medical services', has: 'medical' }, { id: 'shopping', label: 'Shopping', has: 'fpsshop' },
+  { id: 'food', label: 'Food', has: 'food' }, { id: 'shipbuy', label: 'Ship purchase', has: 'shipbuy' }, { id: 'shiprent', label: 'Ship/vehicle rental', has: 'shiprent' },
+  { id: 'vretrieve', label: 'Vehicle retrieval' }, { id: 'sretrieve', label: 'Ship retrieval' }, { id: 'storage', label: 'Storage kiosks' }, { id: 'pads', label: 'Landing pads' },
+  { id: 'fines', label: 'Fine and citation kiosk' }, { id: 'security', label: 'Security terminal' }, { id: 'defenses', label: 'Defenses' }, { id: 'habitation', label: 'Habitation' },
+  { id: 'harvest', label: 'Harvestables' }, { id: 'loot', label: 'Loot' }, { id: 'minables', label: 'Hand minables' }
+];
+export const LOCATION_KINDS = ['City', 'Space station', 'Outpost', 'Point of interest', 'Moon or planet'];
+export const SERVICE_LABEL = Object.fromEntries(SERVICES);
 export const TIERS = ['Here', 'Same moon or planet', 'Same system', 'Other systems'];
 export const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const money = (n) => (Number.isFinite(n) ? Math.round(n * 100) / 100 : null);
 
 // One entry per place: { key, name, system, body, terminals: [{ name, buys, sells }] }.
 // buys = what you can buy there (price you pay); sells = what the terminal pays you for.
-export function buildPlaces(rows) {
+export function buildPlaces(rows, services = []) {
   const places = new Map();
+  const at = (system, name, body, kind) => {
+    const key = `${norm(system)}|${norm(name)}`;
+    let p = places.get(key);
+    if (!p) places.set(key, (p = { key, name, system: system || '', body: body || '', kind: kind || '', terminals: new Map(), svc: new Set() }));
+    if (!p.body && body) p.body = body;
+    if (!p.kind && kind) p.kind = kind;
+    return p;
+  };
+  for (const s of Array.isArray(services) ? services : []) {
+    if (!s || !Array.isArray(s.svc)) continue;
+    const name = s.place || s.name; if (!name) continue;
+    const p = at(s.system, name, s.body, s.kind);
+    for (const k of s.svc) if (SERVICE_LABEL[k]) p.svc.add(k);
+    if (s.name && s.name !== name && !p.terminals.has(s.name)) p.terminals.set(s.name, { name: s.name, buys: [], sells: [] });
+  }
   for (const r of Array.isArray(rows) ? rows : []) {
     if (!r || !r.terminal) continue;
-    const name = r.place || r.terminal, key = `${norm(r.system)}|${norm(name)}`;
-    let p = places.get(key);
-    if (!p) places.set(key, (p = { key, name, system: r.system || '', body: r.body || '', terminals: new Map() }));
-    if (!p.body && r.body) p.body = r.body;
+    const p = at(r.system, r.place || r.terminal, r.body, r.kind);
     let t = p.terminals.get(r.terminal);
     if (!t) p.terminals.set(r.terminal, (t = { name: r.terminal, buys: [], sells: [] }));
     if (r.buy > 0) t.buys.push({ commodity: r.commodity, price: money(r.buy), scu: r.scuBuy ?? null });
     if (r.sell > 0) t.sells.push({ commodity: r.commodity, price: money(r.sell), scu: r.scuSell ?? null });
   }
-  return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)) }))
+  return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)), svc: [...p.svc].sort() }))
     .sort((a, b) => a.system.localeCompare(b.system) || a.name.localeCompare(b.name));
 }
 
@@ -48,17 +74,23 @@ export const tierOf = (p, here) => {
 
 // mode: 'any' | 'buy' (places where you can buy it) | 'sell' (places that pay you for it).
 // q matches a commodity, terminal or place name. Without q, 'buy'/'sell' keep any place with something to buy/sell.
-export function rank(places, here, { mode = 'any', q = '', system = '' } = {}) {
+export function rank(places, here, { mode = 'any', q = '', system = '', service = '', cats = [], planet = '', kind = '' } = {}) {
   const k = norm(q), out = [];
+  const need = [...(service ? [service] : []), ...CATEGORIES.filter((c) => cats.includes(c.id) && c.has).map((c) => c.has)];
   for (const p of places) {
     if (system && p.system !== system) continue;
+    if (planet && p.body !== planet) continue;
+    if (kind && p.kind !== kind) continue;
+    if (need.some((n) => (n === 'trade' ? !p.terminals.some((t) => t.buys.length || t.sells.length) : !(p.svc || []).includes(n)))) continue;
     const hits = [];
-    for (const t of p.terminals) {
+    const filtered = need.length > 0 || !!planet || !!kind;
+    const wantHits = !filtered || k || mode !== 'any';
+    for (const t of wantHits ? p.terminals : []) {
       const nameHit = k && (norm(t.name).includes(k) || norm(p.name).includes(k));
       if (mode !== 'sell') for (const b of t.buys) if (!k || nameHit || norm(b.commodity).includes(k)) hits.push({ terminal: t.name, commodity: b.commodity, price: b.price, kind: 'buy' });
       if (mode !== 'buy') for (const s of t.sells) if (!k || nameHit || norm(s.commodity).includes(k)) hits.push({ terminal: t.name, commodity: s.commodity, price: s.price, kind: 'sell' });
     }
-    if (!hits.length && !(k && (norm(p.name).includes(k) || p.terminals.some((t) => norm(t.name).includes(k))) && mode === 'any')) continue;
+    if (!hits.length && !(filtered && !k && mode === 'any') && !(k && (norm(p.name).includes(k) || p.terminals.some((t) => norm(t.name).includes(k))) && mode === 'any')) continue;
     const best = mode === 'sell' ? Math.max(0, ...hits.map((h) => h.price || 0)) : Math.min(Infinity, ...hits.map((h) => h.price || Infinity));
     out.push({ place: p, tier: tierOf(p, here), hits: hits.slice(0, 40), best: Number.isFinite(best) && best > 0 ? best : null });
   }
