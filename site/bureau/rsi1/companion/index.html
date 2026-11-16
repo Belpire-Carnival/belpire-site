@@ -61,7 +61,7 @@
 <section class="view" id="v-ops" aria-labelledby="h-ops">
   <div class="hero"><div><h2 id="h-ops">OmniOps</h2><span class="daemon">sys://ops.telemetry</span><p class="tag">Your day at a glance: earnings, a pre-launch checklist and the state of the verse.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs logged</div><div class="val" data-k="ops.runs">—</div></div><div class="kpi"><div class="lbl">Lifetime net</div><div class="val" data-k="ops.net">—</div></div><div class="kpi"><div class="lbl">Average per hour</div><div class="val" data-k="ops.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="ops"></div></div>
   <div class="card accent mt12"><h3>OmniGlass Desktop</h3>
-    <p class="small muted">A Windows app that reads your own Game.log and sends what happens in the game straight here: blueprints you receive, contracts, missions and ship losses. It never touches game files or game memory. Link it with a one-time code, and unlink it any time.</p>
+    <p class="small muted">A Windows app that reads your own Game.log and sends what happens in the game straight here: blueprints you receive, contracts, missions and ship losses. It never touches game memory. It only changes game files if you switch on the optional Field Notes, and that can be rolled back. Link it with a one-time code, and unlink it any time.</p>
     <div id="desktopLink"></div></div>
   <div class="card accent mt12" id="localGame"></div>
   <div class="grid g3">
@@ -509,12 +509,15 @@
 <section class="view" id="v-desktop" aria-labelledby="h-desktop">
   <div class="hero"><div><h2 id="h-desktop">OmniGlass Desktop</h2><span class="daemon">sys://desktop.readme</span><p class="tag">A Windows tray app that reads your own game logs and feeds this site. Read me, how-to and download.</p><div class="chips"><span class="chip">Read me</span><span class="chip">How to</span><span class="chip">Download</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="desktop"></div></div>
   <div class="card accent mb12" id="desktopDownload"><h3>Download</h3>
-    <p class="small">The installer is not released yet. When it is, the download button and the version number will appear in this box, and nowhere else: do not install copies from other places.</p>
-    <p class="small muted">The first installers will not be code-signed, so Windows SmartScreen may warn before it runs. Windows 10 or 11, 64-bit. Star Citizen needs to be installed on the same PC.</p></div>
+    <p class="small"><b>OmniGlass Desktop 0.0.1</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
+    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.0.1-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
+    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">cdfda69f8de43bb4c85af8f6f6a62b3a4dc41f5093befc64fd1006eac5e1685b</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.0.1-x64-setup.exe SHA256</span>. The result must match the line above.</p>
+    <p class="small muted">This installer is <b>not code-signed</b>, so Windows SmartScreen will say it is from an unknown publisher. Choose <i>More info</i>, then <i>Run anyway</i>. Only install it from this page or the releases page above: do not install copies from other places.</p></div>
   <div class="grid g2">
     <div class="card"><h3>Read me</h3>
       <p class="small">OmniGlass Desktop sits in your system tray. While Star Citizen runs it reads the Game.log file the game already writes, and it reads the RSI Launcher log once to find out which install you launched. From that it shows your blueprint, contract, mission and ship-loss events, your blueprints from the game files, minerals, reputation ladders, and an optional in-game overlay.</p>
-      <p class="small"><b>It never</b> reads game memory, injects code, sends keystrokes or mouse input, or changes game files. It only reads two log files and draws its own windows.</p>
+      <p class="small"><b>It never</b> reads game memory, injects code, or sends keystrokes or mouse input. It reads your Game.log, your archived logs and the game's own data file (Data.p4k) read-only, and draws its own windows.</p>
+      <p class="small"><b>The one optional feature that writes</b> is <i>Field Notes</i>. It is off until you switch it on in Settings. When you press Apply it writes the game's English text file (global.ini, built from your own install) and makes sure user.cfg selects English, after saving your originals. <i>Roll back</i> restores them exactly. It refuses to write while the game is running. CIG allows community text files but does not endorse them, so it is your choice.</p>
       <p class="small"><b>What it sends here</b> (only while the PC is linked and sending is on): blueprints you receive, contracts, missions and your own ship losses. Never other players' names or ids.</p>
       <p class="small muted">Game data (blueprints, ores, reputation) comes from the site, one file set per channel (LIVE and PTU), extracted from the game files by us. Check for updates after each patch.</p></div>
     <div class="card"><h3>What is in the window</h3>
@@ -523,6 +526,7 @@
         <li><b>Blueprints</b>: all blueprints for the build, which contracts give them (CAN TAKE, LOCKED or SET RANK), and which you own. Export and import as JSON or CSV.</li>
         <li><b>Minerals</b>: search an ore, see its compositions and where it spawns.</li>
         <li><b>Reputation</b>: pick your rank on each ladder so contracts show whether you can take them.</li>
+        <li><b>Settings</b>: checks that the app can read your game files, imports game data, reads your older logs for blueprints you already own, and holds <i>Field Notes</i>: blueprint marks and counts on contract titles, and rank, reputation, full blueprint lists and weapon numbers in descriptions.</li>
         <li><b>Overlay</b>: a click-through window over the game with a Watching list. <span class="mono">Ctrl+Shift+O</span> opens its drawer; <span class="mono">Ctrl+Shift+F</span> opens the search box.</li>
         <li><b>Watch log of</b>: pick LIVE, PTU or any other install the launcher knows.</li>
       </ul></div>
@@ -583,7 +587,7 @@
       <p class="small"><b>OmniLog</b> is every run you logged, totalled and sorted by activity. Logging a run from any Earn tab feeds the OmniOps totals and best rate.</p>
       <p class="small muted">Data: only what you logged. Nothing here comes from the game.</p></div>
     <div class="card"><h3>OmniGlass Desktop <span class="muted small">Windows app</span></h3>
-      <p class="small">A small tray app that reads your Game.log and sends only your blueprints, contracts, missions and ship losses to your profile. The <a href="#desktop">OmniGlass Desktop</a> tab has the read me, the how-to (including the optional scmdb live sync) and where the installer will be.</p></div>
+      <p class="small">A small tray app that reads your Game.log and sends only your blueprints, contracts, missions and ship losses to your profile. The <a href="#desktop">OmniGlass Desktop</a> tab has the read me, the how-to (including the optional scmdb live sync) and the download with its checksum.</p></div>
     <div class="card"><h3>Help</h3>
       <p class="small"><b>Guide</b> is this page. <b>Field Manual</b> has bug workarounds for the usual alpha problems (stuck ships, elevator failures, disconnects) and the reference sites worth bookmarking.</p></div>
   </div>
