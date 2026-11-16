@@ -75,7 +75,7 @@ const HUBS = [
   { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
   { id: 'earn', label: 'Earn', icon: 'hubearn', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
   { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
-  { id: 'help', label: 'Help', icon: 'manual', blurb: 'What each tab does and what the data means.', panes: [['guide', 'Guide'], ['manual', 'Field Manual']] },
+  { id: 'help', label: 'Help', icon: 'manual', blurb: 'What each tab does and what the data means.', panes: [['guide', 'Guide'], ['howto', 'How it works'], ['manual', 'Field Manual']] },
 ];
 const VIEWS = HUBS.flatMap((h) => h.panes);
 const HUB_OF = Object.fromEntries(HUBS.flatMap((h) => h.panes.map(([id]) => [id, h])));
