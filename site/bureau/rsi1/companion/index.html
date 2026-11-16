@@ -506,6 +506,60 @@
   <p class="small muted mt12">This site is an unofficial fan tool and is not affiliated with Cloud Imperium Games.</p>
 </section>
 
+<section class="view" id="v-desktop" aria-labelledby="h-desktop">
+  <div class="hero"><div><h2 id="h-desktop">OmniGlass Desktop</h2><span class="daemon">sys://desktop.readme</span><p class="tag">A Windows tray app that reads your own game logs and feeds this site. Read me, how-to and download.</p><div class="chips"><span class="chip">Read me</span><span class="chip">How to</span><span class="chip">Download</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="desktop"></div></div>
+  <div class="card accent mb12" id="desktopDownload"><h3>Download</h3>
+    <p class="small">The installer is not released yet. When it is, the download button and the version number will appear in this box, and nowhere else: do not install copies from other places.</p>
+    <p class="small muted">The first installers will not be code-signed, so Windows SmartScreen may warn before it runs. Windows 10 or 11, 64-bit. Star Citizen needs to be installed on the same PC.</p></div>
+  <div class="grid g2">
+    <div class="card"><h3>Read me</h3>
+      <p class="small">OmniGlass Desktop sits in your system tray. While Star Citizen runs it reads the Game.log file the game already writes, and it reads the RSI Launcher log once to find out which install you launched. From that it shows your blueprint, contract, mission and ship-loss events, your blueprints from the game files, minerals, reputation ladders, and an optional in-game overlay.</p>
+      <p class="small"><b>It never</b> reads game memory, injects code, sends keystrokes or mouse input, or changes game files. It only reads two log files and draws its own windows.</p>
+      <p class="small"><b>What it sends here</b> (only while the PC is linked and sending is on): blueprints you receive, contracts, missions and your own ship losses. Never other players' names or ids.</p>
+      <p class="small muted">Game data (blueprints, ores, reputation) comes from the site, one file set per channel (LIVE and PTU), extracted from the game files by us. Check for updates after each patch.</p></div>
+    <div class="card"><h3>What is in the window</h3>
+      <ul class="tight small">
+        <li><b>Events</b>: what the log shows, with a filter and a copy-as-text button that leaves your handle out.</li>
+        <li><b>Blueprints</b>: all blueprints for the build, which contracts give them (CAN TAKE, LOCKED or SET RANK), and which you own. Export and import as JSON or CSV.</li>
+        <li><b>Minerals</b>: search an ore, see its compositions and where it spawns.</li>
+        <li><b>Reputation</b>: pick your rank on each ladder so contracts show whether you can take them.</li>
+        <li><b>Overlay</b>: a click-through window over the game with a Watching list. <span class="mono">Ctrl+Shift+O</span> opens its drawer; <span class="mono">Ctrl+Shift+F</span> opens the search box.</li>
+        <li><b>Watch log of</b>: pick LIVE, PTU or any other install the launcher knows.</li>
+      </ul></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>How to: first run</h3>
+      <ol class="tight small">
+        <li>Start the app. Its window opens and an icon appears in the tray (left-click it to bring the window back).</li>
+        <li>Check the <i>Game.log</i> line shows your install, for example the LIVE folder. If not, press <i>Use this file</i> after typing the path.</li>
+        <li>Under <i>Game data</i> pick LIVE or PTU and press <i>Check for updates</i> once.</li>
+        <li>To send your events here: open <a href="#ops">OmniOps</a>, find the OmniGlass Desktop card, choose <i>Link a device</i>, and type the code it shows into the app, then press <i>Link</i>. Untick <i>Send to my profile</i> to pause sending; <i>Unlink this PC</i> removes the link.</li>
+        <li>Play. Blueprints you receive appear in the app and on your Blueprints page within a few minutes.</li>
+      </ol></div>
+    <div class="card"><h3>How to: live sync from scmdb <span class="muted small">optional</span></h3>
+      <ol class="tight small">
+        <li>In the app scroll to the bottom, open <i>scmdb live sync</i>, tick <i>Listen for scmdb</i> and press <i>Copy address</i>.</li>
+        <li>On scmdb.net open <i>Profile</i>, then <i>Sync Sinks</i>, add a sink, paste the address, tick <i>Blueprints</i> and save.</li>
+        <li>Press <i>Resync</i> on that sink. The app's counter shows how many messages arrived and how many new blueprints were added.</li>
+      </ol>
+      <p class="small">From then on, each blueprint you mark as owned in scmdb is added to the app while it is running; anything marked while it was closed arrives on the next Resync. Blueprints are only ever added, never removed.</p>
+      <p class="small muted">The address works only on your own PC (127.0.0.1) and contains a secret: treat it like a password. <i>Make a new secret</i> replaces it, then paste the new address into scmdb.</p></div>
+    <div class="card"><h3>How to: more</h3>
+      <ul class="tight small">
+        <li><b>Back up or restore my settings</b> (bottom of the window) saves your owned blueprints, watch list, ranks and window settings as one file. Your profile link and scmdb secret are never in it.</li>
+        <li><b>Read again</b> re-reads the whole Game.log from the top.</li>
+        <li>Moving to a new PC: install, restore the backup, link again with a new code.</li>
+      </ul></div>
+    <div class="card"><h3>If something looks wrong</h3>
+      <ul class="tight small">
+        <li><b>Stuck on "Starting..."</b> or empty fields: quit the app from the tray and start it again. Report it with the first red line from the console if it repeats.</li>
+        <li><b>"Hotkey already registered"</b>: another program, or an older copy of the app, holds <span class="mono">Ctrl+Shift+O</span>. Quit the old copy; the rest of the app still works.</li>
+        <li><b>Data for another build</b>: the data bar warns when the game data is for a different patch than your install. Press <i>Check for updates</i>.</li>
+        <li><b>Nothing arrives from scmdb</b>: make sure the app is running with the box ticked, then press Resync in scmdb.</li>
+      </ul></div>
+  </div>
+</section>
+
 <section class="view" id="v-guide" aria-labelledby="h-guide">
   <div class="hero"><div><h2 id="h-guide">Guide</h2><span class="daemon">sys://ref.guide</span><p class="tag">What each tab is for, what the numbers mean, and how current the data is.</p><div class="chips"><span class="chip">Tab by tab</span><span class="chip">Data sources</span><span class="chip">Glossary</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="guide"></div></div>
   <div class="note info">Star Citizen changes every patch. Everything here is a planning aid: check a price, a location or a stat in game before you spend or fly on it. Each tab says where its numbers come from.</div>
@@ -528,6 +582,8 @@
     <div class="card"><h3>Log</h3>
       <p class="small"><b>OmniLog</b> is every run you logged, totalled and sorted by activity. Logging a run from any Earn tab feeds the OmniOps totals and best rate.</p>
       <p class="small muted">Data: only what you logged. Nothing here comes from the game.</p></div>
+    <div class="card"><h3>OmniGlass Desktop <span class="muted small">Windows app</span></h3>
+      <p class="small">A small tray app that reads your Game.log and sends only your blueprints, contracts, missions and ship losses to your profile. The <a href="#desktop">OmniGlass Desktop</a> tab has the read me, the how-to (including the optional scmdb live sync) and where the installer will be.</p></div>
     <div class="card"><h3>Help</h3>
       <p class="small"><b>Guide</b> is this page. <b>Field Manual</b> has bug workarounds for the usual alpha problems (stuck ships, elevator failures, disconnects) and the reference sites worth bookmarking.</p></div>
   </div>
