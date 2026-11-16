@@ -40,6 +40,13 @@ test('extractJson finds JSON inside prose and code fences, and survives braces i
   assert.deepEqual(extractJson('Sure!\n```json\n{"a": 1, "b": "x}y"}\n```'), { a: 1, b: 'x}y' });
   assert.deepEqual(extractJson({ response: '{"a":2}' }), { a: 2 });
   assert.equal(extractJson('no json here'), null);
+  // the other shapes the platform returns
+  assert.deepEqual(extractJson({ response: { rows: [1] } }), { rows: [1] });
+  assert.deepEqual(extractJson({ choices: [{ message: { content: '```json\n{"a":3}\n```' } }] }), { a: 3 });
+  assert.deepEqual(extractJson({ choices: [{ message: { content: [{ type: 'text', text: '{"a":' }, { type: 'text', text: '4}' }] } }] }), { a: 4 });
+  assert.deepEqual(extractJson({ seen: 'x', rows: [] }), { seen: 'x', rows: [] });
+  assert.equal(extractJson({ response: '' }), null);
+  assert.equal(extractJson(null), null);
   assert.equal(extractJson('{"a": '), null);
 });
 
