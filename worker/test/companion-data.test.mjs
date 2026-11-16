@@ -8,7 +8,7 @@ test('manifest lists both channels, each with both files and one build', async (
   const r = get(); assert.equal(r.status, 200);
   const m = await r.json();
   assert.equal(m.v, 2); assert.deepEqual(Object.keys(m.channels).sort(), ['live', 'ptu']);
-  for (const c of Object.values(m.channels)) { assert.deepEqual(Object.keys(c.files).sort(), ['app-blueprints', 'factions']); assert.equal(typeof c.build, 'string'); assert.equal(c.available, c.build !== ''); }
+  for (const c of Object.values(m.channels)) { assert.deepEqual(Object.keys(c.files).sort(), ['app-blueprints', 'factions', 'mining']); assert.equal(typeof c.build, 'string'); assert.equal(c.available, c.build !== ''); }
   assert.match(m.channels.live.build, /^\d/); assert.equal(m.channels.live.available, true);
   assert.ok(m.channels.live.files.factions.bytes > 1000 && m.channels.live.files['app-blueprints'].bytes > 1000);
   assert.equal(m.build, m.channels.live.build); assert.deepEqual(m.files, m.channels.live.files);
@@ -19,6 +19,13 @@ test('LIVE is the default channel; factions have ladders, blueprints have items'
   const b = await get('?name=app-blueprints&channel=live').json(); assert.ok(Array.isArray(b.items) && b.items.length > 0);
   assert.ok(b.items.every((i) => i.n && !/PLACEHOLDER/i.test(i.n)));
   assert.equal((await get('?name=factions&channel=LIVE').json()).build, f.build);
+});
+test('mining file: ores, compositions and providers; no CIG test presets', async () => {
+  const m = await get('?name=mining').json();
+  assert.ok(m.elements.length > 10 && m.compositions.length > 10 && m.providers.length > 10); assert.match(m.build, /^\d/);
+  assert.ok(m.elements.some((e) => /quantainium/i.test(e.name)));
+  assert.ok(m.elements.every((e) => !/PLACEHOLDER/i.test(e.name)));
+  assert.ok(m.compositions.every((c) => !/^test/i.test(c.key)));
 });
 test('PTU is served only once it has an extracted build', async () => {
   const ptu = (await get().json()).channels.ptu;

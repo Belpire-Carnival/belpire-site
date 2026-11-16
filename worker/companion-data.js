@@ -5,6 +5,7 @@
 //                                                      (top-level build/files repeat LIVE for older clients)
 //   GET /api/companion/data?name=factions            → the reputation ladders file (LIVE)
 //   GET /api/companion/data?name=app-blueprints&channel=ptu → the blueprint finder file for the PTU
+//   GET /api/companion/data?name=mining              → ores, deposit compositions and rock tables (for the mineral finder)
 //
 // Refresh after each game patch: in the desktop repo run `node tools/extract/refresh.mjs live <version>` (and `ptu <version>`), then
 // run apply-data.mjs here (see its header). Nothing user-specific is stored.
@@ -12,10 +13,12 @@ import liveFactions from './companion-data/live/factions.json' with { type: 'jso
 import liveBlueprints from './companion-data/live/app-blueprints.json' with { type: 'json' };
 import ptuFactions from './companion-data/ptu/factions.json' with { type: 'json' };
 import ptuBlueprints from './companion-data/ptu/app-blueprints.json' with { type: 'json' };
+import liveMining from './companion-data/live/mining.json' with { type: 'json' };
+import ptuMining from './companion-data/ptu/mining.json' with { type: 'json' };
 
 const CHANNELS = {
-  live: { factions: liveFactions, 'app-blueprints': liveBlueprints },
-  ptu: { factions: ptuFactions, 'app-blueprints': ptuBlueprints }
+  live: { factions: liveFactions, 'app-blueprints': liveBlueprints, mining: liveMining },
+  ptu: { factions: ptuFactions, 'app-blueprints': ptuBlueprints, mining: ptuMining }
 };
 const HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
