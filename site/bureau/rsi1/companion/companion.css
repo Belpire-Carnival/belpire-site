@@ -722,3 +722,11 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
 .fm-h{margin:12px 0 4px;font:600 11px var(--display);letter-spacing:.18em;text-transform:uppercase;color:var(--bronze-hi)}
 .fm-list{list-style:none;margin:0 0 6px;padding:0;display:flex;flex-direction:column;gap:4px}
 .fm-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.fm-ring{fill:none;stroke:var(--line2)}.fm-ring.here{stroke:var(--amber)}
+.fm-rl{fill:var(--muted);font:9px var(--mono)}
+.fm-chip{cursor:pointer;padding:3px 10px;font-size:11px;background:none}
+.fm-chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.fm-hit{padding:4px 0;border-bottom:1px solid var(--line)}
+.fm-dir{max-height:360px;overflow:auto}.fm-dir thead th{position:sticky;top:0;background:var(--bg,#05080d)}
+.fm-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fm-form>*{flex:1 1 150px;min-width:0}.fm-form>button{flex:0 0 auto}
+#v-waypoint .radar{max-height:250px;width:auto;margin:0 auto;display:block}

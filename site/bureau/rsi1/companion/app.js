@@ -5,6 +5,8 @@ import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
 import { initFleetManager } from './fleet-ui.js';
+import { initInventory } from './inv-ui.js';
+import { initWaypoint } from './near-ui.js';
 import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
 import { initFabricator } from './fab-ui.js';
@@ -69,8 +71,8 @@ const Store = {
 // Eight hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
 // belong together and shows them as sub-tabs. A hub id as the address (#earn) opens the view last used in that hub.
 const HUBS = [
-  { id: 'ops', label: 'OmniOps', icon: 'hubops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
-  { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command'], ['fleetmgr', 'Fleet Manager']] },
+  { id: 'ops', label: 'OmniOps', icon: 'hubops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['waypoint', 'Waypoint'], ['contracts', 'TacBoard']] },
+  { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command'], ['fleetmgr', 'Fleet Manager'], ['inventory', 'Inventory']] },
   { id: 'plan', label: 'Plan', icon: 'hubplan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator'], ['objectives', 'Objectives']] },
   { id: 'armory', label: 'Armory', icon: 'hubarmory', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
   { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
@@ -1050,6 +1052,7 @@ async function loadMarket() {
   indexMarket(); paintLiveChip(); paintPatch(MK.version); renderRoutes(); renderSalvageLive(); fillOreList(); paintStamp();
   // Armistice status from the wiki lands a moment later and re-colours the PvP badges.
   learnZones(MK.prices).then((got) => { if (got) { renderRoutes(); renderSalvageLive(); } });
+  window.dispatchEvent(new CustomEvent('arsenal:market'));
 }
 // Shows what this page is running on, so a phone with an old copy is easy to spot.
 function paintStamp() {
@@ -1372,6 +1375,28 @@ scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any m
       add.addEventListener('click', () => { S.contracts = [c, ...S.contracts]; Store.saveContracts(); add.disabled = true; add.textContent = 'Added'; });
       res.append(el('div', { class: 'card mt8' }, contractBody(c), el('div', { class: 'row mt8' }, add)));
     }
+  } });
+
+// Waypoint (OmniOps) and Inventory (Hangar)
+initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices) });
+const inventory = initInventory($('#inventoryHost'), { toast });
+scanner('#scan-inv', { kind: 'inventory', view: 'inventory', title: 'a storage screen',
+  hint: 'A hangar or station item list, an item bank or a ship cargo list. One screen or a short scroll per place.',
+  render: (d, res) => {
+    const rows = (Array.isArray(d.rows) ? d.rows : []).filter((r) => r && r.name).slice(0, 150);
+    if (!rows.length) { res.append(el('p', { class: 'small muted', text: 'No items found on that screenshot. Crop to the list and try again.' })); return; }
+    const place = el('input', { type: 'text', maxlength: '80', placeholder: 'Where is this?', 'aria-label': 'Place for these items', list: 'invPlaces' }); place.value = d.place || '';
+    const tb = el('tbody');
+    for (const r of rows) tb.append(el('tr', {}, el('td', { text: r.name }), el('td', { text: r.category || '—' }), el('td', { class: 'num', text: r.qty == null ? '1' : String(r.qty) })));
+    const done = (replace) => {
+      if (!place.value.trim()) { toast('Say where these items are'); return; }
+      const out = inventory.importRows(place.value, rows.map((r) => ({ name: r.name, qty: r.qty == null ? 1 : r.qty, cat: r.category, system: d.system || '' })), replace);
+      toast(`${rows.length} item${rows.length === 1 ? '' : 's'} saved to ${place.value.trim()}`);
+      res.replaceChildren(el('p', { class: 'small', text: `Saved ${rows.length} item${rows.length === 1 ? '' : 's'} to ${place.value.trim()} (${out >= 0 ? out + ' new' : 'updated'}).` }));
+    };
+    res.append(el('p', { class: 'small muted', text: `${rows.length} item${rows.length === 1 ? '' : 's'} read. Check the place and the counts against the screenshot. Replace makes the place match this scan; Add only adds new items and raises counts.` }),
+      el('div', { class: 'row' }, place), el('div', { class: 'scrollx mt8' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Item' }), el('th', { text: 'Category' }), el('th', { class: 'num', text: 'Qty' }))), tb)),
+      el('div', { class: 'row mt8' }, el('button', { class: 'primary', type: 'button', text: 'Replace this place', onclick: () => done(true) }), el('button', { class: 'ghost', type: 'button', text: 'Add to this place', onclick: () => done(false) })));
   } });
 
 // ---------------- boot ----------------

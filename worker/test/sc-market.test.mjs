@@ -42,7 +42,7 @@ afterEach(() => { globalThis.fetch = realFetch; });
 test('parsePriceRow keeps priced rows and drops unusable ones', () => {
   const rows = parsePrices(ROWS);
   assert.equal(rows.length, 3);
-  assert.deepEqual(rows[0], { commodity: 'Recycled Material Composite', terminal: 'TDD - Commons', system: 'Stanton', place: '', buy: null, sell: 6000, scuBuy: 0, scuSell: 0, at: 1793000000 });
+  assert.deepEqual(rows[0], { commodity: 'Recycled Material Composite', terminal: 'TDD - Commons', system: 'Stanton', place: '', body: '', buy: null, sell: 6000, scuBuy: 0, scuSell: 0, at: 1793000000 });
   assert.equal(parsePriceRow({ commodity_name: 'X', terminal_name: 'Y', price_buy: 'abc' }), null);
 });
 
@@ -151,4 +151,10 @@ test('an old snapshot is served at once and rebuilt in the background, and a fai
   const bad = { SC_DATA: { ...memoryKV(), async put() { throw new Error('KV PUT failed: 429'); } }, UEX_API_TOKEN: 't' };
   const out = await handleMarket(bad, { waitUntil() {} });
   assert.equal(out.enabled, true); assert.deepEqual(out.prices, []);
+});
+
+test('price rows pick up the moon or planet a terminal sits on from the terminals list', () => {
+  const terms = parseTerminals([{ id: 7, name: 'TDD - Commons', star_system_name: 'Stanton', city_name: 'Lorville', planet_name: 'Hurston' }]);
+  const rows = parsePrices([{ commodity_name: 'Gold', terminal_name: 'TDD - Commons', id_terminal: 7, price_sell: 5000 }], terms);
+  assert.equal(rows[0].system, 'Stanton'); assert.equal(rows[0].place, 'Lorville'); assert.equal(rows[0].body, 'Hurston');
 });
