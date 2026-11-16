@@ -27,9 +27,12 @@ async function pair(env, uid = UID, name = 'Gaming PC') {
 }
 const ev = (id, name = 'Test Blueprint', at = 1000) => ({ id, kind: 'blueprint', at, data: { name } });
 
-test('a code looks like XXXX-XXXX with no look-alike characters and normalises either way', () => {
-  for (let i = 0; i < 50; i++) assert.match(newCode(), /^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
+test('a code looks like XXXX-XXXX from 32 unambiguous characters and normalises either way', () => {
+  const seen = new Set();
+  for (let i = 0; i < 400; i++) { const c = newCode(); assert.match(c, /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/); for (const ch of c.replace('-', '')) seen.add(ch); }
+  assert.ok(seen.size >= 30, 'all 32 symbols should turn up');
   assert.equal(normalCode('abcd-2345 '), 'ABCD2345');
+  assert.equal(normalCode('o1il-0O1L'), '01110011');
   assert.match(newToken(), /^ogd_[A-Za-z0-9_-]{43}$/);
 });
 

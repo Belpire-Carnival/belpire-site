@@ -23,7 +23,8 @@ const MAX_DEVICES = 8;
 const MAX_INBOX = 2000;
 const MAX_BATCH = 100;
 const MAX_BODY = 64 * 1024;
-const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
+// Crockford base32: exactly 32 symbols (so a 5-bit mask picks one with no bias), without I, L, O or U.
+const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export const EVENT_KINDS = new Set(['blueprint', 'contract_accepted', 'mission_end', 'vehicle_destroyed', 'incapacitated']);
 const TOKEN_PREFIX = 'ogd_';
 
@@ -47,10 +48,11 @@ const b64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-'
 export function newCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(8));
   let s = '';
-  for (const b of bytes) s += CODE_ALPHABET[b % CODE_ALPHABET.length];
+  for (const b of bytes) s += CODE_ALPHABET[b & 31];
   return `${s.slice(0, 4)}-${s.slice(4)}`;
 }
-export const normalCode = (raw) => String(raw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+// Typed codes: any case, any dashes or spaces; O reads as 0 and I or L as 1, the way Crockford base32 does.
+export const normalCode = (raw) => String(raw ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
 export const newToken = () => TOKEN_PREFIX + b64url(crypto.getRandomValues(new Uint8Array(32)));
 
 // ------------------------------------------------------------ store
