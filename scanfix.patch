@@ -1,0 +1,50 @@
+diff --git a/worker/sc-scan.js b/worker/sc-scan.js
+--- a/worker/sc-scan.js
++++ b/worker/sc-scan.js
+@@ -104,9 +104,14 @@ const SHAPES = {
+   })
+ };
+ 
+-// First balanced {...} in the model's text (models sometimes wrap JSON in prose or code fences).
++// First balanced {...} in the model's text (models sometimes wrap JSON in prose or code fences). Workers AI hands the answer
++// back in more than one shape: a string in `response`, an already-parsed object in `response` (when the model's whole reply
++// is JSON), or an OpenAI-style `choices[0].message.content` that is a string or a list of text parts.
+ export function extractJson(raw) {
+-  const s = typeof raw === 'string' ? raw : raw?.response ?? raw?.result?.response ?? '';
++  let s = typeof raw === 'string' ? raw : raw?.response ?? raw?.result?.response ?? raw?.choices?.[0]?.message?.content ?? '';
++  if (s && typeof s === 'object' && !Array.isArray(s)) return s;
++  if (Array.isArray(s)) s = s.map((p) => (typeof p === 'string' ? p : p && typeof p.text === 'string' ? p.text : '')).join('');
++  if (!s && raw && typeof raw === 'object' && !Array.isArray(raw) && 'seen' in raw) return raw;
+   const str = String(s);
+   for (let start = str.indexOf('{'); start !== -1; start = str.indexOf('{', start + 1)) {
+     let depth = 0, inStr = false;
+@@ -210,7 +215,11 @@ export async function handleScan(request, env) {
+       temperature: 0
+     });
+     const data = cleanScan(kind, extractJson(out));
+-    if (!data) return fail(502, 'unreadable');
++    if (!data) {
++      // Shape only, never the screenshot text: lets `wrangler tail` show whether the model answered at all.
++      console.warn(`Scan unreadable: ${kind}, reply ${typeof out}${out && typeof out === 'object' ? ` keys=${Object.keys(out).slice(0, 6).join(',')}` : ''}`);
++      return fail(502, 'unreadable');
++    }
+     return { status: 200, body: { ok: true, kind, data, remaining: slot.remaining } };
+   } catch (err) {
+     console.warn(`Scan failed: ${err.message}`);
+diff --git a/worker/test/sc-scan.test.mjs b/worker/test/sc-scan.test.mjs
+--- a/worker/test/sc-scan.test.mjs
++++ b/worker/test/sc-scan.test.mjs
+@@ -40,6 +40,13 @@ test('extractJson finds JSON inside prose and code fences, and survives braces i
+   assert.deepEqual(extractJson('Sure!\n```json\n{"a": 1, "b": "x}y"}\n```'), { a: 1, b: 'x}y' });
+   assert.deepEqual(extractJson({ response: '{"a":2}' }), { a: 2 });
+   assert.equal(extractJson('no json here'), null);
++  // the other shapes the platform returns
++  assert.deepEqual(extractJson({ response: { rows: [1] } }), { rows: [1] });
++  assert.deepEqual(extractJson({ choices: [{ message: { content: '```json\n{"a":3}\n```' } }] }), { a: 3 });
++  assert.deepEqual(extractJson({ choices: [{ message: { content: [{ type: 'text', text: '{"a":' }, { type: 'text', text: '4}' }] } }] }), { a: 4 });
++  assert.deepEqual(extractJson({ seen: 'x', rows: [] }), { seen: 'x', rows: [] });
++  assert.equal(extractJson({ response: '' }), null);
++  assert.equal(extractJson(null), null);
+   assert.equal(extractJson('{"a": '), null);
+ });
+ 

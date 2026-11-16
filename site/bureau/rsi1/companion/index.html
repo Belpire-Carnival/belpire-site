@@ -19,6 +19,8 @@
   <meta name="theme-color" content="#03070D">
   <link rel="icon" href="omniglass.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="companion.css">
   <script src="app.js" type="module"></script>
@@ -31,7 +33,7 @@
       <svg class="mark" aria-hidden="true" focusable="false" viewBox="0 0 64 64" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="coreGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e88b2e" stop-opacity="0.4" /><stop offset="100%" stop-color="#e88b2e" stop-opacity="0.05" /></linearGradient></defs><path d="M14 20V14h6M50 20V14h-6M14 44v6h6M50 44v6h-6" stroke-width="2" /><circle cx="32" cy="32" r="22" stroke-width="0.75" stroke-dasharray="2 4" opacity="0.6" /><circle cx="32" cy="32" r="16" stroke-width="0.5" opacity="0.3" /><polygon points="32,16 44,40 36,40 36,50 32,46 28,50 28,40 20,40" fill="url(#coreGlow)" stroke="currentColor" stroke-width="1.5" /><polygon points="32,32 35,36 32,40 29,36" fill="currentColor" /><line x1="18" y1="32" x2="24" y2="32" stroke-width="1.5" /><line x1="40" y1="32" x2="46" y2="32" stroke-width="1.5" /></svg>
       <div><h1>FINTAC OMNIGLASS</h1><span class="sub">Bureau Tactical Systems · DIV_RSI1</span></div>
     </div>
-    <div class="motto"><b>Finem Ultimum Nos Afferimus.</b><span class="sys-state" id="sysState">[ KERNEL: — // LINK: — ]</span></div>
+    <div class="motto"><b>Finem Ultimum Nos Afferimus.</b><span class="sys-state" id="sysState">[ KERNEL: checking // LINK: connecting ]</span></div>
     <button type="button" id="menuBtn" class="menubtn" aria-expanded="false" aria-controls="menuPanel"><span class="mb-now" id="menuNow">Menu</span><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
   </div>
   <div id="menuPanel" class="menupanel">
@@ -80,10 +82,10 @@
       <p class="small muted" id="mkLine">Checking live prices…</p>
       <h3 class="mt12">Latest Comm-Links</h3>
       <ul class="tight small" id="newsList"></ul>
-      <table class="mt8"><tbody id="opsLinks"></tbody></table>
+      <div class="table-wrap"><table class="mt8"><tbody id="opsLinks"></tbody></table></div>
     </div>
   </div>
-  <div class="note info mt12">Prices marked <span class="chip ok">LIVE</span> come from UEX, which is community-submitted: a number can be hours old or wrong. Check it in game before you spend. Anything marked <span class="chip">SNAPSHOT</span> is a dated reference. Everything you enter here is saved in this browser, and to your own profile if you sign in with Discord.</div>
+  <details class="fold mt12"><summary>About these prices</summary><div class="note info">Prices marked <span class="chip ok">LIVE</span> come from UEX, which is community-submitted: a number can be hours old or wrong. Check it in game before you spend. Anything marked <span class="chip">SNAPSHOT</span> is a dated reference. Everything you enter here is saved in this browser, and to your own profile if you sign in with Discord.</div></details>
   
 </section>
 
@@ -132,10 +134,10 @@
 <!-- ================= SALVAGE ================= -->
 <section class="view" id="v-salvage" aria-labelledby="h-salvage">
   <div class="hero"><div><h2 id="h-salvage">Slag &amp; Scrape</h2><span class="daemon">sys://salvage.refinery</span><p class="tag">Hull scraping, structural salvage and refining, with live sell points.</p><div class="kpis"><div class="kpi"><div class="lbl">Salvage runs</div><div class="val" data-k="salvage.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="salvage.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="salvage.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="salvage"></div></div>
-  <div class="card accent mb12">
+  <div class="card accent mb12"><details class="fold"><summary>Field guide: how the salvage loop works</summary>
     <p><b>The loop:</b> hull-scrape wrecks into <b>Recycled Material Composite (RMC)</b>, then optionally fracture and disintegrate the hull into raw construction material. Since Alpha 4.3.2 that raw material must be <b>refined</b> into <b>Construction Materials</b> before it sells. The grade you get depends on ship class: <b>Rubble</b> (light salvage: fastest refining, lowest yield), <b>Pieces</b>, then <b>Salvage</b>.</p>
     <p class="small muted m0">Sources: RSI Salvage &amp; Repair guide (Comm-Link 19070), starcitizen.tools Salvage, timesaver.gg 4.10 guide.</p>
-  </div>
+  </details></div>
 
   <div class="grid g2">
     <div class="card">
@@ -177,10 +179,10 @@
     </div>
     <div class="card">
       <h3>Older reference <span class="chip">SNAPSHOT 4.10.0</span></h3>
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>RMC sell point</th><th>System</th><th class="num">aUEC / SCU</th><th>Stamped</th></tr></thead>
         <tbody id="svPrices"></tbody>
-      </table>
+      </table></div>
       <div class="note warn"><b>Don't misread Admin offices:</b> many only <i>sell</i> RMC to you (seen at 7,587). That's a buy price, not a payout.</div>
       <ul class="tight small">
         <li><b>RMC:</b> Trade &amp; Development Division (TDD) offices and scrapyards; some commodity terminals.</li>
@@ -189,7 +191,7 @@
       </ul>
     </div>
     <div class="card">
-      <h3>Contracts &amp; mitigations</h3>
+      <details class="fold"><summary>Field guide &amp; mitigations: contracts</summary>
       <ul class="tight small">
         <li><b>Salvager Needed</b> orders (Adagio Holdings) ask for RMC, unrefined construction material (Rubble, Pieces or Salvage) and components, delivered to a freight elevator (e.g. Levski). Any class or size of salvage ship qualifies. <span class="muted">Seen on 4.10.2.</span></li>
         <li>Contract bonuses can pay out if a wreck is "sufficiently salvaged" or towed far enough from its spawn. A timer eventually brings security forces.</li>
@@ -198,7 +200,7 @@
         <li><b>Eject RMC before structural salvage.</b> Construction material uses the same filler buffer.</li>
         <li><b>Sell before you log off.</b> Loose cargo and refinery jobs can be lost to a crash or version change. LTP protects aUEC and in-game-earned ships, not loose RMC in your grid.</li>
         <li><b>Error 30000:</b> fully close the client before reconnecting.</li>
-      </ul>
+      </ul></details>
     </div>
   </div>
 </section>
@@ -211,7 +213,7 @@
       <h3>Refinery job calculator</h3>
       <p class="small muted">One line per ore. Yield % and fee come from the refinery terminal's estimate for the method you pick. Type an ore name from the list, then "Fill sell prices" uses the best live sell price. Edit any number.</p>
       <div id="scan-mining"></div>
-      <table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table></div>
       <div class="row mt8"><button id="mnAdd">Add ore</button><button id="mnLive" class="ghost">Fill sell prices (live)</button><datalist id="oreList"></datalist></div>
       <div class="fields mt12" id="mnFields"></div>
       <div class="out" id="mnOut"></div>
@@ -230,11 +232,11 @@
         <li>Modules stack. Active modules trade charge-window stability for power, so plan the stack per rock rather than one fit for all.</li>
       </ul>
       <div class="note">Best ore and refinery yield bonuses rotate. Before a session, check <a href="https://regolith.rocks/" target="_blank" rel="noopener">Regolith</a> for rock and refinery data and <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX</a> for refined prices.</div>
-      <h3 class="mt12">Mitigations</h3>
+      <details class="fold mt12"><summary>Mitigations: refinery and fracturing</summary>
       <ul class="tight small">
         <li>Refinery jobs can be lost to version changes. Collect and sell finished jobs before a patch lands.</li>
         <li>Fracture on a stable charge window; if the bar runs away, cut power rather than riding the overcharge.</li>
-      </ul>
+      </ul></details>
     </div>
   </div>
 </section>
@@ -279,13 +281,13 @@
       <div class="fields mt8" id="hlFields"></div>
       <div class="out" id="hlOut"></div>
     </div>
-    <div class="card"><h3>Mitigations</h3>
+    <div class="card"><details class="fold"><summary>Mitigations: hauling and freight elevators</summary>
       <ul class="tight small">
         <li>Use the <b>Cargo Grid</b> tab to plan boxes before you hit the freight elevator.</li>
         <li>Freight elevator stuck or empty: re-open the terminal, switch tabs, and wait for the elevator to cycle before re-requesting. Don't spam the request.</li>
         <li>Store cargo you mean to keep. Don't log off with a full hold you haven't sold or stored.</li>
         <li>Check <a href="https://sc-trade.tools/" target="_blank" rel="noopener">SC Trade Tools</a> for current route ideas, then price-check them here.</li>
-      </ul>
+      </ul></details>
     </div>
   </div>
 </section>
@@ -326,7 +328,7 @@
       <div id="scan-weapon"></div>
       <div class="fields" id="tkFields"></div>
       <h3 class="mt12">Armor multipliers</h3>
-      <table><thead><tr><th>Class</th><th class="num">Physical</th><th class="num">Energy</th></tr></thead><tbody id="tkArmor"></tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>Class</th><th class="num">Physical</th><th class="num">Energy</th></tr></thead><tbody id="tkArmor"></tbody></table></div>
       <div class="row mt6"><button type="button" id="tkArmorFill">Fill armor from item database</button><span class="small muted">Typical torso multipliers per class. 1.00 = no reduction, 0.60 = 40% less damage.</span></div>
       <div class="scrollx mt12"><table>
         <thead><tr><th>Armor</th><th class="num">Dmg / shot</th><th class="num">Shots</th><th class="num">Reloads</th><th class="num">TTK (s)</th></tr></thead>
@@ -421,13 +423,13 @@
         <li><b>Damage type</b> is Physical, Energy or Mixed from the per-hit figures; ship guns can also be Distortion. Guns with no range in the data drop out when you set a minimum range, and the table says how many.</li>
       </ul></div>
     <div class="card"><h3>Where the data comes from</h3>
-      <table><tbody>
+      <div class="table-wrap"><table><tbody>
         <tr><td><b>Star Citizen Wiki</b></td><td class="small">Ships, parts, weapons and armor classes. Community-maintained; can lag behind a patch.</td></tr>
         <tr><td><b>UEX</b></td><td class="small">Commodity buy and sell prices and refinery data. Community-submitted.</td></tr>
         <tr><td><b>RSI</b></td><td class="small">Service status and Comm-Links.</td></tr>
         <tr><td><b>Your logs</b></td><td class="small">Runs, contracts and hangar. Saved in this browser; also in your profile if you sign in with Discord, so they follow you between devices.</td></tr>
         <tr><td><b>Scans</b></td><td class="small">Screenshots you paste are read by AI and shown for review before anything is applied. Check the values.</td></tr>
-      </tbody></table>
+      </tbody></table></div>
       <p class="small muted mt8">Nothing here reads the game itself. There is no game API, so inventory and progress are only as current as what you enter.</p></div>
   </div>
   <div class="card mt12"><h3>Glossary</h3>
@@ -447,9 +449,9 @@
 <section class="view" id="v-manual" aria-labelledby="h-manual">
   <div class="hero"><div><h2 id="h-manual">Field Manual</h2><span class="daemon">sys://ref.manual</span><p class="tag">Bug workarounds and the reference sites worth bookmarking.</p><div class="chips"><span class="chip">Bug mitigations</span><span class="chip">Reference tools</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="manual"></div></div>
   <div class="grid g2">
-    <div class="card"><h3>Bug mitigations</h3><table><tbody id="bugTable"></tbody></table>
+    <div class="card"><h3>Bug mitigations</h3><div class="table-wrap"><table><tbody id="bugTable"></tbody></table></div>
       <p class="small muted mt8">For bug reports, add a screenshot with <span class="mono">r_displaySessionInfo 1</span> and file it on the <a href="https://issue-council.robertsspaceindustries.com/" target="_blank" rel="noopener">Issue Council</a>.</p></div>
-    <div class="card"><h3>Reference tools</h3><table><tbody id="refTable"></tbody></table></div>
+    <div class="card"><h3>Reference tools</h3><div class="table-wrap"><table><tbody id="refTable"></tbody></table></div></div>
   </div>
 </section>
 

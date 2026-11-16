@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { multiplier, qualityFor, pct, verdict, clampQuality, materialList, statRows, isLinear } from '../../site/bureau/rsi1/companion/fab-core.js';
+import { arrow, multiplier, qualityFor, pct, verdict, clampQuality, materialList, statRows, isLinear } from '../../site/bureau/rsi1/companion/fab-core.js';
 
 // From the API: Frame -> Integrity x0.90 at quality 0 to x1.10 at 1000.
 const integrity = { key: 'health_maxhealth', label: 'Integrity', better: 'higher', qmin: 0, qmax: 1000, lo: 0.9, hi: 1.1, curve: 'linear', segs: null };
@@ -23,6 +23,10 @@ test('the quality needed for a wanted multiplier is the inverse, or null out of 
   assert.equal(qualityFor(integrity, 1.2), null);
   assert.equal(qualityFor(integrity, 0.8), null);
   assert.equal(qualityFor({ ...integrity, lo: 1, hi: 1 }, 1), null);
+});
+
+test('a change is marked with an arrow as well as a colour', () => {
+  assert.equal(arrow(1.1), '▲'); assert.equal(arrow(0.9), '▼'); assert.equal(arrow(1), '–'); assert.equal(arrow(null), '–');
 });
 
 test('labels and colours follow which direction is better', () => {
