@@ -4,6 +4,7 @@
 import { columnsFor, sortParts, detailGroupsVs, compareCol, isBuyable, cheapest, TYPE_LABEL, num, fmtVal } from './builder-core.js';
 import { meter } from './viz.js';
 import { partArt, photo } from './art.js';
+import { lazyPhoto } from './partimg.js';
 
 const h = (tag, attrs = {}, ...kids) => {
   const e = document.createElement(tag);
@@ -88,7 +89,7 @@ export function detailPane(part, ref) {
     return pane;
   }
   pane.append(h('div', { class: 'holo-part' },
-    photo(part.img, part.name, partArt(part.type), 'photo thumb'),
+    lazyPhoto(part, 'photo thumb', () => partArt(part.type)),
     h('div', {}, h('h4', { class: 'holo-name', text: part.name }),
       h('div', { class: 'mk', text: [part.mfr, TYPE_LABEL[part.type] || part.type, part.cls, part.grade && `grade ${part.grade}`, part.size != null && `size ${part.size}`].filter(Boolean).join(' · ') }))));
   const cols = columnsFor(part.type);

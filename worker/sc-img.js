@@ -161,3 +161,56 @@ export async function browseItems(url, typeKey, env, ctx) {
   const more = ok.some((j) => Array.isArray(j?.data) && j.data.length >= BROWSE_SIZE && (j?.links?.next || Number(j?.meta?.last_page) > page));
   return { status: 200, body: { items, page, more } };
 }
+
+// ---------------------------------------------------------------- pictures for parts the item database has none for
+// GET /api/sc-partimg?n=<part name>&n=... (up to 12) asks the wiki's page-image lookup for the picture on each part's wiki page.
+// Returns { images: { <name>: <media path or ''> } }. Only paths that pass IMG_PATH on the media host are kept, so the page can
+// request them through /api/sc-img. A miss is remembered for a day so the wiki is not asked again at once.
+const WIKI_SITE = 'https://starcitizen.tools/api.php';
+const PI_TTL = 7 * 86400, PI_MISS_TTL = 86400, PI_MAX = 12;
+const piKey = (n) => `partimg:v1:${String(n).toLowerCase().replace(/[^a-z0-9]+/g, '')}`;
+
+// Pure: from a MediaWiki pageimages answer, the media path for each asked name ('' when there is none).
+export function partImgFromQuery(json, names) {
+  const q = json?.query || {};
+  const alias = new Map();
+  for (const n of q.normalized || []) alias.set(n.from, n.to);
+  const redirect = new Map();
+  for (const r of q.redirects || []) redirect.set(r.from, r.to);
+  const pages = new Map();
+  for (const p of Array.isArray(q.pages) ? q.pages : []) if (p?.title) pages.set(p.title, p);
+  const out = {};
+  for (const name of names) {
+    let t = alias.get(name) || name; t = redirect.get(t) || t;
+    let path = '';
+    const src = pages.get(t)?.thumbnail?.source;
+    if (typeof src === 'string') {
+      try { const u = new URL(src); const p = u.pathname.replace(/^\//, ''); if (u.protocol === 'https:' && u.hostname === MEDIA_HOST && IMG_PATH.test(p)) path = p; } catch { /* not a URL */ }
+    }
+    out[name] = path;
+  }
+  return out;
+}
+
+export async function handlePartImg(url, env) {
+  const names = [...new Set(url.searchParams.getAll('n').map((s) => s.replace(/[|\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)).filter((s) => s.length >= 2))].slice(0, PI_MAX);
+  if (!names.length) return { status: 400, body: { error: 'give one or more n= part names' } };
+  const images = {}, todo = [];
+  await Promise.all(names.map(async (n) => {
+    try { const c = await env.SC_DATA?.get(piKey(n)); if (c != null) { images[n] = c === '-' ? '' : c; return; } } catch { /* cache is optional */ }
+    todo.push(n);
+  }));
+  if (todo.length) {
+    let found = null;
+    try {
+      const res = await fetch(`${WIKI_SITE}?${new URLSearchParams({ action: 'query', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '200', redirects: '1', format: 'json', formatversion: '2', titles: todo.join('|') })}`,
+        { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
+      if (res.ok) found = partImgFromQuery(await res.json(), todo);
+    } catch { /* the wiki is optional here */ }
+    for (const n of todo) {
+      images[n] = found ? found[n] : '';
+      if (found) { try { await env.SC_DATA?.put(piKey(n), images[n] || '-', { expirationTtl: images[n] ? PI_TTL : PI_MISS_TTL }); } catch { /* ignore */ } }
+    }
+  }
+  return { status: 200, body: { images } };
+}

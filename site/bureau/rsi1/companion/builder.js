@@ -9,6 +9,7 @@ import {
 import { openSwap, openDetail } from './builder-holo.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
+import { lazyPhoto } from './partimg.js';
 import { riskOf } from './risk.js';
 
 const API = '/api/sc-builder';
@@ -178,7 +179,7 @@ export function initBuilder(host) {
     const unit = p ? (p.shield?.hp != null ? 'shield HP' : p.gen != null ? 'power segments' : p.cool != null ? 'cooling' : '') : '';
     const c = el('div', { class: `part ${current !== slot.stock ? 'changed' : ''}`.trim() },
       el('span', { class: 'sz', text: size }),
-      photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
+      lazyPhoto(p),
       el('div', {}, el('div', { class: 'nm' }, nameBtn(p?.name || 'Unknown part', p)), el('div', { class: 'mk', text: [p?.mfr, p?.grade && `grade ${p.grade}`, p?.cls].filter(Boolean).join(' · ') })),
       el('div', {}, el('div', { class: 'big', text: big }), el('div', { class: 'mk', text: unit })));
     if (p?.shield?.regen != null) c.append(el('div', { class: 'wide mk', text: `${fmt1(p.shield.regen)} HP/s regen` }));
@@ -191,7 +192,7 @@ export function initBuilder(host) {
     const p = partsById.get(current);
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
-      photo(p?.img, p?.name || '', el('span', { class: 'photo thumb none' }), 'photo thumb'),
+      lazyPhoto(p),
       el('div', {}, el('div', { class: 'nm' }, nameBtn(`S${slot.max} ${p?.name || 'Unknown'}`, p)),
         el('div', { class: 'mk', text: `${slotLabel(slot)}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
@@ -275,7 +276,7 @@ export function initBuilder(host) {
         currentId: m?.id || '', stockId: null, allowClear: true, onPick: (id) => { setOverride(s, r.key, id); paint(); }
       });
       c.append(openable(el('div', { class: `gun ordn ${m ? 'changed' : ''}`.trim() },
-        photo(r.rack?.img, r.rack?.name || '', partArt('MissileLauncher'), 'photo thumb'),
+        lazyPhoto(r.rack, 'photo thumb', () => partArt('MissileLauncher')),
         el('div', {}, el('div', { class: 'nm' }, nameBtn(`${r.tubes ?? '?'} × S${r.size ?? '?'} ${r.rack?.name || 'rack'}`, r.rack)),
           el('div', { class: 'mk', text: m ? `${m.name} · ${fmt1(m.msl?.dmg)} dmg each · lock ${fmt1(m.msl?.lock)} s · ${fmt1(m.msl?.speed)} m/s` : `${slotLabel(r.slot)}${r.slot.locked ? ' · rack is fixed' : ''} · stock missiles` })),
         el('div', { class: 'big', text: m && r.tubes && m.msl?.dmg != null ? fmt1(r.tubes * m.msl.dmg) : '—' }),

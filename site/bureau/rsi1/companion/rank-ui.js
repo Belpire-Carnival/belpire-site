@@ -1,8 +1,9 @@
 // Weapon rankings for the Avionics Lab page: FPS weapons by time to kill against an armor class, and ship guns by
 // time to destroy a reference ship. Data comes only from our own /api/sc-weapons, /api/sc-armor and /api/sc-builder; the
 // maths is in rank-core.js. The page is built with text nodes only, and the choices live in this browser's localStorage.
-import { ARMOR, rankFps, rankShipGuns, shipEhp, topOverall, topByGroup, topByClass, weaponType, weaponTypes } from './rank-core.js';
+import { ARMOR, rankFps, rankShipGuns, rankMissiles, shipEhp, topOverall, topByGroup, topByClass, weaponType, weaponTypes } from './rank-core.js';
 import { indexParts, viewOf } from './builder-core.js';
+import { lazyPhoto } from './partimg.js';
 
 const API_WEAPONS = '/api/sc-weapons';
 const API_ARMOR = '/api/sc-armor';
@@ -40,7 +41,7 @@ const CLASS_NOTE = { Physical: 'Ballistic rounds', Energy: 'Lasers and plasma', 
 export function initRankings(host, opts = {}) {
   const kind = opts.kind === 'fps' || opts.kind === 'ship' ? opts.kind : null;
   const store = storeFor(kind ? `${KEY}.${kind}` : KEY);
-  let st = { tab: 'fps', list: kind === 'fps' ? 'type' : 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', type: '', ...store.read() };
+  let st = { tab: 'fps', list: kind === 'fps' ? 'type' : 'top', armor: 'MEDIUM', hp: 100, zone: 1, reload: 0, ship: '', minRange: 0, size: '', type: '', what: 'guns', sig: '', sort: 'dmg', ...store.read() };
   if (kind) st.tab = kind;
   let weapons = null; // null = not loaded, false = unavailable, else [..]
   let armor = null; // { Light: { phys, energy }, ... } | false
@@ -146,6 +147,32 @@ export function initRankings(host, opts = {}) {
       el('p', { class: 'small muted mt8', text: `Assumes every shot lands in the chosen zone and the first shot fires at t = 0. TTK includes burst cooldowns and the reload time above; burst TTK is straight cyclic fire. The game data has no reload time, so one value applies to every weapon (0 ignores reloads). Damage falloff and bullet drag are not modelled.${skipped ? ` ${skipped} weapon${skipped === 1 ? ' has' : 's have'} no damage or rate of fire in the data and ${skipped === 1 ? 'is' : 'are'} not ranked.` : ''}` }));
   }
 
+  function missileTable(rows) {
+    const t = el('table', { class: 'ranktbl' }, el('thead', {}, el('tr', {}, th('#', true), th('Missile'), th('Size', true), th('Tracking'), th('Damage', true), th('Lock (s)', true), th('Speed (m/s)', true), th('Lock range (m)', true), th('To kill', true))));
+    const body = el('tbody');
+    rows.forEach((r, i) => body.append(el('tr', {},
+      el('td', { class: 'num', text: String(i + 1) }), el('td', {}, el('div', { class: 'row' }, lazyPhoto(r, 'photo thumb'), el('span', {}, el('b', { text: r.name }), el('div', { class: 'mk', text: r.mfr || '' })))),
+      el('td', { class: 'num', text: r.size == null ? '—' : `S${r.size}` }), el('td', { text: r.sig || '—' }), el('td', { class: 'num best', text: fmt(r.dmg, 0) }),
+      el('td', { class: 'num', text: secs(r.lock) }), el('td', { class: 'num', text: fmt(r.speed, 0) }), el('td', { class: 'num', text: fmt(r.rmax, 0) }), el('td', { class: 'num', text: r.kills == null ? '—' : String(r.kills) }))));
+    t.append(body);
+    return wrap(t);
+  }
+
+  function missileBody(ship, target) {
+    const sizes = [...new Set(build.parts.filter((p) => p.type === 'Missile' && p.size != null).map((p) => p.size))].sort((a, b) => a - b);
+    const sigs = [...new Set(build.parts.filter((p) => p.type === 'Missile' && p.msl?.sig).map((p) => p.msl.sig))].sort();
+    const ctl = el('div', { class: 'fields' },
+      field('Reference ship', select('ship', build.ships.map((s) => [s.id, s.name]))),
+      field('Missile size', select('size', [['', 'All sizes'], ...sizes.map((z) => [String(z), `Size ${z}`])])),
+      field('Tracking', select('sig', [['', 'All tracking types'], ...sigs.map((g) => [g, g])])),
+      field('Sort by', select('sort', [['dmg', 'Most damage'], ['lock', 'Fastest lock'], ['speed', 'Fastest missile']])));
+    const rows = rankMissiles(build.parts, target?.ehp, { size: st.size, sig: st.sig, sort: st.sort });
+    return el('div', {}, ctl,
+      el('p', { class: 'small muted mt8', text: target ? `Target: ${ship.name}, ${fmt(target.ehp)} health (hull ${fmt(target.hull)} + shields ${fmt(target.shield)}). "To kill" is how many of that missile it takes if every one hits.` : 'Pick a ship with a hull figure to see how many missiles it takes.' }),
+      rows.length ? missileTable(rows.slice(0, 40)) : el('p', { class: 'small muted', text: 'No missiles match these settings.' }),
+      el('p', { class: 'small muted mt8', text: 'Damage is the missile\u2019s total damage from the item database. It ignores shield absorption, countermeasures, missile misses and the time to get a lock, so use lock time and range alongside it. Pictures come from the wiki where it has one.' }));
+  }
+
   function shipBody() {
     if (build === null) return el('p', { class: 'small muted', text: 'Loading ships and guns…' });
     if (build === 'wait') return el('p', { class: 'small muted', text: 'The ship data is still being rebuilt. Try again in a few minutes.' });
@@ -153,6 +180,7 @@ export function initRankings(host, opts = {}) {
     const ship = build.ships.find((s) => s.id === st.ship) || build.ships[0];
     const target = ship ? shipEhp(ship, build.byId) : null;
     const sizes = [...new Set(build.parts.filter((p) => p.type === 'WeaponGun' && p.size != null).map((p) => p.size))].sort((a, b) => a - b);
+    if (st.what === 'missiles') return missileBody(ship, target);
     const ctl = el('div', { class: 'fields' },
       field('Reference ship', select('ship', build.ships.map((s) => [s.id, s.name]))),
       field('Gun size', select('size', [['', 'All sizes'], ...sizes.map((z) => [String(z), `Size ${z}`])])),
@@ -174,7 +202,8 @@ export function initRankings(host, opts = {}) {
       el('h3', { text: title }),
       el('p', { class: 'small muted', text: 'Fastest time to kill first. Weapon data comes from the Star Citizen Wiki item database and is only as current as its last update.' }),
       kind ? null : tabs('Weapon kind', [['fps', 'FPS weapons'], ['ship', 'Ship armaments']], st.tab, (tab) => set({ tab, list: st.list })),
-      el('div', { class: 'mt8' }, tabs('List', [['top', 'Top 20 overall'], ['type', isShip ? 'Top 10 by size' : 'Top 10 by type'], ['class', 'Physical vs Energy'], ['best', 'Best in class']], st.list, (list) => set({ list }))),
+      isShip ? el('div', { class: 'mt8' }, tabs('Armament', [['guns', 'Guns'], ['missiles', 'Missiles']], st.what, (what) => set({ what, size: '' }))) : null,
+      isShip && st.what === 'missiles' ? null : el('div', { class: 'mt8' }, tabs('List', [['top', 'Top 20 overall'], ['type', isShip ? 'Top 10 by size' : 'Top 10 by type'], ['class', 'Physical vs Energy'], ['best', 'Best in class']], st.list, (list) => set({ list }))),
       el('div', { class: 'mt10' }, isShip ? shipBody() : fpsBody())));
   }
 

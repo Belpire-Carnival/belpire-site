@@ -148,3 +148,30 @@ export function topByClass(rows, n = 10) {
   const order = ['Physical', 'Energy', 'Mixed', 'Distortion', 'Unknown'];
   return order.map((key) => ({ key, rows: rows.filter((r) => r.cls === key).slice(0, n) })).filter((g) => g.rows.length);
 }
+
+// ------------------------------------------------------------------ missiles
+// One row per missile in the parts list. kills = how many of them it takes to destroy the reference ship's health, if all hit.
+export function missileRow(part, ehp) {
+  const m = part?.msl;
+  const dmg = num(m?.dmg);
+  if (!m || !(dmg > 0)) return null;
+  return {
+    id: part.id, name: part.name, mfr: part.mfr, size: part.size, img: part.img || '',
+    sig: m.sig || '', dmg, lock: num(m.lock) || null, speed: num(m.speed) || null, rmax: num(m.rmax) || null, rmin: num(m.rmin) || null,
+    kills: ehp > 0 ? Math.ceil(ehp / dmg) : null
+  };
+}
+// sort: 'dmg' (most damage first), 'lock' (fastest lock first) or 'speed' (fastest missile first). size and sig filter the list.
+export function rankMissiles(parts, ehp, opts = {}) {
+  const rows = [];
+  for (const p of Array.isArray(parts) ? parts : []) {
+    if (p?.type !== 'Missile') continue;
+    const r = missileRow(p, ehp); if (!r) continue;
+    if (opts.size != null && opts.size !== '' && r.size !== Number(opts.size)) continue;
+    if (opts.sig && r.sig !== opts.sig) continue;
+    rows.push(r);
+  }
+  const by = opts.sort === 'lock' ? (a, b) => (a.lock ?? Infinity) - (b.lock ?? Infinity) : opts.sort === 'speed' ? (a, b) => (b.speed ?? 0) - (a.speed ?? 0) : (a, b) => b.dmg - a.dmg;
+  rows.sort((a, b) => by(a, b) || b.dmg - a.dmg || a.name.localeCompare(b.name));
+  return rows;
+}
