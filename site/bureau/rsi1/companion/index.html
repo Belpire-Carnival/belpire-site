@@ -60,6 +60,9 @@
 <!-- ================= OPS ================= -->
 <section class="view" id="v-ops" aria-labelledby="h-ops">
   <div class="hero"><div><h2 id="h-ops">OmniOps</h2><span class="daemon">sys://ops.telemetry</span><p class="tag">Your day at a glance: earnings, a pre-launch checklist and the state of the verse.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs logged</div><div class="val" data-k="ops.runs">—</div></div><div class="kpi"><div class="lbl">Lifetime net</div><div class="val" data-k="ops.net">—</div></div><div class="kpi"><div class="lbl">Average per hour</div><div class="val" data-k="ops.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="ops"></div></div>
+  <div class="card accent mt12"><h3>OmniGlass Desktop</h3>
+    <p class="small muted">A Windows app that reads your own Game.log and sends what happens in the game straight here: blueprints you receive, contracts, missions and ship losses. It never touches game files or game memory. Link it with a one-time code, and unlink it any time.</p>
+    <div id="desktopLink"></div></div>
   <div class="grid g3">
     <div class="card accent"><h3>Today</h3><div class="stat-big" id="opsToday">0 aUEC</div><div class="muted small" id="opsTodaySub">No runs logged today</div></div>
     <div class="card accent"><h3>Last 7 days</h3><div class="stat-big" id="opsWeek">0 aUEC</div><div class="muted small" id="opsWeekSub">—</div></div>
@@ -70,9 +73,6 @@
     <div class="card"><h3>Next objective</h3><div id="opsObjective"></div></div>
     <div class="card accent"><h3>Your hangar</h3><div id="opsHangar"></div></div>
   </div>
-  <div class="card mt12"><h3>OmniGlass Desktop</h3>
-    <p class="small muted">A Windows app that reads your own Game.log and sends what happens in the game straight here: blueprints you receive, contracts, missions and ship losses. It never touches game files or game memory. Link it with a one-time code, and unlink it any time.</p>
-    <div id="desktopLink"></div></div>
   <div class="grid g2 mt12">
     <div class="card"><h3>Last 14 days <span class="muted small">net aUEC per day</span></h3><div id="opsChart"></div></div>
     <div class="card"><h3>By activity <span class="muted small">net aUEC, all time</span></h3><div id="opsMix"></div></div>
