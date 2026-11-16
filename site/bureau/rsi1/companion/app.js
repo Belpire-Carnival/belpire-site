@@ -4,6 +4,7 @@ import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
+import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
 import { initFabricator } from './fab-ui.js';
 import { initRankings } from './rank-ui.js';
@@ -69,7 +70,7 @@ const Store = {
 const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'hubops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
   { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
-  { id: 'plan', label: 'Plan', icon: 'hubplan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator']] },
+  { id: 'plan', label: 'Plan', icon: 'hubplan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator'], ['objectives', 'Objectives']] },
   { id: 'armory', label: 'Armory', icon: 'hubarmory', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
   { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
   { id: 'earn', label: 'Earn', icon: 'hubearn', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
@@ -86,7 +87,9 @@ const rankingsFps = initRankings($('#rankingsFps'), { kind: 'fps' });
 initWishlist($('#wishlist'));
 const blueprints = initBlueprints($('#blueprintList'), { toast: (m) => toast(m) });
 initCatalog($('#blueprintCatalog'), { toast: (m) => toast(m) });
-const fabricator = initFabricator($('#fabricatorHost'), { toast: (m) => toast(m) });
+const fabricator = initFabricator($('#fabricatorHost'), { toast: (m) => toast(m), onGoal: (g) => trackGather(g) });
+initObjectives($('#objectives'), { toast: (m) => toast(m) });
+initNextObjective($('#opsObjective'));
 const nav = $('#nav');
 for (const h of HUBS) {
   const box = el('div', { class: 'hub', 'data-h': h.id }, el('a', { href: '#' + h.panes[0][0], 'data-hub': h.id }, icon(h.icon), h.label));
