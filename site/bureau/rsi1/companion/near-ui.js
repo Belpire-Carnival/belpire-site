@@ -39,7 +39,7 @@ export function writeHash(st) {
 
 export function initWaypoint(host, { getRows = () => [], getServices = () => [] } = {}) {
   if (!host) return null;
-  let places = [], hereKey = read(K_HERE, '');
+  let places = [], game = [], hereKey = read(K_HERE, '');
   const st = { ...readHash(location.hash) };
   const remember = () => { if (document.body.dataset.v === 'waypoint' || /^#waypoint/.test(location.hash)) { try { history.replaceState(null, '', writeHash(st)); } catch { /* ignore */ } } };
 
@@ -61,7 +61,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
     el('div', { class: 'card' }, el('h3', { text: 'Location search' }),
       el('div', { class: 'row fm-form' }, planet, faction, kind, q), el('p', { class: 'small muted mt8', text: 'Prices' }), modeBar,
       el('details', { class: 'fold mt12', open: '' }, el('summary', { text: 'Filters' }), catBar,
-        el('p', { class: 'small muted mt8', text: 'Switched-off filters need game-file data this site does not have yet (hangars, retrieval kiosks, landing pads, factions).' }))),
+        el('p', { class: 'small muted mt8', text: 'Hangars, landing pads, garages and vehicle services come from the game files (patch 4.10) and are matched to places by name. Switched-off filters need data this site does not have yet.' }))),
     el('details', { class: 'fold card mt12' }, el('summary', { text: 'Sort by distance from where you are' }),
       el('div', { class: 'row fm-form mt8' }, sys, body, plc), el('div', { class: 'row mt8 fm-form' }, paste, pasteBtn), status, radar),
     el('div', { class: 'mt12' }, count, list));
@@ -116,7 +116,9 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
   }
 
   function card(r) {
-    const p = r.place, chips = (p.svc || []).map((k) => el('span', { class: 'chip', text: SERVICE_LABEL[k] || k }));
+    const p = r.place, sv = p.svc || [];
+    const shown = sv.filter((k) => !((k === 'hangar' || k === 'pad') && sv.some((x) => x.startsWith(k + '-'))));
+    const chips = shown.map((k) => el('span', { class: 'chip', text: SERVICE_LABEL[k] || k }));
     const priced = p.terminals.filter((t) => t.buys.length || t.sells.length);
     if (priced.length) chips.unshift(el('span', { class: 'chip', text: 'Trade terminals' }));
     const sub = [p.kind, p.body, p.system].filter(Boolean).join(' · ');
@@ -145,9 +147,14 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
     if (ranked.length > 60) list.append(el('p', { class: 'small muted', text: `${ranked.length - 60} more. Narrow the search.` }));
   }
 
-  function draw() { places = buildPlaces(getRows(), getServices()); drawPicker(); drawResults(); }
+  function draw() { places = buildPlaces(getRows(), getServices(), game); drawPicker(); drawResults(); }
   window.addEventListener('arsenal:market', draw);
   window.addEventListener('hashchange', () => { if (/^#waypoint/.test(location.hash) && location.hash !== writeHash(st)) { Object.assign(st, readHash(location.hash)); q.value = st.q; for (const [i, c] of CATEGORIES.entries()) if (c.has) catBar.children[i].setAttribute('aria-pressed', String(st.cats.includes(c.id))); drawPicker(); drawResults(); } });
   draw();
+  // Places and services from the game files; one small request, and the page works without it.
+  fetch('/api/sc-locations', { headers: { Accept: 'application/json' } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => { if (j && Array.isArray(j.places) && j.places.length) { game = j.places; draw(); } })
+    .catch(() => { /* offline or blocked: Waypoint keeps working on live trade data */ });
   return { draw };
 }
