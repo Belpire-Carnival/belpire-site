@@ -19,7 +19,7 @@ export const MARKET_EVERY_MS = 55 * 60 * 1000;
 const STALE_MS = 3 * 60 * 60 * 1000;
 const MAX_ROWS = 6000;
 // Bump when the stored rows gain fields, so the next request rebuilds the snapshot instead of waiting out the hour.
-const MARKET_SCHEMA = 2;
+const MARKET_SCHEMA = 3;
 
 const num = (v) => {
   const n = typeof v === 'string' ? Number(v.trim()) : v;
@@ -53,6 +53,7 @@ export function parsePriceRow(row) {
     terminal,
     system: str(first(row, ['star_system_name', 'system_name', 'star_system']), 40),
     place: str(first(row, ['city_name', 'space_station_name', 'outpost_name', 'planet_name', 'moon_name', 'orbit_name']), 60),
+    body: str(first(row, ['moon_name', 'planet_name', 'orbit_name']), 60),
     buy: buy > 0 ? buy : null,
     sell: sell > 0 ? sell : null,
     scuBuy: num(first(row, ['scu_buy', 'scu_buy_avg'])),
@@ -72,7 +73,9 @@ export function parseTerminals(data) {
     const loc = {
       system: str(first(t, ['star_system_name', 'system_name']), 40),
       // displayname is the name players use ("Grim HEX", "Area18", "CRU-L4 Shallow Fields Station"); UEX's own station field can differ.
-      place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60)
+      place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60),
+      // The moon or planet it sits on or orbits, so the page can tell what is close by.
+      body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60)
     };
     if (!loc.system && !loc.place) continue;
     if (t.id != null) map.set(`id:${t.id}`, loc);
@@ -89,7 +92,7 @@ export function parsePrices(data, terminals) {
     if (!r) continue;
     if (terminals?.size && (!r.system || !r.place)) {
       const loc = terminals.get(`id:${raw.id_terminal}`) || terminals.get(`n:${lc(r.terminal)}`);
-      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; }
+      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; r.body = r.body || loc.body; }
     }
     rows.push(r);
   }

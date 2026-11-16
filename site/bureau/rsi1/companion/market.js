@@ -1,5 +1,5 @@
 // Trade planning over the live UEX price rows: best runs, and the best areas inside each star system.
-// Pure functions (no DOM) so they can be tested. A row is { commodity, terminal, system, place, buy, sell, scuBuy, scuSell, at }.
+// Pure functions (no DOM) so they can be tested. A row is { commodity, terminal, system, place, body, buy, sell, scuBuy, scuSell, at }.
 import { riskOf, worst, LEVELS, runRisk } from './risk.js';
 
 export const SYSTEM_ORDER = ['Stanton', 'Pyro', 'Nyx'];

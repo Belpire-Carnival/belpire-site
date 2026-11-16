@@ -405,6 +405,20 @@
 </section>
 
 
+<section class="view" id="v-waypoint" aria-labelledby="h-waypoint">
+  <div class="hero"><div><h2 id="h-waypoint">Waypoint</h2><span class="daemon">sys://ops.waypoint</span><p class="tag">Nearest place to buy, sell or find what you need, ordered by how close it is to where you are.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="waypoint"></div></div>
+  <div class="note info">Closeness here is a step in the map (same place, same moon or planet, same system, another system), not a distance in kilometres. Exact distances and quantum travel times need coordinate data this site does not have yet.</div>
+  <div id="waypointHost" class="mt12"></div>
+</section>
+
+<section class="view" id="v-inventory" aria-labelledby="h-inventory">
+  <div class="hero"><div><h2 id="h-inventory">Inventory</h2><span class="daemon">sys://avionics.inventory</span><p class="tag">What you have stored and where, across every system. Scan a storage screen or add items by hand.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="inventory"></div></div>
+  <div class="card"><h3>Scan a storage screen</h3>
+    <p class="small muted">Open a hangar, station or ship item list and scan it. Each place remembers when you last updated it, because the game has no live inventory feed. Items stay in your browser and in your Discord profile if you are signed in.</p>
+    <div id="scan-inv"></div></div>
+  <div id="inventoryHost" class="mt12"></div>
+</section>
+
 <section class="view" id="v-fleetmgr" aria-labelledby="h-fleetmgr">
   <div class="hero"><div><h2 id="h-fleetmgr">Fleet Manager</h2><span class="daemon">sys://avionics.fleet</span><p class="tag">Roles, crews and saved builds for every ship you own, and your whole group's fleet in one place.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="fleetmgr"></div></div>
   <div id="fleetMgr"></div>
@@ -453,6 +467,13 @@
       <li>Ships come from Hangar Command. The manager adds a <b>role</b> (combat, cargo, mining...), a <b>status</b> (active, standby, stored), a crew list and up to six saved builds per ship. A build is the link or code the Avionics Lab gives you; <b>Make active</b> marks the one you fly.</li>
       <li>The <b>overview</b> adds up the figures of every ship that has a stat sheet: cargo SCU, DPS, hull plus shield and crew seats. A ship saved by hand has no stat sheet, so it counts as a ship but adds nothing to the totals.</li>
       <li><b>Group fleet:</b> each player copies their fleet code and sends it to the group; paste the codes in to see everyone's ships, roles and combined totals. Codes hold ship names, roles and figures only. There is no live shared fleet yet, so re-paste a code to refresh someone's list.</li>
+    </ul>
+  </details>
+
+  <details class="fold card mt12"><summary>Waypoint and Inventory</summary>
+    <ul class="small">
+      <li><b>Waypoint</b> lists every place that has a commodity terminal in the live UEX data. Pick where you are (or paste a line with a place name in it) and it orders results as: here, same moon or planet, same system, other systems. Within a group it puts the best price first. It cannot give distances or quantum travel times yet, and it does not know services that are not commodity terminals.</li>
+      <li><b>Inventory</b> is a list of items by place. A scan reads a storage screen and shows you the rows to check before anything is saved; <b>Replace this place</b> makes the place match the scan, <b>Add to this place</b> only adds or raises counts. Search an item to see every place that holds it.</li>
     </ul>
   </details>
 

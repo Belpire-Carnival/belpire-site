@@ -32,7 +32,7 @@ test('the fabricator list is cleaned to names, categories, tiers and an owned fl
 });
 
 test('every kind has a prompt and a shape', () => {
-  assert.deepEqual(KINDS.sort(), ['cargo', 'contracts', 'fabricator', 'mining', 'salvage', 'ship', 'trade', 'weapon']);
+  assert.deepEqual(KINDS.sort(), ['cargo', 'contracts', 'fabricator', 'inventory', 'mining', 'salvage', 'ship', 'trade', 'weapon']);
   for (const k of KINDS) assert.ok(PROMPTS[k].includes('"seen"'), k);
 });
 
@@ -141,4 +141,10 @@ test('a model that fails or rambles gives a clean error, never raw model text', 
   const boom = await handleScan(scanRequest(), env(aiReturning(new Error('model exploded: secret detail'))));
   assert.equal(boom.status, 502); assert.equal(boom.body.error, 'scan_failed');
   assert.ok(!JSON.stringify(boom.body).includes('secret'));
+});
+
+test('an inventory scan is cleaned to a place and item rows with counts', () => {
+  const f = cleanScan('inventory', { seen: 'hangar list', place: ' Lorville Hangar ', system: 'Stanton', rows: [{ name: 'Gallant Rifle', qty: '3', category: 'Weapon' }, { name: 'Medpen', qty: 'many' }, { qty: 2 }, null, { name: 'x'.repeat(200), qty: 1 }] });
+  assert.equal(f.place, 'Lorville Hangar'); assert.equal(f.system, 'Stanton'); assert.equal(f.rows.length, 3);
+  assert.equal(f.rows[0].qty, 3); assert.equal(f.rows[1].qty, null); assert.equal(f.rows[2].name.length, 80);
 });
