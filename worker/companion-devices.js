@@ -9,13 +9,14 @@
 //   GET    /api/companion/devices    (signed-in page)   → { devices: [...] }
 //   DELETE /api/companion/devices?id=…  (signed-in page) revoke a device and drop its waiting events
 //   POST   /api/companion/inbox      (desktop app, Bearer token) { events: [...] } → { accepted }
+//   POST   /api/companion/wishlist   (desktop app, Bearer token) → { wishlist: [{ n, prio }], at }   only the names of Blueprint wishlist items not yet received
 //   GET    /api/companion/inbox      (signed-in page)   → { events: [...] }
 //   POST   /api/companion/inbox/ack  (signed-in page)   { keys: ["dev:eid", ...] }
 //
-// Only a hash of each device token is stored. A token can only add events to its own owner's inbox; it cannot read the
-// profile or anything else. Event kinds are a short allow-list and every value is trimmed to plain, short text or numbers.
+// Only a hash of each device token is stored. A token can add events to its own owner's inbox and read ONE thing back: the
+// names of the owner's Blueprint wishlist items that are not received yet (no notes, no other profile data). Event kinds are a short allow-list and every value is trimmed to plain, short text or numbers.
 
-import { readCompanionSession } from './companion.js';
+import { readCompanionSession, profileStore } from './companion.js';
 
 const PAIR_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_CODES = 5;
@@ -159,6 +160,21 @@ async function readJson(request, max) {
   }
 }
 
+// The blueprint names on a saved profile's wishlist (the page keeps them under "arsenal.plan.wish"): not received yet,
+// most wanted first (priority 1 is highest), plain short text only. Everything else in the profile stays unreadable to the app.
+export const MAX_WISHLIST = 50;
+export function wishlistFrom(data) {
+  let list; try { list = JSON.parse(data && data['arsenal.plan.wish']); } catch { return []; }
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const w of list) {
+    if (!w || typeof w !== 'object' || w.kind !== 'Blueprint' || w.got === true || typeof w.name !== 'string') continue;
+    const n = w.name.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 80);
+    if (n) out.push({ n, prio: [1, 2, 3].includes(Number(w.prio)) ? Number(w.prio) : 2 });
+  }
+  return out.sort((a, b) => a.prio - b.prio || a.n.localeCompare(b.n)).slice(0, MAX_WISHLIST);
+}
+
 const bearer = (request) => {
   const m = /^Bearer (ogd_[A-Za-z0-9_-]{20,80})$/.exec(request.headers.get('Authorization') || '');
   return m ? m[1] : null;
@@ -209,6 +225,18 @@ export async function handleDevices(request, env) {
     }
     await store.touch(dev.id, now);
     return json({ accepted, rejected });
+  }
+
+  // ---- the desktop app: read back its owner's blueprint wishlist (names only)
+  if (path === '/api/companion/wishlist') {
+    if (m !== 'POST') return json({ error: 'method not allowed' }, 405, { Allow: 'POST' });
+    const token = bearer(request);
+    const dev = token ? await store.byToken(await sha256Hex(token)) : null;
+    if (!dev) return json({ error: 'unauthorized' }, 401);
+    const row = await profileStore(env.DB).get(dev.uid);
+    await store.touch(dev.id, now);
+    let data = null; try { data = row ? JSON.parse(row.data) : null; } catch { /* a damaged profile has no wishlist */ }
+    return json({ wishlist: wishlistFrom(data), at: row ? row.updated_at : 0 });
   }
 
   // ---- everything below is the signed-in page

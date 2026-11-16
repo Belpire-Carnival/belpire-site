@@ -86,7 +86,7 @@ export default {
     if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
     if (pathname === '/api/discord/interactions') return handleInteraction(request, env, ctx);
     if (pathname === '/api/companion/profile' && isBureauHost(url.hostname)) return handleProfile(request, env);
-    if ((pathname === '/api/companion/pair' || pathname === '/api/companion/pair/new' || pathname === '/api/companion/devices' || pathname === '/api/companion/inbox' || pathname === '/api/companion/inbox/ack') && isBureauHost(url.hostname)) return handleDevices(request, env);
+    if ((pathname === '/api/companion/pair' || pathname === '/api/companion/pair/new' || pathname === '/api/companion/devices' || pathname === '/api/companion/inbox' || pathname === '/api/companion/inbox/ack' || pathname === '/api/companion/wishlist') && isBureauHost(url.hostname)) return handleDevices(request, env);
     if (pathname === '/api/companion/data' && isBureauHost(url.hostname)) return handleCompanionData(request);
     if (pathname === '/api/me') return isGet ? handleMe(request, env) : methodNotAllowed('GET, HEAD');
     if (pathname === '/api/sc-scan') {
