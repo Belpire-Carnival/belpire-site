@@ -171,3 +171,48 @@ test('a full inbox pushes back with 429 instead of growing without end', async (
 test('without the database or secret the whole feature reports unavailable', async () => {
   assert.equal((await app({}, 'POST', '/api/companion/pair', { body: { code: 'ABCD-2345' } })).status, 503);
 });
+
+// ------------------------------------------------------------ wishlist read-back
+import { wishlistFrom } from '../companion-devices.js';
+import { profileStore } from '../companion.js';
+
+const wish = (over) => ({ id: 'w', kind: 'Blueprint', name: 'Karna Rifle', prio: 2, note: 'private note', got: false, at: 1, ...over });
+const saveWish = async (env, list, uid = UID) => { await profileStore(env.DB).save(uid, 'Pilot One', JSON.stringify({ 'arsenal.plan.wish': JSON.stringify(list), 'arsenal.plan.secret': '"nope"' }), 0, 5000); };
+
+test('wishlistFrom: only blueprints not received yet, most wanted first, plain names, no notes', () => {
+  const data = { 'arsenal.plan.wish': JSON.stringify([wish({ name: 'Zed', prio: 3 }), wish({ name: 'Alpha', prio: 1 }), wish({ kind: 'Ship', name: 'Constellation' }), wish({ name: 'Done', got: true }), wish({ name: '  ' }), wish({ name: 'Mid\u0007\ndle', prio: 9 }), null, 5]) };
+  const r = wishlistFrom(data);
+  assert.deepEqual(r.map((x) => x.n), ['Alpha', 'Mid  dle', 'Zed']);
+  assert.deepEqual(r.map((x) => x.prio), [1, 2, 3]);
+  assert.ok(!JSON.stringify(r).includes('private'));
+  assert.deepEqual(wishlistFrom(null), []); assert.deepEqual(wishlistFrom({ 'arsenal.plan.wish': 'not json' }), []); assert.deepEqual(wishlistFrom({ 'arsenal.plan.wish': '{"a":1}' }), []);
+  assert.equal(wishlistFrom({ 'arsenal.plan.wish': JSON.stringify(Array.from({ length: 80 }, (_, i) => wish({ name: 'N' + String(i).padStart(2, '0') }))) }).length, 50);
+});
+
+test('wishlist read-back: the app token gets its owner\'s blueprint names and nothing else', async () => {
+  const env = envWith(), { got } = await pair(env);
+  await saveWish(env, [wish({ name: 'Karna Rifle', prio: 1 }), wish({ id: 'x', kind: 'Ship', name: 'Hull' })]);
+  const res = await app(env, 'POST', '/api/companion/wishlist', { token: got.token });
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.deepEqual(j.wishlist, [{ n: 'Karna Rifle', prio: 1 }]);
+  assert.equal(j.at, 5000);
+  const text = JSON.stringify(j); assert.ok(!text.includes('secret') && !text.includes('private') && !text.includes('Hull'));
+});
+
+test('wishlist read-back: no saved profile gives an empty list; another person\'s profile is never read', async () => {
+  const env = envWith(), { got } = await pair(env);
+  assert.deepEqual((await (await app(env, 'POST', '/api/companion/wishlist', { token: got.token })).json()).wishlist, []);
+  await saveWish(env, [wish({ name: 'Theirs' })], OTHER);
+  assert.deepEqual((await (await app(env, 'POST', '/api/companion/wishlist', { token: got.token })).json()).wishlist, []);
+});
+
+test('wishlist read-back: needs a valid app token, only by POST; the signed-in page cookie alone is not enough', async () => {
+  const env = envWith(), { got } = await pair(env);
+  assert.equal((await app(env, 'POST', '/api/companion/wishlist')).status, 401);
+  assert.equal((await app(env, 'POST', '/api/companion/wishlist', { token: 'ogd_' + 'A'.repeat(43) })).status, 401);
+  assert.equal((await app(env, 'GET', '/api/companion/wishlist', { token: got.token })).status, 405);
+  assert.equal((await page(env, 'POST', '/api/companion/wishlist')).status, 401);
+  await page(env, 'DELETE', `/api/companion/devices?id=${got.deviceId}`);
+  assert.equal((await app(env, 'POST', '/api/companion/wishlist', { token: got.token })).status, 401);
+});
