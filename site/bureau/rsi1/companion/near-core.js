@@ -1,15 +1,20 @@
 // Waypoint ("nearest to me") for OmniOps: from the live UEX terminal rows, find where a service or a commodity is,
 // ordered by how close it is in the verse's hierarchy: same place, same moon or planet, same system, other systems.
 // There are no coordinates in this data, so "close" is a tier, not a distance. Pure functions, no page access.
-export const SERVICES = [['refinery', 'Refinery'], ['refuel', 'Refuel'], ['repair', 'Repair'], ['shipbuy', 'Buy ships'], ['shiprent', 'Rent ships'], ['cargo', 'Cargo center'], ['freight', 'Freight elevator'], ['dock', 'Loading dock'], ['medical', 'Medical'], ['food', 'Food and drink'], ['fpsshop', 'Armor and weapons shop']];
+export const SERVICES = [['refinery', 'Refinery'], ['refuel', 'Refuel'], ['repair', 'Repair'], ['shipbuy', 'Buy ships'], ['shiprent', 'Rent ships'], ['cargo', 'Cargo center'], ['freight', 'Freight elevator'], ['dock', 'Loading dock'], ['medical', 'Medical'], ['food', 'Food and drink'], ['fpsshop', 'Armor and weapons shop'],
+  // From the game's own database (worker/sc-locations.json), not from UEX:
+  ['hangar', 'Hangars'], ['hangar-s', 'Hangar S'], ['hangar-m', 'Hangar M'], ['hangar-l', 'Hangar L'], ['hangar-xl', 'Hangar XL'],
+  ['pad', 'Landing pads'], ['pad-s', 'Pad S'], ['pad-m', 'Pad M'], ['pad-l', 'Pad L'], ['pad-xl', 'Pad XL'],
+  ['garage', 'Garage (ASOP)'], ['vehsvc', 'Vehicle services'], ['docking', 'Ship docking'], ['shipitems', 'Ship items and weapons']];
 // The filter panel. `has` is how a place qualifies: a service key from the terminal data, or 'trade' (a place with priced goods).
 // Entries with no `has` need game-file data this site does not have yet; they are shown, switched off.
 export const CATEGORIES = [
   { id: 'trade', label: 'Trade terminals', has: 'trade' }, { id: 'refinery', label: 'Refinery', has: 'refinery' }, { id: 'cargo', label: 'Cargo deck', has: 'cargo' },
-  { id: 'freight', label: 'Freight elevators', has: 'freight' }, { id: 'dock', label: 'Ship docking', has: 'dock' }, { id: 'refuel', label: 'Refuel', has: 'refuel' },
+  { id: 'freight', label: 'Freight elevators', has: 'freight' }, { id: 'dock', label: 'Loading dock', has: 'dock' }, { id: 'refuel', label: 'Refuel', has: 'refuel' },
   { id: 'repair', label: 'Maintenance', has: 'repair' }, { id: 'medical', label: 'Medical services', has: 'medical' }, { id: 'shopping', label: 'Shopping', has: 'fpsshop' },
   { id: 'food', label: 'Food', has: 'food' }, { id: 'shipbuy', label: 'Ship purchase', has: 'shipbuy' }, { id: 'shiprent', label: 'Ship/vehicle rental', has: 'shiprent' },
-  { id: 'vretrieve', label: 'Vehicle retrieval' }, { id: 'sretrieve', label: 'Ship retrieval' }, { id: 'storage', label: 'Storage kiosks' }, { id: 'pads', label: 'Landing pads' },
+  { id: 'vretrieve', label: 'Vehicle services', has: 'vehsvc' }, { id: 'sretrieve', label: 'Ship retrieval (garage)', has: 'garage' }, { id: 'storage', label: 'Storage kiosks' }, { id: 'pads', label: 'Landing pads', has: 'pad' },
+  { id: 'hangars', label: 'Hangars', has: 'hangar' }, { id: 'docking', label: 'Ship docking', has: 'docking' },
   { id: 'fines', label: 'Fine and citation kiosk' }, { id: 'security', label: 'Security terminal' }, { id: 'defenses', label: 'Defenses' }, { id: 'habitation', label: 'Habitation' },
   { id: 'harvest', label: 'Harvestables' }, { id: 'loot', label: 'Loot' }, { id: 'minables', label: 'Hand minables' }
 ];
@@ -21,7 +26,7 @@ const money = (n) => (Number.isFinite(n) ? Math.round(n * 100) / 100 : null);
 
 // One entry per place: { key, name, system, body, terminals: [{ name, buys, sells }] }.
 // buys = what you can buy there (price you pay); sells = what the terminal pays you for.
-export function buildPlaces(rows, services = []) {
+export function buildPlaces(rows, services = [], game = []) {
   const places = new Map();
   const at = (system, name, body, kind) => {
     const key = `${norm(system)}|${norm(name)}`;
@@ -45,6 +50,21 @@ export function buildPlaces(rows, services = []) {
     if (!t) p.terminals.set(r.terminal, (t = { name: r.terminal, buys: [], sells: [] }));
     if (r.buy > 0) t.buys.push({ commodity: r.commodity, price: money(r.buy), scu: r.scuBuy ?? null });
     if (r.sell > 0) t.sells.push({ commodity: r.commodity, price: money(r.sell), scu: r.scuSell ?? null });
+  }
+  // Game-file places: join an existing place by name (same system), else add one that has no trade terminals.
+  const inSystem = (system) => [...places.values()].filter((p) => norm(p.system) === norm(system));
+  for (const g of Array.isArray(game) ? game : []) {
+    if (!g || !g.n || !Array.isArray(g.svc)) continue;
+    const k = norm(g.n); if (!k) continue;
+    let p = places.get(norm(g.s) + '|' + k);
+    if (!p && k.length >= 6) {
+      const near = inSystem(g.s).filter((x) => { const o = norm(x.name); return o.length >= 6 && (o.includes(k) || k.includes(o)); });
+      if (near.length === 1) p = near[0];
+    }
+    if (!p) p = at(g.s, g.n, g.b, g.k);
+    if (!p.body && g.b) p.body = g.b;
+    if (!p.kind && g.k) p.kind = g.k;
+    for (const s of g.svc) if (SERVICE_LABEL[s]) p.svc.add(s);
   }
   return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)), svc: [...p.svc].sort() }))
     .sort((a, b) => a.system.localeCompare(b.system) || a.name.localeCompare(b.name));

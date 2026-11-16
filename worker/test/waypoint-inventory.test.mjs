@@ -94,8 +94,8 @@ test('the category filters combine, and a search can be shared through the addre
   const names = (o) => rank(p, null, o).map((x) => x.place.name).sort();
   assert.deepEqual(names({ cats: ['refinery'] }), ['Area18', 'Everus Harbor']); assert.deepEqual(names({ cats: ['refinery', 'dock'] }), ['Area18']);
   assert.deepEqual(names({ cats: ['refinery'], planet: 'Hurston' }), ['Everus Harbor']); assert.deepEqual(names({ kind: 'City' }), ['Area18']);
-  assert.deepEqual(names({ cats: ['trade'], planet: 'Hurston' }), ['Everus Harbor', 'Lorville']); assert.deepEqual(names({ cats: ['vretrieve'] }), names({}));
-  assert.ok(CATEGORIES.filter((c) => !c.has).length >= 10 && LOCATION_KINDS.includes('City'));
+  assert.deepEqual(names({ cats: ['trade'], planet: 'Hurston' }), ['Everus Harbor', 'Lorville']); assert.deepEqual(names({ cats: ['storage'] }), names({}));
+  assert.ok(CATEGORIES.filter((c) => !c.has).length >= 8 && LOCATION_KINDS.includes('City'));
   const { readHash, writeHash } = await import('../../site/bureau/rsi1/companion/near-ui.js');
   const st = { cats: ['refinery', 'dock'], planet: 'Hurston', kind: 'City', q: 'ore', mode: 'sell' };
   assert.deepEqual(readHash(writeHash(st)), st); assert.deepEqual(readHash('#waypoint?cat=evil,refinery&kind=Nope'), { cats: ['refinery'], planet: '', kind: '', q: '', mode: 'any' });
