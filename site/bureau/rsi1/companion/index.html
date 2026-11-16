@@ -405,6 +405,11 @@
 </section>
 
 
+<section class="view" id="v-fleetmgr" aria-labelledby="h-fleetmgr">
+  <div class="hero"><div><h2 id="h-fleetmgr">Fleet Manager</h2><span class="daemon">sys://avionics.fleet</span><p class="tag">Roles, crews and saved builds for every ship you own, and your whole group's fleet in one place.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="fleetmgr"></div></div>
+  <div id="fleetMgr"></div>
+</section>
+
 <!-- ================= MANUAL ================= -->
 <section class="view" id="v-howto" aria-labelledby="h-howto">
   <div class="hero"><div><h2 id="h-howto">How it works</h2><span class="daemon">sys://ref.howto</span><p class="tag">The maths behind every number on this site, and the best way to use each tab.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="howto"></div></div>
@@ -441,6 +446,14 @@
   <details class="fold card mt12"><summary>Fabricator: how quality changes a crafted item</summary>
     <p class="small">Each material slot has a quality from 1 to 1000. For every stat a slot affects, the game files give a <b>low and a high multiplier</b>. At the quality you set, the multiplier is the low value plus (high − low) × (your quality ÷ range), and it applies to the item's base stat. The "Quality for a target" box runs that backwards: type the multiplier you want and it shows the quality needed, or says the target is out of range.</p>
     <p class="small muted">Only straight-line (linear) curves are modelled. A stat with a stepped curve is shown as "curve not modelled" rather than guessed. Confirm one craft in game before you spend rare material.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Fleet Manager: roles, crews and group fleet</summary>
+    <ul class="small">
+      <li>Ships come from Hangar Command. The manager adds a <b>role</b> (combat, cargo, mining...), a <b>status</b> (active, standby, stored), a crew list and up to six saved builds per ship. A build is the link or code the Avionics Lab gives you; <b>Make active</b> marks the one you fly.</li>
+      <li>The <b>overview</b> adds up the figures of every ship that has a stat sheet: cargo SCU, DPS, hull plus shield and crew seats. A ship saved by hand has no stat sheet, so it counts as a ship but adds nothing to the totals.</li>
+      <li><b>Group fleet:</b> each player copies their fleet code and sends it to the group; paste the codes in to see everyone's ships, roles and combined totals. Codes hold ship names, roles and figures only. There is no live shared fleet yet, so re-paste a code to refresh someone's list.</li>
+    </ul>
   </details>
 
   <details class="fold card mt12"><summary>Getting the most from the site</summary>

@@ -4,6 +4,7 @@ import C from './core.js';
 import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
+import { initFleetManager } from './fleet-ui.js';
 import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
 import { initFabricator } from './fab-ui.js';
@@ -69,7 +70,7 @@ const Store = {
 // belong together and shows them as sub-tabs. A hub id as the address (#earn) opens the view last used in that hub.
 const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'hubops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
-  { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
+  { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command'], ['fleetmgr', 'Fleet Manager']] },
   { id: 'plan', label: 'Plan', icon: 'hubplan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator'], ['objectives', 'Objectives']] },
   { id: 'armory', label: 'Armory', icon: 'hubarmory', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
   { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
@@ -640,6 +641,7 @@ tickBDL();
   initLoadouts($('#groundLoadouts'), { toast, copy: copyPlain });
   const readLoadouts = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.loadouts')); return Array.isArray(v) ? v.map(normLoadout) : []; } catch { return []; } };
   initOutfits($('#wardrobe'), { toast, copy: copyPlain, getLoadouts: readLoadouts });
+  const fm = initFleetManager($('#fleetMgr'), { toast, copy: copyPlain }); if (fm) Store.onChange(() => fm.draw());
 }
 $('#loSave').addEventListener('click', () => { S.settings.loadout = $('#loNotes').value.slice(0, 4000); Store.saveSettings(); toast('Notes saved in this browser'); });
 $('#loBrief').addEventListener('click', () => copyText(briefRun('Ground Loadout', $('#loNotes').value.split('\n').filter(Boolean)), $('#loBriefBox')));

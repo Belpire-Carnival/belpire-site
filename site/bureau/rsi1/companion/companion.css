@@ -713,3 +713,12 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
 .obj .meter{margin-top:8px}
 .obj td input{width:96px}
 #objectives .pf input{min-width:min(320px,70vw)}
+
+/* Fleet Manager */
+.fm-ships{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.fm-ship .row{flex-wrap:wrap;gap:8px}
+.fm-ship input[type=text]{flex:1 1 120px;min-width:0}
+.fm-stored{opacity:.7}
+.fm-h{margin:12px 0 4px;font:600 11px var(--display);letter-spacing:.18em;text-transform:uppercase;color:var(--bronze-hi)}
+.fm-list{list-style:none;margin:0 0 6px;padding:0;display:flex;flex-direction:column;gap:4px}
+.fm-list li{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
