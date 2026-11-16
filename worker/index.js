@@ -9,7 +9,7 @@ import { handleSnapshot, refresh } from './star-citizen.js';
 import { handleMarket, handleShip, refreshMarket } from './sc-market.js';
 import { handleScan } from './sc-scan.js';
 import { handleBuilder, refreshBuilder } from './sc-builder.js';
-import { handleImg, handleItem } from './sc-img.js';
+import { handleImg, handleItem, handlePartImg } from './sc-img.js';
 import { handleShop } from './sc-shop.js';
 import { handleArmor } from './sc-armor.js';
 import { handleWeapons } from './sc-weapons.js';
@@ -142,6 +142,10 @@ export default {
     }
     if (pathname === '/api/sc-blueprint') {
       const { status, body } = await handleBlueprint(url, env, ctx);
+      return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+    }
+    if (pathname === '/api/sc-partimg') {
+      const { status, body } = await handlePartImg(url, env);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-zones') {
