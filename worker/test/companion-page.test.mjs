@@ -91,9 +91,9 @@ test('every navigation item has an icon and a view', () => {
   for (const v of views) { assert.ok(icons.includes(v), `icon for ${v}`); assert.ok(nav.includes(v), `nav for ${v}`); }
 });
 
-test('eight hubs hold every view once, and each hub keeps old links working', () => {
+test('nine hubs hold every view once, and each hub keeps old links working', () => {
   const hubs = [...app.matchAll(/\{ id: '([a-z]+)', label: '[^']+', icon: '([a-z]+)', blurb: '[^']+', panes: \[(.*?)\] \}/g)];
-  assert.equal(hubs.length, 8);
+  assert.equal(hubs.length, 9);
   const panes = hubs.flatMap((m) => [...m[3].matchAll(/\['([a-z]+)', '[^']+'\]/g)].map((x) => x[1]));
   const views = [...html.matchAll(/<section class="view" id="v-([a-z]+)"/g)].map((m) => m[1]);
   assert.deepEqual([...panes].sort(), [...views].sort());
@@ -101,6 +101,7 @@ test('eight hubs hold every view once, and each hub keeps old links working', ()
   for (const [, , icon] of hubs) assert.match(viz, new RegExp(`^\\s{2}${icon}:\\s*\\[`, 'm'), icon);
   assert.match(html, /id="subtabs"/);
   assert.match(html, /id="v-guide"/);
+  assert.match(html, /id="v-desktop"/); assert.match(html, /id="desktopDownload"/); assert.match(html, /scmdb live sync/); assert.match(html, /Sync Sinks/); // the desktop tab holds the read me, how-to and download box
   assert.match(html, /id="opsMap"/);
   assert.match(app, /document\.body\.dataset\.v = pane/);
 });
