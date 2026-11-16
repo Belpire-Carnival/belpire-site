@@ -105,9 +105,11 @@ export const TYPE_MAP = {
 
 export async function handleItem(url, env, ctx) {
   const q = (url.searchParams.get('q') || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const typeKey = Object.hasOwn(TYPE_MAP, url.searchParams.get('type') || '') ? url.searchParams.get('type') : '';
+  // Browse mode: no search text, only a slot, returns that slot's items a page at a time (the dressing room).
+  if (q.length < 2 && typeKey && url.searchParams.has('page')) return browseItems(url, typeKey, env, ctx);
   if (q.length < 2) return { status: 400, body: { error: 'type at least two letters' } };
   const base = String(env.SC_WIKI_API || WIKI_API).replace(/\/+$/, '');
-  const typeKey = Object.hasOwn(TYPE_MAP, url.searchParams.get('type') || '') ? url.searchParams.get('type') : '';
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const one = async (wikiType) => {
     const target = `${base}/items?filter%5Bname%5D=${encodeURIComponent(q)}${wikiType ? `&filter%5Btype%5D=${wikiType}` : ''}&page%5Bsize%5D=12`;
@@ -128,4 +130,34 @@ export async function handleItem(url, env, ctx) {
   const rows = ok.flatMap((r) => (Array.isArray(r.value?.data) ? r.value.data : [])).filter((x) => { const id = x?.uuid || x?.name; if (seen.has(id)) return false; seen.add(id); return true; });
   if (url.searchParams.get('raw') === '1') return { status: 200, body: { raw: rows[0] ?? null, count: rows.length } };
   return { status: 200, body: { items: rows.map(slimItem).filter(Boolean).slice(0, 12) } };
+}
+
+const BROWSE_SIZE = 48;
+const BROWSE_MAX_PAGE = 40;
+
+// GET /api/sc-item?type=<slot>&page=<n> → { items, page, more }. Every wiki type behind the slot is read at the same page
+// number and merged by name, so a slot with two wiki types (core: armor torsos and torso clothing) still pages evenly.
+export async function browseItems(url, typeKey, env, ctx) {
+  const page = Math.max(1, Math.min(BROWSE_MAX_PAGE, Math.floor(Number(url.searchParams.get('page'))) || 1));
+  const base = String(env?.SC_WIKI_API || WIKI_API).replace(/\/+$/, '');
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const one = async (wikiType) => {
+    const target = `${base}/items?filter%5Btype%5D=${wikiType}&page%5Bsize%5D=${BROWSE_SIZE}&page=${page}`;
+    const key = new Request(`https://browse.cache.invalid/v1/${wikiType}/${BROWSE_SIZE}/${page}`);
+    const hit = cache ? await cache.match(key) : null;
+    if (hit) return hit.json();
+    const res = await fetch(target, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`item database answered ${res.status}`);
+    const json = await res.json();
+    if (cache && ctx?.waitUntil) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(json), { headers: { 'Cache-Control': 'public, max-age=86400' } })));
+    return json;
+  };
+  const results = await Promise.allSettled(TYPE_MAP[typeKey].map(one));
+  const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+  if (!ok.length) return { status: 502, body: { error: 'item database unreachable' } };
+  const seen = new Set();
+  const items = ok.flatMap((j) => (Array.isArray(j?.data) ? j.data : [])).filter((x) => { const id = x?.uuid || x?.name; if (seen.has(id)) return false; seen.add(id); return true; })
+    .map(slimItem).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+  const more = ok.some((j) => Array.isArray(j?.data) && j.data.length >= BROWSE_SIZE && (j?.links?.next || Number(j?.meta?.last_page) > page));
+  return { status: 200, body: { items, page, more } };
 }

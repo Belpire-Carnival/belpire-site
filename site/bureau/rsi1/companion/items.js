@@ -80,3 +80,66 @@ export function thumbStrip(entries) {
   }
   return row.childNodes.length ? row : null;
 }
+
+// ---------------------------------------------------------------- browsable catalog (the dressing room)
+const pageCache = new Map();
+async function browse(type, page) {
+  const key = `${type}:${page}`;
+  if (pageCache.has(key)) return pageCache.get(key);
+  const res = await fetch(`/api/sc-item?type=${encodeURIComponent(type)}&page=${page}`, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(String(res.status));
+  const j = await res.json();
+  const out = { items: Array.isArray(j.items) ? j.items : [], more: !!j.more };
+  pageCache.set(key, out);
+  return out;
+}
+
+// A panel that lists every item the wiki knows for one slot, a page at a time, with a filter box.
+// onPick({ name, img, info, wpn }) runs when a card is chosen; the panel stays open so several can be tried.
+export function catalogPanel({ type, label, current = () => '', onPick, onClose }) {
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const root = mk('div', 'catalog');
+  const head = mk('div', 'cat-head');
+  const title = mk('b', '', `${label} catalog`);
+  const q = mk('input'); q.type = 'search'; q.placeholder = `Filter ${label.toLowerCase()}…`; q.setAttribute('aria-label', `Filter ${label}`); q.maxLength = 40;
+  const close = mk('button', 'ghost', 'Close'); close.type = 'button';
+  head.append(title, q, close);
+  const grid = mk('div', 'cat-grid');
+  const note = mk('p', 'small muted m0', 'Loading…');
+  const more = mk('button', '', 'Load more'); more.type = 'button'; more.hidden = true;
+  root.append(head, grid, note, more);
+  let items = [], page = 0, hasMore = true, busy = false, dead = false;
+  const shown = () => { const f = q.value.trim().toLowerCase(); return f ? items.filter((it) => `${it.name} ${it.mfr} ${it.kind} ${it.sub}`.toLowerCase().includes(f)) : items; };
+  const draw = () => {
+    const rows = shown();
+    grid.textContent = '';
+    const now = current();
+    for (const it of rows) {
+      const b = mk('button', `cat-card${it.name === now ? ' sel' : ''}`); b.type = 'button'; b.title = it.info || it.name;
+      b.append(photo(cleanImg(it.img), '', (() => mk('span', 'photo thumb none'))(), 'photo thumb'));
+      const t = mk('span', 'cat-text'); t.append(mk('b', '', it.name), mk('small', '', [it.mfr, it.kind || it.sub].filter(Boolean).join(' · ')));
+      b.append(t);
+      b.addEventListener('click', () => { onPick({ name: it.name, img: cleanImg(it.img), info: String(it.info || '').slice(0, 220), wpn: it.wpn || null }); draw(); });
+      grid.append(b);
+    }
+    note.textContent = busy ? 'Loading…' : rows.length ? `${rows.length} shown${q.value.trim() ? ` of ${items.length} loaded` : ''}${hasMore ? '' : ' · end of list'}` : (hasMore ? 'No match in the pages loaded so far.' : 'Nothing matches.');
+    more.hidden = !hasMore || busy;
+  };
+  const load = async (auto = 0) => {
+    if (busy || !hasMore || dead) return;
+    busy = true; draw();
+    try {
+      const r = await browse(type, page + 1);
+      page += 1; items = items.concat(r.items); hasMore = r.more;
+    } catch { hasMore = false; note.textContent = 'The item list is unavailable right now. You can still type a name in the slot.'; busy = false; more.hidden = true; return; }
+    busy = false; draw();
+    // A filter with no hits keeps reading pages (a few at a time) so a name further down the list can still be found.
+    if (q.value.trim() && !shown().length && hasMore && auto < 6) load(auto + 1);
+  };
+  let t = 0;
+  q.addEventListener('input', () => { draw(); clearTimeout(t); t = setTimeout(() => { if (q.value.trim() && !shown().length && hasMore) load(); }, 300); });
+  more.addEventListener('click', () => load());
+  close.addEventListener('click', () => { dead = true; onClose?.(); });
+  load();
+  return root;
+}

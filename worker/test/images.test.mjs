@@ -103,3 +103,25 @@ test('item search filters by the slot kind, merges types and ignores unknown kin
     assert.equal(urls.length, 1); assert.ok(!/filter\[type\]/.test(urls[0]));
   } finally { globalThis.fetch = real; }
 });
+
+test('browse mode pages a slot, sorts by name, flags more pages and needs a real slot', async () => {
+  const real = globalThis.fetch, urls = [];
+  try {
+    globalThis.fetch = async (u) => {
+      urls.push(decodeURIComponent(String(u)));
+      const data = Array.from({ length: 48 }, (_, i) => ({ uuid: `${String(u).includes('Armor_Torso') ? 't' : 'c'}${i}`, name: `${String(u).includes('Armor_Torso') ? 'Z' : 'A'} piece ${i}` }));
+      return new Response(JSON.stringify({ data, links: { next: 'x' } }), { status: 200 });
+    };
+    const r = await handleItem(new URL('https://x.test/api/sc-item?type=core&page=2'), {}, {});
+    assert.equal(r.status, 200);
+    assert.equal(urls.length, 2);
+    assert.ok(urls.every((x) => /filter\[type\]=(Char_Armor_Torso|Char_Clothing_Torso_1)/.test(x) && /page=2/.test(x)));
+    assert.equal(r.body.page, 2); assert.equal(r.body.more, true);
+    assert.equal(r.body.items.length, 96);
+    assert.ok(r.body.items[0].name.startsWith('A '));
+    assert.equal((await handleItem(new URL('https://x.test/api/sc-item?type=nope&page=1'), {}, {})).status, 400);
+    assert.equal((await handleItem(new URL('https://x.test/api/sc-item?type=core'), {}, {})).status, 400);
+    globalThis.fetch = async () => new Response('x', { status: 500 });
+    assert.equal((await handleItem(new URL('https://x.test/api/sc-item?type=helmet&page=1'), {}, {})).status, 502);
+  } finally { globalThis.fetch = real; }
+});
