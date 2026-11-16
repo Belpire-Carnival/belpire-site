@@ -1,7 +1,7 @@
 // Fabricator pane: pick a blueprint, set the quality of the material in each slot, see what that does to the crafted
 // item's stats, and get the material list for the number of crafts you want. Text nodes only; the maths is in fab-core.js.
 // Data comes from our own /api/sc-blueprints and /api/sc-blueprint.
-import { multiplier, qualityFor, pct, verdict, clampQuality, materialList, statRows, isLinear, START_QUALITY } from './fab-core.js';
+import { multiplier, qualityFor, pct, arrow, verdict, clampQuality, materialList, statRows, isLinear, START_QUALITY } from './fab-core.js';
 import { keyOf } from './plan-core.js';
 
 const API_LIST = '/api/sc-blueprints';
@@ -73,7 +73,7 @@ export function initFabricator(host, { toast = () => {}, onGoal = null } = {}) {
           need.textContent = target.value === '' ? '' : n == null ? `outside ×${m.lo} to ×${m.hi}` : `needs quality ${n}`;
         });
         tb.append(el('tr', {}, el('td', { text: r.group }), el('td', {}, el('b', { text: m.label }), el('div', { class: 'small muted', text: `×${m.lo} to ×${m.hi}${m.better === 'lower' ? ', lower is better' : ''}` })),
-          el('td', {}, r.modelled ? el('span', { class: `chip ${v === 'good' ? 'ok' : v === 'bad' ? 'bad' : ''}`, text: `${pct(r.mult)} (×${r.mult.toFixed(3)})` }) : el('span', { class: 'small muted', text: 'curve not modelled' })),
+          el('td', {}, r.modelled ? el('span', { class: `chip ${v === 'good' ? 'ok' : v === 'bad' ? 'bad' : ''}`, text: `${arrow(r.mult)} ${pct(r.mult)} (×${r.mult.toFixed(3)})` }) : el('span', { class: 'small muted', text: 'curve not modelled' })),
           el('td', {}, target, need)));
       }
       stats.append(el('div', { class: 'scrollx' }, el('table', {}, el('thead', {}, el('tr', {}, ...['Slot', 'Stat', 'At this quality', 'Quality for a target'].map((t) => el('th', { text: t })))), tb)),

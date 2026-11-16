@@ -24,6 +24,8 @@ export function qualityFor(m, target) {
 
 // "+10.0%" / "-5.0%" / "+0.0%"
 export const pct = (mult) => (ok(mult) ? `${mult >= 1 ? '+' : '-'}${Math.abs((mult - 1) * 100).toFixed(1)}%` : '—');
+// ▲ / ▼ so a change reads without colour; a flat result gets a dash.
+export const arrow = (mult) => (!ok(mult) || Math.abs(mult - 1) < 0.0005 ? '–' : mult > 1 ? '▲' : '▼');
 // 'good' | 'bad' | 'flat' for colouring: better_when says which direction helps.
 export function verdict(m, mult) {
   if (!ok(mult) || Math.abs(mult - 1) < 0.0005) return 'flat';
