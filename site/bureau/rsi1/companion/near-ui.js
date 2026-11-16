@@ -2,7 +2,7 @@
 // keyword) and a list of matching places, with an optional "sort by distance from" step. Built from the live UEX terminal data the page
 // already loads; categories that need game-file data are shown switched off. Text nodes and SVG attributes only. Maths in near-core.js.
 // The choices are kept in the address (#waypoint?cat=refinery,dock&planet=Hurston&kind=City&q=...) so a search can be shared.
-import { buildPlaces, bodiesOf, findHere, rank, tierCounts, TIERS, CATEGORIES, LOCATION_KINDS, SERVICE_LABEL } from './near-core.js';
+import { buildPlaces, authoritiesOf, bodiesOf, findHere, rank, tierCounts, TIERS, CATEGORIES, LOCATION_KINDS, SERVICE_LABEL } from './near-core.js';
 import { svgEl } from './viz.js';
 
 const el = (tag, attrs = {}, ...kids) => {
@@ -24,13 +24,14 @@ const IDS = new Set(CATEGORIES.map((c) => c.id));
 export function readHash(hash) {
   const qs = String(hash || '').split('?')[1] || '';
   const p = new URLSearchParams(qs);
-  return { cats: (p.get('cat') || '').split(',').filter((x) => IDS.has(x)), planet: (p.get('planet') || '').slice(0, 60), kind: LOCATION_KINDS.includes(p.get('kind')) ? p.get('kind') : '', q: (p.get('q') || '').slice(0, 60), mode: ['buy', 'sell'].includes(p.get('mode')) ? p.get('mode') : 'any' };
+  return { cats: (p.get('cat') || '').split(',').filter((x) => IDS.has(x)), planet: (p.get('planet') || '').slice(0, 60), kind: LOCATION_KINDS.includes(p.get('kind')) ? p.get('kind') : '', q: (p.get('q') || '').slice(0, 60), auth: (p.get('auth') || '').slice(0, 40), mode: ['buy', 'sell'].includes(p.get('mode')) ? p.get('mode') : 'any' };
 }
 export function writeHash(st) {
   const p = new URLSearchParams();
   if (st.cats.length) p.set('cat', st.cats.join(','));
   if (st.planet) p.set('planet', st.planet);
   if (st.kind) p.set('kind', st.kind);
+  if (st.auth) p.set('auth', st.auth);
   if (st.q) p.set('q', st.q);
   if (st.mode !== 'any') p.set('mode', st.mode);
   const s = p.toString();
@@ -46,7 +47,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
   const count = el('p', { class: 'small muted', role: 'status' });
   const catBar = el('div', { class: 'row fm-chips', role: 'group', 'aria-label': 'Categories' });
   const planet = el('select', { 'aria-label': 'Planet or moon' }), kind = el('select', { 'aria-label': 'Location type' });
-  const faction = el('select', { 'aria-label': 'Faction', disabled: '', title: 'Faction needs game-file data this site does not have yet' }, el('option', { text: 'Faction (no data yet)' }));
+  const faction = el('select', { 'aria-label': 'Jurisdiction or faction', title: 'Who holds legal authority over the place, or which faction runs it' });
   const q = el('input', { type: 'text', maxlength: '60', placeholder: 'Keyword: a place, terminal or commodity', 'aria-label': 'Keyword' });
   const modeBar = el('div', { class: 'row fm-chips', role: 'group', 'aria-label': 'Prices' });
   const list = el('div', { class: 'mt12' });
@@ -81,6 +82,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
     modeBar.append(b);
   }
   const fill = (select, items, cur, blank) => { select.replaceChildren(el('option', { value: '', text: blank }), ...items.map((i) => el('option', { value: i, text: i }))); select.value = items.includes(cur) ? cur : ''; };
+  faction.addEventListener('change', () => { st.auth = faction.value; redraw(); });
   planet.addEventListener('change', () => { st.planet = planet.value; redraw(); });
   kind.addEventListener('change', () => { st.kind = kind.value; redraw(); });
   q.value = st.q; q.addEventListener('input', () => { st.q = q.value.trim(); redraw(); });
@@ -88,6 +90,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
   function drawPicker() {
     const h = here();
     fill(planet, bodiesOf(places, ''), st.planet, 'Planet or moon'); st.planet = planet.value;
+    fill(faction, authoritiesOf(places), st.auth, 'Jurisdiction or faction'); st.auth = faction.value;
     fill(kind, LOCATION_KINDS.filter((k) => places.some((p) => p.kind === k)), st.kind, 'Location type'); st.kind = kind.value;
     const systems = [...new Set(places.map((p) => p.system).filter(Boolean))].sort();
     fill(sys, systems, h?.system || sys.value, 'Any system');
@@ -121,7 +124,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
     const chips = shown.map((k) => el('span', { class: 'chip', text: SERVICE_LABEL[k] || k }));
     const priced = p.terminals.filter((t) => t.buys.length || t.sells.length);
     if (priced.length) chips.unshift(el('span', { class: 'chip', text: 'Trade terminals' }));
-    const sub = [p.kind, p.body, p.system].filter(Boolean).join(' · ');
+    const sub = [p.kind, p.body, p.system, p.jur, p.fac].filter(Boolean).join(' · ');
     const lines = r.hits.slice(0, 4).map((x) => `${x.commodity} ${x.kind === 'buy' ? 'buy' : 'sell'} ${money(x.price)}`).join(' · ');
     const more = el('details', { class: 'fold' }, el('summary', { text: `${p.terminals.length} terminal${p.terminals.length === 1 ? '' : 's'}` }));
     for (const t of p.terminals) {
@@ -133,7 +136,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
   }
 
   function drawResults() {
-    const h = here(), ranked = rank(places, h, { mode: st.mode, q: st.q, cats: st.cats, planet: st.planet, kind: st.kind });
+    const h = here(), ranked = rank(places, h, { mode: st.mode, q: st.q, cats: st.cats, planet: st.planet, kind: st.kind, auth: st.auth });
     drawRadar(ranked);
     list.replaceChildren();
     if (!places.length) { count.textContent = ''; list.append(el('p', { class: 'small muted', text: 'Live price and terminal data has not arrived yet, so there are no places to search. Try again in a few minutes.' })); return; }
@@ -149,7 +152,7 @@ export function initWaypoint(host, { getRows = () => [], getServices = () => [] 
 
   function draw() { places = buildPlaces(getRows(), getServices(), game); drawPicker(); drawResults(); }
   window.addEventListener('arsenal:market', draw);
-  window.addEventListener('hashchange', () => { if (/^#waypoint/.test(location.hash) && location.hash !== writeHash(st)) { Object.assign(st, readHash(location.hash)); q.value = st.q; for (const [i, c] of CATEGORIES.entries()) if (c.has) catBar.children[i].setAttribute('aria-pressed', String(st.cats.includes(c.id))); drawPicker(); drawResults(); } });
+  window.addEventListener('hashchange', () => { if (/^#waypoint/.test(location.hash) && location.hash !== writeHash(st)) { Object.assign(st, readHash(location.hash)); q.value = st.q; faction.value = st.auth; for (const [i, c] of CATEGORIES.entries()) if (c.has) catBar.children[i].setAttribute('aria-pressed', String(st.cats.includes(c.id))); drawPicker(); drawResults(); } });
   draw();
   // Places and services from the game files; one small request, and the page works without it.
   fetch('/api/sc-locations', { headers: { Accept: 'application/json' } })

@@ -31,7 +31,7 @@ export function buildPlaces(rows, services = [], game = []) {
   const at = (system, name, body, kind) => {
     const key = `${norm(system)}|${norm(name)}`;
     let p = places.get(key);
-    if (!p) places.set(key, (p = { key, name, system: system || '', body: body || '', kind: kind || '', terminals: new Map(), svc: new Set() }));
+    if (!p) places.set(key, (p = { key, name, system: system || '', body: body || '', kind: kind || '', jur: '', fac: '', terminals: new Map(), svc: new Set() }));
     if (!p.body && body) p.body = body;
     if (!p.kind && kind) p.kind = kind;
     return p;
@@ -64,6 +64,8 @@ export function buildPlaces(rows, services = [], game = []) {
     if (!p) p = at(g.s, g.n, g.b, g.k);
     if (!p.body && g.b) p.body = g.b;
     if (!p.kind && g.k) p.kind = g.k;
+    if (g.j && !p.jur) p.jur = g.j;
+    if (g.f && !p.fac) p.fac = g.f;
     for (const s of g.svc) if (SERVICE_LABEL[s]) p.svc.add(s);
   }
   return [...places.values()].map((p) => ({ ...p, terminals: [...p.terminals.values()].sort((a, b) => a.name.localeCompare(b.name)), svc: [...p.svc].sort() }))
@@ -94,16 +96,18 @@ export const tierOf = (p, here) => {
 
 // mode: 'any' | 'buy' (places where you can buy it) | 'sell' (places that pay you for it).
 // q matches a commodity, terminal or place name. Without q, 'buy'/'sell' keep any place with something to buy/sell.
-export function rank(places, here, { mode = 'any', q = '', system = '', service = '', cats = [], planet = '', kind = '' } = {}) {
+export const authoritiesOf = (places) => [...new Set(places.flatMap((p) => [p.jur, p.fac]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+export function rank(places, here, { mode = 'any', q = '', system = '', service = '', cats = [], planet = '', kind = '', auth = '' } = {}) {
   const k = norm(q), out = [];
   const need = [...(service ? [service] : []), ...CATEGORIES.filter((c) => cats.includes(c.id) && c.has).map((c) => c.has)];
   for (const p of places) {
     if (system && p.system !== system) continue;
     if (planet && p.body !== planet) continue;
     if (kind && p.kind !== kind) continue;
+    if (auth && p.jur !== auth && p.fac !== auth) continue;
     if (need.some((n) => (n === 'trade' ? !p.terminals.some((t) => t.buys.length || t.sells.length) : !(p.svc || []).includes(n)))) continue;
     const hits = [];
-    const filtered = need.length > 0 || !!planet || !!kind;
+    const filtered = need.length > 0 || !!planet || !!kind || !!auth;
     const wantHits = !filtered || k || mode !== 'any';
     for (const t of wantHits ? p.terminals : []) {
       const nameHit = k && (norm(t.name).includes(k) || norm(p.name).includes(k));
