@@ -14,6 +14,7 @@ import { handleShop } from './sc-shop.js';
 import { handleArmor } from './sc-armor.js';
 import { handleWeapons } from './sc-weapons.js';
 import { handleBlueprints, handleBlueprint } from './sc-blueprints.js';
+import { hasGameBlueprints, handleGameList, handleGameOne } from './sc-bpdata.js';
 import { handleZones } from './sc-zones.js';
 import { handleLocations } from './sc-locations.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
@@ -140,11 +141,11 @@ export default {
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-blueprints') {
-      const { status, body } = await handleBlueprints(env, ctx);
+      const { status, body } = hasGameBlueprints() ? handleGameList() : await handleBlueprints(env, ctx);
       return json(body, status === 206 ? 200 : status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-blueprint') {
-      const { status, body } = await handleBlueprint(url, env, ctx);
+      const { status, body } = hasGameBlueprints() ? handleGameOne(url) : await handleBlueprint(url, env, ctx);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
     }
     if (pathname === '/api/sc-partimg') {
