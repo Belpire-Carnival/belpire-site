@@ -361,7 +361,7 @@
 
 <!-- ================= WARDROBE ================= -->
 <section class="view" id="v-wardrobe" aria-labelledby="h-wardrobe">
-  <div class="hero"><div><h2 id="h-wardrobe">Wardrobe</h2><span class="daemon">sys://dress.wardrobe</span><p class="tag">Dress the mannequin, browse the gear for each slot, dye it and save the look.</p><div class="chips"><span class="chip">Browse gear</span><span class="chip">Save &amp; share</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="wardrobe"></div></div>
+  <div class="hero"><div><h2 id="h-wardrobe">Wardrobe</h2><span class="daemon">sys://dress.wardrobe</span><p class="tag">Dress the mannequin, browse the gear for each slot and save the look.</p><div class="chips"><span class="chip">Browse gear</span><span class="chip">Save &amp; share</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="wardrobe"></div></div>
   <div id="wardrobe" class="mt12"></div>
 </section>
 
@@ -406,6 +406,66 @@
 
 
 <!-- ================= MANUAL ================= -->
+<section class="view" id="v-howto" aria-labelledby="h-howto">
+  <div class="hero"><div><h2 id="h-howto">How it works</h2><span class="daemon">sys://ref.howto</span><p class="tag">The maths behind every number on this site, and the best way to use each tab.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="howto"></div></div>
+  <div class="note info">Every figure here is a planning aid built from community data and the numbers you type in. Star Citizen changes every patch, so check a stat or a price in game before you spend on it.</div>
+
+  <details class="fold card mt12" open><summary>Time to kill (TTK) for ground weapons</summary>
+    <p class="small">The Ballistics Matrix and the FPS weapon rankings use the same steps:</p>
+    <ol class="small">
+      <li><b>Damage per shot</b> = (physical damage × the armor's physical multiplier + energy damage × the armor's energy multiplier) × pellets × the body-zone multiplier. A pistol has one pellet; a shotgun fires several at once. A multiplier of 0.70 means the armor takes 30% off.</li>
+      <li><b>Shots to kill</b> = the target's health ÷ damage per shot, rounded up.</li>
+      <li><b>Time</b> = (shots − 1) × the gap between shots. The gap is 60 ÷ rounds per minute. The first shot is instant, so only the gaps between shots count.</li>
+      <li><b>Burst weapons</b> add their cooldown after each full burst, on top of the normal gap.</li>
+      <li><b>Reloads</b> add one reload time for every full magazine you use up before the kill.</li>
+    </ol>
+    <p class="small muted">It assumes every shot lands in the zone you pick and that nothing heals the target. <b>Burst TTK</b> is straight cyclic fire with no burst cooldown and no reload; <b>TTK</b> includes both. Damage figures come from the wiki's weapon records; where the wiki has no per-shot figure for a beam weapon, the ammunition's damage is used instead and the row is marked.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Weapon rankings: FPS and ship</summary>
+    <p class="small"><b>FPS rankings</b> score every weapon the wiki has full figures for against the armor class you choose (Light, Medium or Heavy). The armor multipliers are the middle value across that class's torso pieces, so a single odd armor does not skew them. They order fastest TTK first, and show how many weapons were left out for missing figures.</p>
+    <p class="small"><b>Ship rankings</b> use <b>time to destroy</b> = the reference ship's health ÷ the gun's sustained damage per second. Reference health is the ship's hull plus the shields it carries. You can filter by gun size and by engagement range, and guns with no listed range are counted but flagged. Burst damage is shown beside sustained so you can see the opening hit.</p>
+    <p class="small muted">Rankings compare guns on paper under the same assumptions. They ignore aim, bullet speed, heat and power draw, so treat them as a starting shortlist.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Salvage, mining, trade and hauling profit</summary>
+    <ul class="small">
+      <li><b>Salvage:</b> value = RMC SCU × RMC price + (raw construction material SCU × refinery yield %) × its price, plus components and contract pay. Net = value − refinery fee − expenses. Per hour = net ÷ (minutes ÷ 60). Per crew member = net ÷ crew.</li>
+      <li><b>Mining:</b> each ore line is raw SCU × yield % = refined SCU, then × price. The net takes off the refinery fee and expenses.</li>
+      <li><b>Trade chain:</b> for each leg, quantity = the smallest of your hold, what your capital can buy, and the stock available. Profit = quantity × (sell − buy). Capital carries forward, so a good first leg funds a bigger second one. Each leg is labelled with what limited it: hold, stock or capital.</li>
+      <li><b>Hauling:</b> payout − expenses, per hour from the minutes you enter.</li>
+      <li><b>Prices</b> are typed or come from UEX Corp community data. They are not a live feed; each tab shows how old the figures are.</li>
+    </ul>
+  </details>
+
+  <details class="fold card mt12"><summary>Fabricator: how quality changes a crafted item</summary>
+    <p class="small">Each material slot has a quality from 1 to 1000. For every stat a slot affects, the game files give a <b>low and a high multiplier</b>. At the quality you set, the multiplier is the low value plus (high − low) × (your quality ÷ range), and it applies to the item's base stat. The "Quality for a target" box runs that backwards: type the multiplier you want and it shows the quality needed, or says the target is out of range.</p>
+    <p class="small muted">Only straight-line (linear) curves are modelled. A stat with a stepped curve is shown as "curve not modelled" rather than guessed. Confirm one craft in game before you spend rare material.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Getting the most from the site</summary>
+    <ol class="small">
+      <li><b>Sign in with Discord</b> so your logs, fleet, blueprints, wardrobe, loadouts and objectives follow you between devices. Without it they stay in this browser only.</li>
+      <li><b>Import your blueprints</b> from the Item Fabricator (Plan, Blueprints) after each patch, then browse the catalog to see what you are missing and how to unlock it.</li>
+      <li><b>Turn a craft into objectives:</b> plan it in the Fabricator, press Make this an objective, and tick off materials as you gather them. OmniOps shows the next one.</li>
+      <li><b>Build ships in the Avionics Lab</b>, save the build to your hangar, and compare it against stock. Rank the guns before you buy them.</li>
+      <li><b>Log every run</b> in Slag &amp; Scrape, Extraction OS, OmniRoute and GridMaster; OmniLog totals them so you can see which job earns the most per hour.</li>
+      <li><b>Save your kits</b> in the Dressing Room: ground loadouts for each kind of mission, and outfits you can share as a code.</li>
+    </ol>
+  </details>
+
+  <details class="fold card mt12"><summary>Where the data comes from, and how fresh it is</summary>
+    <ul class="small">
+      <li><b>Ships, parts, weapons, armor, blueprints:</b> the Star Citizen Wiki API (community data from the game files). It updates after each patch and is cached for a day or less.</li>
+      <li><b>Commodity prices and terminals:</b> UEX Corp, a community price database.</li>
+      <li><b>Status and news:</b> robertsspaceindustries.com.</li>
+      <li><b>Scans</b> (screenshots read by an AI model) are always shown to you for review before anything is saved. The model can misread; correct it before you import.</li>
+      <li>The patch line at the top of each tab says which game version the site was last checked against.</li>
+    </ul>
+  </details>
+  <p class="small muted mt12">This site is an unofficial fan tool and is not affiliated with Cloud Imperium Games.</p>
+</section>
+
 <section class="view" id="v-guide" aria-labelledby="h-guide">
   <div class="hero"><div><h2 id="h-guide">Guide</h2><span class="daemon">sys://ref.guide</span><p class="tag">What each tab is for, what the numbers mean, and how current the data is.</p><div class="chips"><span class="chip">Tab by tab</span><span class="chip">Data sources</span><span class="chip">Glossary</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="guide"></div></div>
   <div class="note info">Star Citizen changes every patch. Everything here is a planning aid: check a price, a location or a stat in game before you spend or fly on it. Each tab says where its numbers come from.</div>
