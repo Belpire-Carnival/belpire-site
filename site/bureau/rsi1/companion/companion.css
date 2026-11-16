@@ -706,3 +706,10 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
 .wr-tools button.on{border-color:var(--bronze);color:var(--bronze-hi)}
 .wr-code{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
 .wr-code textarea{flex:1 1 280px;min-width:0}
+
+/* Objectives */
+.obj{margin-top:10px}
+.obj.doneobj{opacity:.65}
+.obj .meter{margin-top:8px}
+.obj td input{width:96px}
+#objectives .pf input{min-width:min(320px,70vw)}

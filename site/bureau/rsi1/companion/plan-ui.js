@@ -2,6 +2,8 @@
 // (arsenal.plan.*, which the companion profile sync carries between devices). The maths is in plan-core.js.
 import { WISH_KINDS, keyOf, cleanBp, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleLabel, cleanWishlist, addWish, patchWish, removeWish, sortWish, ownedState, catalogTypes, catalogView, craftTime, recipeText } from './plan-core.js';
 
+import { trackUnlock } from './obj-ui.js';
+
 const API_LIST = '/api/sc-blueprints';
 const API_ONE = '/api/sc-blueprint';
 
@@ -179,7 +181,9 @@ export function initCatalog(host, { toast = () => {} } = {}) {
       for (const g of d.missions) kids.push(el('p', { class: 'small' }, el('b', { text: `${g.label}${g.chance != null && g.chance < 1 ? ` (${Math.round(g.chance * 100)}%)` : ''}: ` }), g.list.map((m) => `${m.title}${m.scope ? ` (${m.scope})` : ''}`).join(' · ')));
       kids.push(el('p', { class: 'small muted', text: 'Mission pools rotate between patches. Check the in-game reward before you chase one.' }));
     } else if (!b.def) kids.push(el('p', { class: 'small muted', text: 'The wiki lists no unlocking mission for this one.' }));
-    kids.push(el('div', { class: 'row mt8' }, want, el('a', { class: 'ghost btnlink', href: `#fabricator?b=${encodeURIComponent(b.id)}`, text: 'Plan the craft' })));
+    const track = el('button', { type: 'button', text: 'Track as objective' });
+    track.addEventListener('click', () => toast(trackUnlock({ name: b.name, bpId: b.id }) ? 'Added to your objectives' : 'Already in your objectives'));
+    kids.push(el('div', { class: 'row mt8' }, want, ...(b.def ? [] : [track]), el('a', { class: 'ghost btnlink', href: `#fabricator?b=${encodeURIComponent(b.id)}`, text: 'Plan the craft' })));
     open.replaceChildren(...kids);
   }
   [q, type, status].forEach((c) => c.addEventListener(c === q ? 'input' : 'change', () => { shown = 50; draw(); }));
