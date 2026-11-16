@@ -64,13 +64,14 @@ const Store = {
 };
 
 // ---------------- routing ----------------
-// Seven hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
+// Eight hubs. Every view keeps its own id (so old #links and shared #calc?b= builds still work); a hub groups the views that
 // belong together and shows them as sub-tabs. A hub id as the address (#earn) opens the view last used in that hub.
 const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'ops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['contracts', 'TacBoard']] },
   { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command']] },
   { id: 'plan', label: 'Plan', icon: 'plan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator']] },
-  { id: 'armory', label: 'Armory', icon: 'calc', blurb: 'Build loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
+  { id: 'armory', label: 'Armory', icon: 'calc', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
+  { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
   { id: 'earn', label: 'Earn', icon: 'trade', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
   { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
   { id: 'help', label: 'Help', icon: 'manual', blurb: 'What each tab does and what the data means.', panes: [['guide', 'Guide'], ['manual', 'Field Manual']] },

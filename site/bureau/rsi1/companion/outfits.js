@@ -2,7 +2,7 @@
 // a style tag, three colour picks and an optional link to a saved ground loadout. One outfit can be marked "Wearing".
 // Saved in this browser and, when signed in, on the player's profile (everything under "arsenal.*").
 import { svgEl } from './viz.js';
-import { attachPicker, cleanImg, thumbStrip } from './items.js';
+import { attachPicker, cleanImg, thumbStrip, catalogPanel } from './items.js';
 import { createViewer, boxPart } from './viewer3d.js';
 
 const KEY = 'arsenal.outfits';
@@ -52,6 +52,50 @@ export function normalize(o) {
     fav: !!o?.fav, worn: !!o?.worn,
     at: Number(o?.at) || Date.now()
   };
+}
+
+// ---------------------------------------------------------------- share codes and wardrobe files (pure, testable)
+const CODE = 'SCW1.';
+const toB64 = (str) => { const bytes = new TextEncoder().encode(str); let bin = ''; for (const b of bytes) bin += String.fromCharCode(b); return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const fromB64 = (b64) => { const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))); };
+
+// One outfit as a short text code you can paste into Discord. It holds the look only: not the id, the "wearing" flag or the linked loadout.
+export function encodeOutfit(o) {
+  const n = normalize(o);
+  return CODE + toB64(JSON.stringify({ n: n.name, s: n.style, x: n.sex, p: n.pieces, t: n.tints, i: n.imgs, f: n.infos, c: n.notes }));
+}
+export function decodeOutfit(text) {
+  const t = String(text ?? '').replace(/\s+/g, '');
+  if (!t.startsWith(CODE) || t.length > 16000) return null;
+  try {
+    const j = JSON.parse(fromB64(t.slice(CODE.length)));
+    if (!j || typeof j !== 'object' || Array.isArray(j)) return null;
+    return normalize({ id: '', name: j.n, style: j.s, sex: j.x, pieces: j.p, tints: j.t, imgs: j.i, infos: j.f, notes: j.c });
+  } catch { return null; }
+}
+
+// The whole wardrobe as a file you keep, and the reverse. Read and written on this machine only.
+export const FILE_TAG = 'belpire-wardrobe';
+export const wardrobeFile = (list) => JSON.stringify({ app: FILE_TAG, v: 1, saved: new Date().toISOString(), outfits: list.map(normalize) }, null, 1);
+export function parseWardrobe(text) {
+  if (typeof text !== 'string' || text.length > 1_500_000) return null;
+  try {
+    const j = JSON.parse(text);
+    const arr = Array.isArray(j) ? j : j?.app === FILE_TAG ? j.outfits : null;
+    if (!Array.isArray(arr)) return null;
+    return arr.filter((x) => x && typeof x === 'object').slice(0, MAX).map(normalize);
+  } catch { return null; }
+}
+// Merge incoming outfits into the list: the same id replaces, new ones are added, and only one may be worn.
+export function mergeWardrobe(list, incoming) {
+  const byId = new Map(list.map((x) => [x.id, x]));
+  let wornTaken = list.some((x) => x.worn);
+  for (const n of incoming) {
+    if (n.worn && wornTaken && !byId.has(n.id)) n.worn = false;
+    if (n.worn) wornTaken = true;
+    byId.set(n.id, n);
+  }
+  return [...byId.values()].sort((a, b) => b.at - a.at).slice(0, MAX);
 }
 
 // 140×230 mannequin. A piece with a name is filled with the outfit colours; an empty one is a dashed outline.
@@ -112,6 +156,17 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
     // Right: the equipment matrix, one angular card per slot with its own dye row
     const grid = el('div', { class: 'slots' });
     const cards = {};
+    const catHost = el('div', { class: 'cat-host' });
+    let catOpen = '';
+    const closeCatalog = () => { const was = catOpen; catOpen = ''; catHost.replaceChildren(); if (was && cards[was]) drawSlot(was, PIECES.find(([x]) => x === was)[1]); };
+    const openCatalog = (k, label) => {
+      const prev = catOpen; catOpen = k;
+      catHost.replaceChildren(catalogPanel({ type: k, label, current: () => o.pieces[k], onClose: closeCatalog,
+        onPick: ({ name: nm, img, info }) => { o.pieces[k] = nm; o.imgs[k] = img; o.infos[k] = info || ''; drawSlot(k, label); sync(); } }));
+      if (prev && prev !== k && cards[prev]) drawSlot(prev, PIECES.find(([x]) => x === prev)[1]);
+      drawSlot(k, label);
+      catHost.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    };
     const drawSlot = (k, label) => {
       const c = cards[k]; c.textContent = '';
       const filled = !!o.pieces[k];
@@ -125,7 +180,8 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
       });
       const pic = o.imgs[k] ? el('img', { src: o.imgs[k], alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : el('span', { class: 'ph', 'aria-hidden': 'true', text: label[0] });
       const dye = el('span', { class: 'dye' }, swatchRow(o.tints[k], (hex) => { o.tints[k] = hex; o.colors[0] = o.tints.undersuit; o.colors[1] = o.tints.core; o.colors[2] = o.tints.helmet; drawSlot(k, label); }, `${label} dye`));
-      c.append(el('div', { class: 'slot-top' }, el('div', { class: 'slot-pic' }, pic), el('div', { class: 'slot-body' }, el('span', { class: 'slot-label', text: label }), input)),
+      const browseBtn = el('button', { type: 'button', class: `ghost browse${catOpen === k ? ' on' : ''}`, text: 'Browse', 'aria-label': `Browse ${label} catalog`, onclick: () => openCatalog(k, label) });
+      c.append(el('div', { class: 'slot-top' }, el('div', { class: 'slot-pic' }, pic), el('div', { class: 'slot-body' }, el('span', { class: 'slot-label', text: label }), input, browseBtn)),
         ...(o.infos[k] ? [el('p', { class: 'slot-stats', text: o.infos[k] })] : []), dye);
       attachPicker(input, ({ name: nm, img, info }) => { picked = nm; o.pieces[k] = nm; o.imgs[k] = img; o.infos[k] = info || ''; drawSlot(k, label); sync(); }, { type: k });
     };
@@ -140,6 +196,7 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
     const root = el('div', { class: 'card accent building' }, el('h3', { text: list.some((x) => x.id === o.id) ? 'Edit outfit' : 'New outfit' }),
       el('div', { class: 'fields' }, el('label', { class: 'f' }, 'Name', name), el('label', { class: 'f' }, 'Style', style), el('label', { class: 'f' }, 'Linked loadout', lo)),
       el('div', { class: 'bb mt10' }, vp, grid),
+      catHost,
       el('div', { class: 'mt10' }, el('label', { class: 'f' }, 'Notes', notes)),
       el('div', { class: 'row mt10' }, save, el('button', { type: 'button', class: 'ghost', text: 'Cancel', onclick: () => { stop(); editing = null; paint(); } })));
     queueMicrotask(() => { try { viewer = createViewer(canvas); } catch { viewer = null; } if (viewer) showModel(); else { viewport.replaceChildren(fallback); sync(); } });
@@ -164,18 +221,50 @@ export function initOutfits(host, { toast = () => {}, copy = async () => false, 
         el('button', { type: 'button', class: o.worn ? 'primary' : '', text: o.worn ? 'Wearing' : 'Wear', onclick: () => { const was = o.worn; list.forEach((x) => { x.worn = false; }); o.worn = !was; persist(); paint(); } }),
         el('button', { type: 'button', text: 'Edit', onclick: () => { editing = normalize(o); paint(); } }),
         el('button', { type: 'button', class: 'ghost', text: 'Copy', onclick: async () => { toast((await copy(brief())) ? 'Copied for Discord' : 'Could not copy'); } }),
+        el('button', { type: 'button', class: 'ghost', text: 'Share code', title: 'A short code another player can paste into Import code', onclick: async () => { toast((await copy(encodeOutfit(o))) ? 'Share code copied' : 'Could not copy'); } }),
         el('button', { type: 'button', class: 'ghost', text: 'Duplicate', onclick: () => { list = [normalize({ ...o, id: '', worn: false, name: `${o.name} copy`.slice(0, 50) }), ...list].slice(0, MAX); persist(); paint(); } }),
         del));
   }
+
+  const fileIn = el('input', { type: 'file', accept: '.json,application/json', hidden: true, 'aria-label': 'Import a wardrobe file' });
+  fileIn.addEventListener('change', async () => {
+    const f = fileIn.files?.[0]; fileIn.value = '';
+    if (!f) return;
+    if (f.size > 1_500_000) { toast('That file is too large to be a wardrobe'); return; }
+    const got = parseWardrobe(await f.text());
+    if (!got || !got.length) { toast('That is not a wardrobe file'); return; }
+    list = mergeWardrobe(list, got); persist(); paint(); toast(`Imported ${got.length} outfit${got.length === 1 ? '' : 's'}`);
+  });
+  let codeOpen = false;
+  const save = () => {
+    const url = URL.createObjectURL(new Blob([wardrobeFile(list)], { type: 'application/json' }));
+    const a = el('a', { href: url, download: `belpire-wardrobe-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast('Wardrobe file saved to your downloads');
+  };
 
   function paint() {
     host.textContent = '';
     if (editing) { host.append(editor()); return; }
     const ordered = [...list].sort((a, b) => (b.worn - a.worn) || (b.fav - a.fav) || (b.at - a.at));
+    const tools = el('div', { class: 'row wr-tools' },
+      el('button', { type: 'button', class: 'primary', text: 'New outfit', onclick: () => { editing = normalize({ name: '', style: 'Combat' }); paint(); } }),
+      el('button', { type: 'button', text: 'Save wardrobe file', disabled: list.length ? null : 'disabled', title: 'Download every outfit as one file you can keep or move to another browser', onclick: save }),
+      el('button', { type: 'button', text: 'Import file', onclick: () => fileIn.click() }),
+      el('button', { type: 'button', class: codeOpen ? 'on' : '', text: 'Import code', 'aria-expanded': String(codeOpen), onclick: () => { codeOpen = !codeOpen; paint(); } }));
+    const codeRow = codeOpen ? (() => {
+      const box = el('textarea', { rows: '2', maxlength: '16000', 'aria-label': 'Share code', placeholder: 'Paste a share code that starts with SCW1.' });
+      return el('div', { class: 'wr-code mt8' }, box, el('button', { type: 'button', class: 'primary', text: 'Add to wardrobe', onclick: () => {
+        const o = decodeOutfit(box.value);
+        if (!o) { toast('That is not a valid share code'); return; }
+        list = [o, ...list].slice(0, MAX); persist(); codeOpen = false; paint(); toast(`Added ${o.name}`);
+      } }));
+    })() : null;
     host.append(el('div', { class: 'card' },
-      el('div', { class: 'row between' }, el('h3', { class: 'm0', text: 'Wardrobe' }), el('button', { type: 'button', class: 'primary', text: 'New outfit', onclick: () => { editing = normalize({ name: '', style: 'Combat' }); paint(); } })),
-      el('p', { class: 'small muted', text: 'Name the pieces of each outfit, pick its colours and tag its style. Mark the one you are wearing, and link it to a ground loadout.' }),
-      ordered.length ? el('div', { class: 'outfits' }, ...ordered.map(card)) : el('p', { class: 'small muted', text: 'No outfits yet. Press New outfit to dress your first look.' })));
+      el('div', { class: 'row between' }, el('h3', { class: 'm0', text: 'Wardrobe' }), el('span', { class: 'small muted', text: `${list.length} of ${MAX} outfits` })),
+      el('p', { class: 'small muted', text: 'Dress the mannequin: name each piece or browse the catalog for the slot, pick its dye and tag its style. Outfits save in this browser, and on your profile when you are signed in. A wardrobe file or share code keeps them anywhere. Nothing is uploaded.' }),
+      tools, codeRow, fileIn,
+      ordered.length ? el('div', { class: 'outfits mt10' }, ...ordered.map(card)) : el('p', { class: 'small muted mt10', text: 'No outfits yet. Press New outfit to dress your first look.' })));
   }
 
   paint();

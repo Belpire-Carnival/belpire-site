@@ -684,3 +684,25 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
   button,select,.tabs a,#subtabs a,.chk,input:not([type=checkbox]):not([type=range]){min-height:44px}
   .chk{display:flex;align-items:center;gap:10px}.chk input{width:22px;height:22px}
 }
+
+/* Dressing room: slot catalog, wardrobe tools */
+.slot-body .browse{align-self:flex-start;padding:3px 10px;font-size:11px;min-height:0}
+.slot-body .browse.on{border-color:var(--bronze);color:var(--bronze-hi)}
+.cat-host:not(:empty){margin-top:12px}
+.catalog{border:1px solid var(--bronze-lo);border-radius:12px;padding:12px;background:rgba(10,16,24,.7)}
+.cat-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.cat-head b{color:var(--bronze-hi);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.cat-head input{flex:1 1 180px;min-width:0}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:420px;overflow:auto;padding:2px}
+.cat-card{all:unset;box-sizing:border-box;display:flex;gap:10px;align-items:center;padding:8px;min-height:56px;border:1px solid var(--line);background:rgba(17,26,38,.6);cursor:pointer;border-radius:6px}
+.cat-card:hover,.cat-card:focus-visible{border-color:var(--bronze)}
+.cat-card.sel{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+.cat-card .photo{flex:0 0 44px;width:44px;height:44px}
+.cat-text{display:flex;flex-direction:column;min-width:0}
+.cat-text b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-text small{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catalog .small{margin:8px 0}
+.wr-tools{gap:8px;flex-wrap:wrap}
+.wr-tools button.on{border-color:var(--bronze);color:var(--bronze-hi)}
+.wr-code{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.wr-code textarea{flex:1 1 280px;min-width:0}

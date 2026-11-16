@@ -320,7 +320,7 @@
 
 <!-- ================= COMBAT ================= -->
 <section class="view" id="v-combat" aria-labelledby="h-combat">
-  <div class="hero"><div><h2 id="h-combat">Ballistics Matrix</h2><span class="daemon">sys://tac.armory</span><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span><span class="chip">Ground loadouts</span><span class="chip">Wardrobe</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
+  <div class="hero"><div><h2 id="h-combat">Ballistics Matrix</h2><span class="daemon">sys://tac.armory</span><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
   <div class="grid g2">
     <div class="card">
       <h3>TTK matrix</h3>
@@ -349,8 +349,18 @@
     </div>
   </div>
   <div id="rankingsFps" class="mt12"></div>
-  <div id="groundLoadouts" class="mt12"></div>
+</section>
+
+<!-- ================= WARDROBE ================= -->
+<section class="view" id="v-wardrobe" aria-labelledby="h-wardrobe">
+  <div class="hero"><div><h2 id="h-wardrobe">Wardrobe</h2><span class="daemon">sys://dress.wardrobe</span><p class="tag">Dress the mannequin, browse the gear for each slot, dye it and save the look.</p><div class="chips"><span class="chip">Browse gear</span><span class="chip">Save &amp; share</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="wardrobe"></div></div>
   <div id="wardrobe" class="mt12"></div>
+</section>
+
+<!-- ================= GROUND LOADOUTS ================= -->
+<section class="view" id="v-loadouts" aria-labelledby="h-loadouts">
+  <div class="hero"><div><h2 id="h-loadouts">Ground Loadouts</h2><span class="daemon">sys://dress.loadouts</span><p class="tag">A saved kit for each kind of ground mission: armor, weapons, gadgets and supplies.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="loadouts"></div></div>
+  <div id="groundLoadouts" class="mt12"></div>
 </section>
 
 <!-- ================= CALCULATOR ================= -->
@@ -402,7 +412,7 @@
       <p class="small"><b>Fabricator</b> plans a craft: set the quality of each material and see what it does to the finished item, plus the shopping list. <b>Wishlist</b> is what you want (ships, components, weapons, armor, blueprints) with a priority. <b>Blueprints</b> lists the crafting blueprints you own. Scan the Item Fabricator's blueprint list, one category at a time or as a short scroll clip, then check the names and import. A new scan replaces the categories it shows, so blueprints you no longer see there drop off.</p>
       <p class="small muted">Data: only what you scan or type. There is no game API for blueprints, so re-scan before you play; OmniOps' checklist shows how old your last import is.</p></div>
     <div class="card"><h3>Armory</h3>
-      <p class="small"><b>Avionics Lab</b> builds a loadout: pick a ship, click any part to see every figure the wiki has for it, swap it from a sortable table (green is better than what is fitted, red is worse), and see damage, defence, power and flight totals against stock. Under the builder, <b>Ship weapon rankings</b> orders ship guns by time to destroy a reference ship. <b>Ballistics Matrix</b> holds the FPS time-to-kill calculator and <b>FPS weapon rankings</b>, plus medpen tracking, ground loadouts and the wardrobe.</p>
+      <p class="small"><b>Avionics Lab</b> builds a loadout: pick a ship, click any part to see every figure the wiki has for it, swap it from a sortable table (green is better than what is fitted, red is worse), and see damage, defence, power and flight totals against stock. Under the builder, <b>Ship weapon rankings</b> orders ship guns by time to destroy a reference ship. <b>Ballistics Matrix</b> holds the FPS time-to-kill calculator and <b>FPS weapon rankings</b>, plus medpen tracking. The <b>Dressing Room</b> holds your <b>Wardrobe</b> (browse gear for each slot, dye it, save outfits to a file or share them as a code) and your <b>Ground Loadouts</b>.</p>
       <p class="small muted">Data: Star Citizen Wiki item database through our own snapshot. It is only as current as the wiki and the last snapshot rebuild.</p></div>
     <div class="card"><h3>Earn</h3>
       <p class="small"><b>Slag &amp; Scrape</b> is hull scraping, structural salvage and refining. <b>Extraction OS</b> plans a refinery job, prices the ore and logs the haul. <b>OmniRoute</b> lists live buy and sell pairs and plans a route. <b>GridMaster</b> packs 1 to 32 SCU boxes into your hold and gives a loading order.</p>
