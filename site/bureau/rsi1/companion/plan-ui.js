@@ -3,6 +3,8 @@
 import { WISH_KINDS, keyOf, cleanBp, applyScan, addOwned, removeOwned, listOwned, categoriesOf, staleLabel, cleanWishlist, addWish, patchWish, removeWish, sortWish, ownedState, catalogTypes, catalogView, craftTime, recipeText } from './plan-core.js';
 
 import { trackUnlock } from './obj-ui.js';
+import { strictPick } from './pick-ui.js';
+import { wishSource } from './catalog.js';
 
 const API_LIST = '/api/sc-blueprints';
 const API_ONE = '/api/sc-blueprint';
@@ -43,6 +45,17 @@ export function initWishlist(host) {
     el('div', { class: 'row pfrow mt6' }, field('Note', note), add),
     el('div', { class: 'row mt12' }, field('Show', show)), sum, list);
 
+  const hint = el('div', { class: 'small muted pickhint' });
+  host.firstChild.after(hint);
+  const HOLD = { Ship: 'Start typing a ship', Component: 'Start typing a shield, cooler, power plant...', Weapon: 'Start typing a weapon', Armor: 'Start typing an armor piece', Blueprint: 'Start typing a blueprint', Other: 'Anything, in your own words' };
+  const pick = strictPick(name, { onChange: () => sync() });
+  function sync() {
+    const ok = pick.valid();
+    add.disabled = !ok;
+    hint.textContent = kind.value === 'Other' ? 'There is no list for this kind, so it is free text.' : ok || !name.value.trim() ? '' : `Choose a ${kind.value.toLowerCase()} from the list.`;
+  }
+  kind.addEventListener('change', () => { name.value = ''; name.placeholder = HOLD[kind.value] || ''; pick.setSource(wishSource(kind.value)); });
+  name.placeholder = HOLD[kind.value]; pick.setSource(wishSource(kind.value));
   const wish = () => cleanWishlist(read(K_WISH, []));
   const save = (w) => { write(K_WISH, w); draw(); changed(); };
   function draw() {
@@ -68,9 +81,10 @@ export function initWishlist(host) {
     list.append(el('div', { class: 'scrollx' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Got' }), el('th', { text: 'Item' }), el('th', { text: 'Kind' }), el('th', { text: 'Priority' }), el('th', { text: '' }))), tb)));
   }
   add.addEventListener('click', () => {
-    if (!name.value.trim()) { name.focus(); return; }
-    save(addWish(wish(), { kind: kind.value, name: name.value, prio: Number(prio.value), note: note.value }));
-    name.value = ''; note.value = ''; name.focus();
+    const picked = pick.value();
+    if (!picked) { name.focus(); return; }
+    save(addWish(wish(), { kind: kind.value, name: picked, prio: Number(prio.value), note: note.value }));
+    pick.reset(); note.value = ''; name.focus();
   });
   name.addEventListener('keydown', (e) => { if (e.key === 'Enter') add.click(); });
   show.addEventListener('change', draw);
