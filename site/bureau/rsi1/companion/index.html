@@ -509,9 +509,9 @@
 <section class="view" id="v-desktop" aria-labelledby="h-desktop">
   <div class="hero"><div><h2 id="h-desktop">OmniGlass Desktop</h2><span class="daemon">sys://desktop.readme</span><p class="tag">A Windows tray app that reads your own game logs and feeds this site. Read me, how-to and download.</p><div class="chips"><span class="chip">Read me</span><span class="chip">How to</span><span class="chip">Download</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="desktop"></div></div>
   <div class="card accent mb12" id="desktopDownload"><h3>Download</h3>
-    <p class="small"><b>OmniGlass Desktop 0.0.2</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
-    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.0.2-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
-    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">7a7eea12109c24c3e67d44f4924e539fe457b48572d029ed6cf36f2769ffbd9d</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.0.2-x64-setup.exe SHA256</span>. The result must match the line above.</p>
+    <p class="small"><b>OmniGlass Desktop 0.1.0</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
+    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.1.0-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
+    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">1c0399451758ced43368831a1895a31fa990ea73606e73c7a3da639b751f09a2</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.1.0-x64-setup.exe SHA256</span>. The result must match the line above.</p>
     <p class="small muted">This installer is <b>not code-signed</b>, so Windows SmartScreen will say it is from an unknown publisher. Choose <i>More info</i>, then <i>Run anyway</i>. Only install it from this page or the releases page above: do not install copies from other places.</p></div>
   <div class="grid g2">
     <div class="card"><h3>Read me</h3>
@@ -527,7 +527,8 @@
         <li><b>Minerals</b>: search an ore, see its compositions and where it spawns.</li>
         <li><b>Reputation</b>: pick your rank on each ladder so contracts show whether you can take them.</li>
         <li><b>Settings</b>: checks that the app can read your game files, imports game data, reads your older logs for blueprints you already own, and holds <i>Field Notes</i>: blueprint marks and counts on contract titles, and rank, reputation, full blueprint lists and weapon numbers in descriptions.</li>
-        <li><b>Overlay</b>: a click-through window over the game with a Watching list. <span class="mono">Ctrl+Shift+O</span> opens its drawer; <span class="mono">Ctrl+Shift+F</span> opens the search box.</li>
+        <li><b>Overlay</b>: a click-through window over the game made of cards you can move and resize: <i>Recent</i> events, your <i>Watching</i> list, a <i>This session</i> count, <i>Timers</i> and pop-up <i>Alerts</i>. See the hotkey guide below.</li>
+        <li><b>Website connection</b>: with one switch and a short code, this site can show your live game data (see the how-to below).</li>
         <li><b>Watch log of</b>: pick LIVE, PTU or any other install the launcher knows.</li>
       </ul></div>
   </div>
@@ -548,16 +549,49 @@
       </ol>
       <p class="small">From then on, each blueprint you mark as owned in scmdb is added to the app while it is running; anything marked while it was closed arrives on the next Resync. Blueprints are only ever added, never removed.</p>
       <p class="small muted">The address works only on your own PC (127.0.0.1) and contains a secret: treat it like a password. <i>Make a new secret</i> replaces it, then paste the new address into scmdb.</p></div>
+    <div class="card"><h3>Hotkey guide</h3>
+      <ul class="tight small">
+        <li><span class="mono">Ctrl+Shift+O</span>: open or close the overlay drawer (the Recent, Watching and This session cards). Alerts and running timers show even when it is closed.</li>
+        <li><span class="mono">Ctrl+Shift+F</span>: search a blueprint or mineral. Type, press <b>Enter</b> to pin the top result to Watching, <b>Esc</b> (or the hotkey again) to close. Clicking another program also closes it. The keyboard goes back to the game.</li>
+        <li><span class="mono">Ctrl+Shift+E</span>: move and resize the overlay cards. <b>Esc</b>, <i>Done</i> or the hotkey again saves and finishes.</li>
+        <li>These work while the app is running, even with the game in front. The overlay only shows over the game in <b>borderless windowed</b> mode, not exclusive fullscreen.</li>
+        <li>Hotkeys cannot be changed yet. If another program already holds one, the app starts without it and the rest still works.</li>
+      </ul></div>
+    <div class="card"><h3>How to: set up the in-game overlay</h3>
+      <ol class="tight small">
+        <li>Run Star Citizen in borderless windowed mode, then press <span class="mono">Ctrl+Shift+O</span>.</li>
+        <li>Press <span class="mono">Ctrl+Shift+E</span>. The screen dims and a bar appears. Drag a card to move it; drag its bottom-right corner to resize it. Tick or untick <i>Recent</i>, <i>Watching</i>, <i>Alerts</i>, <i>Session</i> and <i>Timers</i> to show or hide each card.</li>
+        <li>There are two saved layouts, <i>Flying</i> and <i>On foot</i>. Choose one in the bar before you arrange; you switch between them by hand. <i>Reset layout</i> puts the current one back to the default.</li>
+        <li>Press <i>Done</i> (or Esc). Positions are kept on this PC as a share of your screen, so they survive a change of resolution.</li>
+      </ol>
+      <p class="small muted">Dragging only moves the app's own window. Nothing is sent to the game.</p></div>
+    <div class="card"><h3>How to: timers and the session card</h3>
+      <ol class="tight small">
+        <li>In the app open <i>Settings</i>, then <i>In-game timers</i>. Type a label such as <i>Refinery Pyro</i> and the time the game shows: <span class="mono">2h 10m</span>, <span class="mono">45m</span> or <span class="mono">1:30:00</span> (up to 7 days, eight timers at once). Press <i>Start</i>.</li>
+        <li>The Timers card counts down on the overlay and posts a <i>Timer done</i> alert when it ends. Timers survive restarting the app.</li>
+      </ol>
+      <p class="small">The game does not write refinery jobs to its log, so these timers run on the time you type; they do not read the game.</p>
+      <p class="small">The <i>This session</i> card counts what the log shows since the game started: contracts accepted, missions completed, blueprints received, ships destroyed and lost, and times you went down. The clock stops when the game closes.</p></div>
+    <div class="card"><h3>How to: show your live game data here</h3>
+      <ol class="tight small">
+        <li>In the app open <i>Settings</i> and tick <i>Let the website connect</i>. The app shows an 8-character code and copies it for you.</li>
+        <li>On this site open <a href="#ops">OmniOps</a>, find the <i>From your game</i> card under the OmniGlass Desktop card, type the code and press <i>Connect</i>.</li>
+        <li>Your recent events and game data build then show live. Use <i>Disconnect</i> at the bottom of that card to stop.</li>
+      </ol>
+      <p class="small muted">The connection stays on your own PC (127.0.0.1) and only accepts this site. <i>New code</i> in the app cuts off anything already connected. Untick the switch to turn it off.</p></div>
     <div class="card"><h3>How to: more</h3>
       <ul class="tight small">
         <li><b>Back up or restore my settings</b> (bottom of the window) saves your owned blueprints, watch list, ranks and window settings as one file. Your profile link and scmdb secret are never in it.</li>
         <li><b>Read again</b> re-reads the whole Game.log from the top.</li>
         <li>Moving to a new PC: install, restore the backup, link again with a new code.</li>
+        <li><b>Field Notes names</b> (Settings, Field Notes): rename the label on added lines and the two blueprint tags. Press Preview or Apply to put a new name into the game.</li>
       </ul></div>
     <div class="card"><h3>If something looks wrong</h3>
       <ul class="tight small">
         <li><b>Stuck on "Starting..."</b> or empty fields: quit the app from the tray and start it again. Report it with the first red line from the console if it repeats.</li>
         <li><b>"Hotkey already registered"</b>: another program, or an older copy of the app, holds <span class="mono">Ctrl+Shift+O</span>. Quit the old copy; the rest of the app still works.</li>
+        <li><b>No overlay over the game</b>: switch the game to borderless windowed mode. Check <i>Game.log</i> shows your install.</li>
+        <li><b>A card is off screen or in the wrong place</b> after changing monitors: press <span class="mono">Ctrl+Shift+E</span>, then <i>Reset layout</i>.</li>
         <li><b>Data for another build</b>: the data bar warns when the game data is for a different patch than your install. Press <i>Check for updates</i>.</li>
         <li><b>Nothing arrives from scmdb</b>: make sure the app is running with the box ticked, then press Resync in scmdb.</li>
       </ul></div>
