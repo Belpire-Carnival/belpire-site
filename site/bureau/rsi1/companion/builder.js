@@ -195,10 +195,14 @@ export function initBuilder(host) {
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
       lazyPhoto(p),
-      el('div', {}, el('div', { class: 'nm' }, nameBtn(`S${slot.max} ${p?.name || 'Unknown'}`, p)),
-        el('div', { class: 'mk', text: `${slotLabel(slot)}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
+      el('div', {}, el('div', { class: 'nm' }, nameBtn(p ? `S${slot.max} ${p.name}` : `S${slot.max} gun not listed`, p)),
+        el('div', { class: 'mk', text: `${slotLabel(slot)}${p ? '' : ' · the wiki does not say which gun is fitted'}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
-    row.append(swapSelect(s, slot, current));
+    if (slot.locked) {
+      row.append(el('div', { class: 'swaprow2' },
+        el('span', { class: 'mk', text: 'Fixed to the hull' }),
+        el('button', { type: 'button', class: 'ghost', text: 'Details', 'aria-label': `Details of the fitted ${slotLabel(slot)}`, onclick: () => openDetail(p) })));
+    } else row.append(swapSelect(s, slot, current));
     return openable(row, p);
   }
 
