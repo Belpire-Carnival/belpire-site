@@ -1,0 +1,61 @@
+
+=== Apollo Medivac
+uuid 4559fbe2-55ab-a5a8-4e77-75106cb96ab7 | slug rsi-apollo-medivac
+slots built: 16 {"Cooler":2,"PowerPlant":2,"QuantumDrive":1,"Radar":1,"MissileLauncher":2,"Shield":4,"WeaponGun":4}
+img path: (none) | ship-images override: check worker/ship-images.json for the uuid above
+armament summary: {"pilot":[{"name":"Mantis GT-220 Gatling","dps":853},{"name":"Mantis GT-220 Gatling","dps":853},{"name":"CF-447 Rhino Repeater","dps":818},{"name":"CF-447 Rhino Repeater","dps":818}],"turrets":[],"pilotDps":3342,"turretDps":null,"missiles":16,"gunners":null}
+wiki weaponry keys: pilot_dps, pilot_alpha, pilot_sustained_dps, fixed_weapons, missiles, total_missile_damage
+wiki fixed_weapons: ["Mantis GT-220 Gatling","Mantis GT-220 Gatling","CF-447 Rhino Repeater","CF-447 Rhino Repeater"]
+wiki turrets keys: manned:0, remote:0, pdc:0
+wiki ports that look like guns or turrets:
+  hardpoint_turret [Turret] editable=false size 3-3 children=0
+  hardpoint_missile_left [MissileLauncher] editable=false size 2-2 children=0
+  hardpoint_missile_right [MissileLauncher] editable=false size 2-2 children=0
+  hardpoint_weapon_left [Turret] editable=true size 4-4 children=0
+  hardpoint_weapon_right [Turret] editable=true size 4-4 children=0
+  hardpoint_countermeasure_left [WeaponDefensive] editable=false size 1-1 children=0
+  hardpoint_countermeasure_right [WeaponDefensive] editable=false size 1-1 children=0
+
+=== Constellation Mk V Centaurus
+uuid 7ecd6678-86b1-478a-8668-823f4e3ca016 | slug rsi-constellation-mk5-centaurus-display
+slots built: 22 {"Radar":1,"PowerPlant":2,"Shield":2,"Cooler":2,"MissileLauncher":2,"QuantumDrive":1,"WeaponGun":12}
+img path: (none) | ship-images override: check worker/ship-images.json for the uuid above
+armament summary: {"pilot":[{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-557 Galdereen Repeater","dps":1227},{"name":"CF-557 Galdereen Repeater","dps":1227},{"name":"CF-557 Galdereen Repeater","dps":1227},{"name":"CF-557 Galdereen Repeater","dps":1227}],"turrets":[],"pilotDps":9274,"turretDps":null,"missiles":32,"gunners":null}
+wiki weaponry keys: pilot_dps, pilot_alpha, pilot_sustained_dps, fixed_weapons, missiles, total_missile_damage
+wiki fixed_weapons: ["CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-337 Panther Repeater","CF-557 Galdereen Repeater","CF-557 Galdereen Repeater","CF-557 Galdereen Repeater","CF-557 Galdereen Repeater"]
+wiki turrets keys: manned:0, remote:0, pdc:0
+wiki ports that look like guns or turrets:
+  hardpoint_turret_upper [Turret] editable=false size 3-3 children=0
+  hardpoint_turret_lower [Turret] editable=false size 3-3 children=0
+  hardpoint_gun_s5_body_right [Turret] editable=false size 5-5 children=0
+  hardpoint_gun_s5_body_left [Turret] editable=false size 5-5 children=0
+  hardpoint_countermeasure_left [WeaponDefensive] editable=false size 1-3 children=0
+  hardpoint_countermeasure_right [WeaponDefensive] editable=false size 1-3 children=0
+  hardpoint_missiles_left [MissileLauncher] editable=false size 6-6 children=0
+  hardpoint_missiles_right [MissileLauncher] editable=false size 6-6 children=0
+  hardpoint_gun_s5_front_right [Turret] editable=false size 5-5 children=0
+  hardpoint_gun_s5_front_left [Turret] editable=false size 5-5 children=0
+
+=== Cutlass Black
+uuid b58f7735-9454-4a0a-b724-2bc8d61961d7 | slug drak-cutlass-black
+slots built: 18 {"QuantumDrive":1,"Radar":1,"Shield":1,"PowerPlant":1,"Cooler":2,"MissileLauncher":6,"WeaponGun":6}
+img path: thumb/8/87/CutlassBlack_TouchingDown.png/600px-CutlassBlack_TouchingDown.png.webp | ship-images override: check worker/ship-images.json for the uuid above
+armament summary: {"pilot":[{"name":"Mantis GT-220 Gatling","dps":853},{"name":"Mantis GT-220 Gatling","dps":853},{"name":"CF-337 Panther Repeater","dps":546},{"name":"CF-337 Panther Repeater","dps":546}],"turrets":[{"kind":"manned","mounts":2,"gun":"CF-337 Panther Repeater","size":5}],"pilotDps":2798,"turretDps":1091,"missiles":16,"gunners":1}
+wiki weaponry keys: pilot_dps, pilot_alpha, pilot_sustained_dps, turret_dps, turret_alpha, turret_sustained_dps, fixed_weapons, missiles, total_missile_damage
+wiki fixed_weapons: ["Mantis GT-220 Gatling","Mantis GT-220 Gatling","CF-337 Panther Repeater","CF-337 Panther Repeater"]
+wiki turrets keys: manned:1, remote:0, pdc:0
+wiki ports that look like guns or turrets:
+  hardpoint_turret [TurretBase] editable=false size 1-6 children=0
+  hardpoint_Left_Body_Weapon [Turret] editable=true size 3-3 children=0
+  hardpoint_Right_Body_Weapon [Turret] editable=true size 3-3 children=0
+  hardpoint_Left_Wing_Weapon [Turret] editable=true size 3-3 children=0
+  hardpoint_Right_Wing_Weapon [Turret] editable=true size 3-3 children=0
+  hardpoint_cm_launcher_left [WeaponDefensive] editable=false size 1-1 children=0
+  hardpoint_cm_launcher_right [WeaponDefensive] editable=false size 1-1 children=0
+  hardpoint_Right_Pylon_03 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_Right_Pylon_02 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_Right_Pylon_01 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_Left_Pylon_03 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_Left_Pylon_02 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_Left_Pylon_01 [MissileLauncher] editable=true size 4-4 children=0
+  hardpoint_tractor_turret [Turret] editable=false size 1-4 children=0
