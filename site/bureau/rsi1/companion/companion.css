@@ -763,3 +763,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .gun.ordn>:first-child{width:44px;max-width:44px;height:28px;overflow:hidden}
 .simbody>*{max-width:680px}
 .simtabs{margin:8px 0}
+
+/* Calculator tidy 7a mobile */
+.part>.thumb{width:100%;max-width:100%;height:auto;aspect-ratio:56/34;object-fit:cover;min-width:0}
