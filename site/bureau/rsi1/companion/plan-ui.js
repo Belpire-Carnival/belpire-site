@@ -4,7 +4,7 @@ import { WISH_KINDS, keyOf, cleanBp, applyScan, addOwned, removeOwned, listOwned
 
 import { trackUnlock } from './obj-ui.js';
 import { strictPick } from './pick-ui.js';
-import { wishSource } from './catalog.js';
+import { wishSource, blueprintNames, blueprintType } from './catalog.js';
 
 const API_LIST = '/api/sc-blueprints';
 const API_ONE = '/api/sc-blueprint';
@@ -111,6 +111,10 @@ export function initBlueprints(host, { toast = () => {} } = {}) {
       el('div', { class: 'row pfrow mt6' }, ownName, ownCat, ownAdd),
       el('div', { class: 'row pfrow mt6' }, wantName, wantNote, wantAdd)));
 
+  const pOwn = strictPick(ownName, { onChange: (ok) => { ownAdd.disabled = !ok; } });
+  const pWant = strictPick(wantName, { onChange: (ok) => { wantAdd.disabled = !ok; } });
+  pOwn.setSource({ get: blueprintNames }); pWant.setSource({ get: blueprintNames });
+  ownName.placeholder = 'Start typing a blueprint you own'; wantName.placeholder = 'Start typing a blueprint you want';
   const bp = () => cleanBp(read(K_BP, null));
   const save = (s) => { write(K_BP, s); draw(); changed(); };
   function draw() {
@@ -131,11 +135,17 @@ export function initBlueprints(host, { toast = () => {} } = {}) {
     list.append(el('div', { class: 'scrollx' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Blueprint' }), el('th', { text: 'Category' }), el('th', { text: 'Tier' }), el('th', { text: '' }))), tb)));
   }
   q.addEventListener('input', draw); cat.addEventListener('change', draw);
-  ownAdd.addEventListener('click', () => { if (!ownName.value.trim()) { ownName.focus(); return; } save(addOwned(bp(), ownName.value, ownCat.value)); ownName.value = ''; });
+  ownAdd.addEventListener('click', async () => {
+    const v = pOwn.value();
+    if (!v) { toast('Pick a blueprint from the list'); ownName.focus(); return; }
+    const category = ownCat.value.trim() || await blueprintType(v);
+    save(addOwned(bp(), v, category)); pOwn.reset(); ownCat.value = '';
+  });
   wantAdd.addEventListener('click', () => {
-    if (!wantName.value.trim()) { wantName.focus(); return; }
-    write(K_WISH, addWish(read(K_WISH, []), { kind: 'Blueprint', name: wantName.value, note: wantNote.value }));
-    wantName.value = ''; wantNote.value = ''; changed(); toast('Added to your wishlist');
+    const v = pWant.value();
+    if (!v) { toast('Pick a blueprint from the list'); wantName.focus(); return; }
+    write(K_WISH, addWish(read(K_WISH, []), { kind: 'Blueprint', name: v, note: wantNote.value }));
+    pWant.reset(); wantNote.value = ''; changed(); toast('Added to your wishlist');
   });
   window.addEventListener('arsenal:plan', draw);
   draw();

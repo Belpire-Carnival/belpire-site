@@ -744,3 +744,4 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .fm-form.hasPick{position:relative}
 .pickwrap{position:relative;min-width:0}
 .pickwrap input{width:100%}
+.pfrow.hasPick{position:relative}
