@@ -195,8 +195,8 @@ export function initBuilder(host) {
     const w = p?.wpn;
     const row = el('div', { class: `gun ${current !== slot.stock ? 'changed' : ''}`.trim() },
       lazyPhoto(p),
-      el('div', {}, el('div', { class: 'nm' }, nameBtn(p ? `S${slot.max} ${p.name}` : `S${slot.max} gun not listed`, p)),
-        el('div', { class: 'mk', text: `${slotLabel(slot)}${p ? '' : ' · the wiki does not say which gun is fitted'}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
+      el('div', {}, el('div', { class: 'nm' }, nameBtn(p ? `S${slot.max} ${p.name}` : slot.empty ? `S${slot.max} empty mount` : `S${slot.max} gun not listed`, p)),
+        el('div', { class: 'mk', text: `${slotLabel(slot)}${p ? '' : slot.empty ? ' · nothing fitted at the factory' : ' · the wiki does not say which gun is fitted'}${w ? ` · alpha ${fmt1(w.alpha)} · sustained ${fmt1(w.sustained)}${w.range ? ` · ${fmt1(w.range)} m` : ''}` : ''}` })),
       el('div', { class: 'big', text: w ? fmt1(w.burst) : '—' }));
     if (slot.locked) {
       row.append(el('div', { class: 'swaprow2' },

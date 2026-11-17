@@ -76,9 +76,11 @@ test('a gun bolted to the hull becomes a locked gun slot with its stock part', (
   assert.ok(stock.has('sf7e'), 'the stock gun is kept even when the catalogue lacks it');
 });
 
-test('guns inside turrets are not turned into locked slots', () => {
+test('a gun inside a hardware-locked mount is listed as a fixed gun, not a swappable one', () => {
   const slots = collectSlots([port('turret', 'TurretBase', { max: 5, ports: [port('gun', WEAPON_TYPE, { max: 3, equipped_item_uuid: 'g1', equipped_item: item('g1', 'Gun', 3) })] })]);
-  assert.equal(slots.length, 0);
+  assert.equal(slots.length, 1);
+  assert.equal(slots[0].locked, true);
+  assert.equal(slots[0].stock, 'g1');
 });
 
 test('an editable gun port is still swappable (not locked)', () => {

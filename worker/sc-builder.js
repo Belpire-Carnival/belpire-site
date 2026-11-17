@@ -20,14 +20,14 @@ const WORK_KEY = 'sc:builder:work';
 const LOCK_KEY = 'sc:builder:lock';
 export const REBUILD_MS = 24 * 60 * 60 * 1000;
 const PAGES_PER_TICK = 4;
-const MAX_PAGES = 40; // hard stop on one rebuild
+const MAX_PAGES = 40; // hard stop on one rebuild (list pages; the one-off ship records below are not counted)
 const SHIP_PAGE = 20;
 const PART_PAGE = 100;
 const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 10;
+export const SCHEMA = 11;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -159,7 +159,7 @@ export function slimPart(it) {
 export function collectSlots(ports) {
   const slots = [];
   const seen = new Map();
-  const walk = (list, trail) => {
+  const walk = (list, trail, parentEd = false) => {
     for (const p of Array.isArray(list) ? list : []) {
       if (!p || typeof p !== 'object') continue;
       const here = [...trail, str(p.name, 60)];
@@ -167,7 +167,10 @@ export function collectSlots(ports) {
       // A gun bolted to the hull (an Ares' ion cannon, a Glaive's cannons) cannot be swapped, but it is still a gun with
       // real numbers. Only the ship's own top-level ports count: guns inside turrets are described by the turret.
       const bolted = !trail.length && p.type === WEAPON_TYPE && !p.editable && !!(p.equipped_item_uuid || p.equipped_item?.uuid);
-      if ((p.editable || rack || bolted) && SLOT_TYPES.has(p.type)) {
+      // A ship's own record (not the list) shows a gimbal's gun as a child port. It can be swapped when its mount can.
+      const carried = trail.length > 0 && p.type === WEAPON_TYPE && !p.editable && !!(p.equipped_item_uuid || p.equipped_item?.uuid);
+      const hasGun = !!(p.equipped_item_uuid || p.equipped_item?.uuid);
+      if ((p.editable || rack || bolted || carried) && SLOT_TYPES.has(p.type)) {
         let id = here.join('/');
         const n = (seen.get(id) || 0) + 1;
         seen.set(id, n);
@@ -179,11 +182,12 @@ export function collectSlots(ports) {
           max: num(p.sizes?.max) ?? 0,
           stock: p.equipped_item_uuid || p.equipped_item?.uuid || null,
           group: trail.length ? trail[trail.length - 1] : '',
-          ...(rack || bolted ? { locked: true } : {}),
+          ...(rack || bolted || (carried && !parentEd) ? { locked: true } : {}),
+          ...(trail.length && p.type === WEAPON_TYPE && !hasGun ? { empty: true } : {}),
           ...(bolted && p.equipped_item?.name ? { stockName: str(p.equipped_item.name, 60) } : {})
         });
       }
-      walk(p.ports, here);
+      walk(p.ports, here, !!p.editable);
     }
   };
   walk(ports, []);
@@ -341,7 +345,7 @@ export function nameLeftoverGuns(slots, fixedWeapons) {
   for (const n of names) {
     if ((used.get(n) || 0) > 0) used.set(n, used.get(n) - 1); else left.push(n);
   }
-  const open = slots.filter((s) => s.type === WEAPON_TYPE && !s.stock && !s.stockName);
+  const open = slots.filter((s) => s.type === WEAPON_TYPE && !s.stock && !s.stockName && !s.empty);
   if (open.length && left.length === open.length && left.every((n) => n === left[0])) for (const s of open) s.stockName = left[0];
 }
 
@@ -509,6 +513,18 @@ export function jobUrl(job) {
   return `/vehicles?${q}&filter%5Bis_spaceship%5D=true`;
 }
 
+// The list endpoint drops the guns that sit inside gimbal mounts; the ship's own record (/vehicles/{slug}) lists them
+// port by port. So ships whose guns the list could not name get a second request for their own record.
+export function needsDetail(ships, parts, stock) {
+  const out = [];
+  for (const b of buildSnapshot('detail', ships, parts, stock).ships) {
+    const guns = b.slots.filter((x) => x.type === WEAPON_TYPE && !x.empty);
+    const wikiGuns = b.arm?.pilot?.length || 0;
+    if (b.slug && (guns.some((g) => !g.stock) || guns.length < wikiGuns)) out.push({ kind: 'detail', id: b.id, slug: b.slug });
+  }
+  return out;
+}
+
 const freshJobs = () => [
   { kind: 'parts', page: 1, size: PART_PAGE },
   { kind: 'weapons', page: 1, size: PART_PAGE },
@@ -535,8 +551,28 @@ export async function currentVersion(env) {
 export async function stepWork(env, work) {
   let calls = 0;
   while (work.jobs.length && calls < PAGES_PER_TICK) {
-    if (++work.pages > MAX_PAGES) throw new Error('builder rebuild exceeded page limit');
     const job = work.jobs[0];
+    if (job.kind === 'detail') {
+      work.jobs.shift();
+      calls++;
+      try {
+        const rec = (await wiki(env, `/vehicles/${enc(job.slug)}`))?.data;
+        const fresh = slimShip(rec);
+        const at = work.ships.findIndex((s) => s.id === job.id);
+        if (fresh && at >= 0 && fresh.slots.length) {
+          const old = work.ships[at];
+          work.ships[at] = { ...fresh, img: fresh.img || old.img, buy: fresh.buy?.length ? fresh.buy : old.buy };
+          const seen = new Map();
+          stockParts(rec.ports, seen);
+          const have = new Set(work.stock.map((p) => p.id));
+          for (const p of seen.values()) if (!have.has(p.id)) work.stock.push(p);
+        }
+      } catch (err) {
+        console.warn(`Builder: no own record for ${job.slug}: ${err.message}`); // the list's data stays; one ship never blocks a rebuild
+      }
+      continue;
+    }
+    if (++work.pages > MAX_PAGES) throw new Error('builder rebuild exceeded page limit');
     const json = await wiki(env, jobUrl(job));
     calls++;
     const rows = Array.isArray(json?.data) ? json.data : [];
@@ -588,6 +624,15 @@ export async function refreshBuilder(env, { force = false, lock = false } = {}) 
   if (work.jobs.length) {
     await kv.put(WORK_KEY, JSON.stringify(work), { expirationTtl: 6 * 60 * 60 });
     return null;
+  }
+  if (!work.detailed) {
+    work.detailed = true;
+    const more = needsDetail(work.ships, work.parts, work.stock);
+    if (more.length) {
+      work.jobs.push(...more);
+      await kv.put(WORK_KEY, JSON.stringify(work), { expirationTtl: 6 * 60 * 60 });
+      return null;
+    }
   }
   const snap = buildSnapshot(work.version, work.ships, work.parts, work.stock);
   if (!snap.ships.length) throw new Error('builder rebuild produced no ships');
