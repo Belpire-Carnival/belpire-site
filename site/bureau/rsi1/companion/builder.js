@@ -12,6 +12,7 @@ import { shipArt, partArt, photo } from './art.js';
 import { lazyPhoto } from './partimg.js';
 import { strictPick } from './pick-ui.js';
 import { riskOf } from './risk.js';
+import { simPanel } from './sim-ui.js';
 
 const API = '/api/sc-builder';
 const SHOP_API = '/api/sc-shop';
@@ -536,6 +537,7 @@ export function initBuilder(host) {
       el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
       el('div', { class: 'calc' }, armamentPanel(s, ov), ordnancePanel(s, ov), systemsPanel(s, ov, ['MissileLauncher'])),
       el('div', { class: 'calc' }, systemsPanel(s, ov, SYS_TYPES.filter((t) => t !== 'MissileLauncher')))));
+    host.append(simPanel(s, partsById, ov));
     host.append(el('div', { class: 'grid g2' }, totalsPanel(s, base, mine), costPanel(s, ov)));
     host.append(el('div', { class: 'grid g2' }, comparePanel(s, mine), savedPanel(s)));
     host.append(el('p', { class: 'small muted', text: `Data: Star Citizen Wiki API (api.star-citizen.wiki), game version ${data.version}, updated ${String(data.updatedAt || '').slice(0, 10)}. Shop prices come from UEX through the same API. Unofficial fan tool; figures follow the game data and can change each patch.` }));
