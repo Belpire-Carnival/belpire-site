@@ -1,0 +1,19 @@
+schema 7 | updated 2026-11-17T15:50:36.189Z | version 4.10.3-LIVE.13165946
+Constellation Mk V Centaurus 7ecd6678-86b1-478a-8668-823f4e3ca016
+hardpoint_gun_s5_body_right min 5 max 5 stock null
+hardpoint_gun_s5_body_left min 5 max 5 stock null
+hardpoint_gun_s5_front_right min 5 max 5 stock null
+hardpoint_gun_s5_front_left min 5 max 5 stock null
+hardpoint_turret_upper/mount_1 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_upper/mount_2 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_upper/mount_3 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_upper/mount_4 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_lower/mount_1 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_lower/mount_2 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_lower/mount_3 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+hardpoint_turret_lower/mount_4 min 3 max 3 stock bd13235d-1261-4b71-b32f-aed1a8beb526
+--- parts named Galdereen or Panther
+e4870a3c-b2f8-462b-8be2-dd04520551cf | CF-337 Panther "Hazard-Zone" Repeater | type WeaponGun | size 3
+bd13235d-1261-4b71-b32f-aed1a8beb526 | CF-337 Panther Repeater | type WeaponGun | size 3
+4170fcb0-0cef-4228-a3d5-7efc41ba4ea3 | CF-557 Galdereen Repeater | type WeaponGun | size 5
+d55ffb79-a3b9-4765-8ed6-15b882ec548c | CF-557 Galdereen Repeater | type WeaponGun | size 5

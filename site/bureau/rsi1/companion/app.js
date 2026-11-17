@@ -9,6 +9,7 @@ import { initLocal } from './local-ui.js';
 import { initBridge } from './bridge.js';
 import { initFleetManager } from './fleet-ui.js';
 import { initInventory } from './inv-ui.js';
+import { builderSchema } from './catalog.js';
 import { buildPlaces } from './near-core.js';
 import { initWaypoint } from './near-ui.js';
 import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
@@ -120,17 +121,19 @@ for (const m of $$('[data-art]')) m.append(heroArt(m.dataset.art));
   dock.append(tabs, $('#acct'));
 }
 // Honest status line: what the page can actually tell about itself.
+let schemaNow = null;
 function paintStatus() {
   const online = navigator.onLine !== false;
   const live = (document.querySelector('[data-patch] b')?.textContent.match(/Alpha ([0-9.]+)/) || [])[1] || C.PATCH.version;
   const signed = !!document.querySelector('#acct .out, #acct [data-signed]') || /sign out/i.test($('#acct')?.textContent || '');
-  $('#sysState').textContent = `[ KERNEL: ${live} // LINK: ${online ? 'ONLINE' : 'OFFLINE'} ]`;
+  $('#sysState').textContent = `[ KERNEL: ${live} // LINK: ${online ? 'ONLINE' : 'OFFLINE'} // SCHEMA: ${schemaNow ?? '...'} ]`;
   $('#ogSys').textContent = `SYS: FINTAC OMNIGLASS · ALPHA ${live}`;
   $('#ogLink').textContent = `LINK: ${online ? 'ONLINE' : 'OFFLINE'}`;
   $('#ogSync').textContent = `SYNC: ${signed ? 'PROFILE' : 'THIS BROWSER ONLY'}`;
   let n = 0; try { n = Object.keys(localStorage).filter((k) => k.startsWith('arsenal.')).length; } catch { /* storage blocked */ }
   $('#ogCache').textContent = `LOCAL CACHE: ${n ? 'NOMINAL' : 'EMPTY'}`;
 }
+builderSchema().then((v) => { schemaNow = v; paintStatus(); }).catch(() => { schemaNow = '?'; paintStatus(); });
 window.addEventListener('online', paintStatus); window.addEventListener('offline', paintStatus);
 setTimeout(paintStatus, 600); setInterval(paintStatus, 30000);
 function setMenu(open) {
