@@ -742,3 +742,5 @@ details.fold[open]>summary{margin-bottom:8px;padding-bottom:6px;border-bottom:1p
 input[aria-invalid="true"]{border-color:#c0524a}
 button:disabled{opacity:.45;cursor:not-allowed}
 .fm-form.hasPick{position:relative}
+.pickwrap{position:relative;min-width:0}
+.pickwrap input{width:100%}

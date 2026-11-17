@@ -8,8 +8,10 @@ export function strictPick(input, { onChange = () => {}, limit = 8 } = {}) {
   box.className = 'picklist';
   box.hidden = true;
   box.setAttribute('role', 'listbox');
-  input.parentNode.classList.add('hasPick');
-  input.parentNode.append(box);
+  // The box joins the page next to the input as soon as the input has a parent, even if that happens after this call.
+  let attached = false;
+  const attach = () => { if (attached || !input.parentNode) return; input.parentNode.classList.add('hasPick'); input.parentNode.append(box); attached = true; };
+  attach();
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('role', 'combobox');
   input.setAttribute('aria-autocomplete', 'list');
@@ -41,6 +43,7 @@ export function strictPick(input, { onChange = () => {}, limit = 8 } = {}) {
     box.hidden = !names.length;
   }
   async function run() {
+    attach();
     const q = input.value.trim(), my = ++token;
     if (free()) { close(); return; }
     if (q.length < (source.min ?? 1)) { close(); return; }
