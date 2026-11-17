@@ -766,3 +766,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 /* Calculator tidy 7a mobile */
 .part>.thumb{width:100%;max-width:100%;height:auto;aspect-ratio:56/34;object-fit:cover;min-width:0}
+details.calcfold{margin-top:14px}
+details.calcfold>summary{min-height:36px}
+@media (max-width:820px){details.calcfold>summary{min-height:44px}}
