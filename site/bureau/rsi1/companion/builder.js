@@ -288,9 +288,9 @@ export function initBuilder(host) {
     return c;
   }
 
-  function systemsPanel(s, ov) {
+  function systemsPanel(s, ov, types = SYS_TYPES) {
     const c = el('div', { class: 'calc' });
-    for (const type of SYS_TYPES) {
+    for (const type of types) {
       const slots = s.slots.filter((x) => x.type === type);
       if (!slots.length) continue;
       const box = card('', el('div', { class: 'sectitle' }, icon(SYS_ICON[type]), el('h3', { text: `${TYPE_LABEL[type]} (${slots.length})` }), partArt(type)));
@@ -524,8 +524,8 @@ export function initBuilder(host) {
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
     host.append(el('div', { class: 'calc-cols' },
       el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
-      el('div', { class: 'calc' }, armamentPanel(s, ov), ordnancePanel(s, ov)),
-      el('div', { class: 'calc' }, systemsPanel(s, ov))));
+      el('div', { class: 'calc' }, armamentPanel(s, ov), ordnancePanel(s, ov), systemsPanel(s, ov, ['MissileLauncher'])),
+      el('div', { class: 'calc' }, systemsPanel(s, ov, SYS_TYPES.filter((t) => t !== 'MissileLauncher')))));
     host.append(el('div', { class: 'grid g2' }, totalsPanel(s, base, mine), costPanel(s, ov)));
     host.append(el('div', { class: 'grid g2' }, comparePanel(s, mine), savedPanel(s)));
     host.append(el('p', { class: 'small muted', text: `Data: Star Citizen Wiki API (api.star-citizen.wiki), game version ${data.version}, updated ${String(data.updatedAt || '').slice(0, 10)}. Shop prices come from UEX through the same API. Unofficial fan tool; figures follow the game data and can change each patch.` }));
