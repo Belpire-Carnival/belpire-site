@@ -37,8 +37,6 @@ export function initInventory(host, { toast = () => {}, getCommodities = () => [
   } });
   const fleetShips = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.fleet')); return (Array.isArray(v) ? v : []).map((s) => s && s.name).filter((n) => typeof n === 'string' && n); } catch { return []; } };
   const ctx = { commodities: getCommodities, places: getPlaces, ships: fleetShips, used: () => places(read()).map((p) => p.place) };
-  const pItem = strictPick(nName, { onChange: () => sync() });
-  const pPlace = strictPick(nPlace, { onChange: () => sync() });
   function sync() {
     add.disabled = !(pItem.valid() && pPlace.valid());
     hint.textContent = !nName.value.trim() || pItem.valid() ? (nPlace.value.trim() && !pPlace.valid() ? 'Choose where it is from the list.' : '') : 'Choose the item from the list.';
@@ -47,6 +45,8 @@ export function initInventory(host, { toast = () => {}, getCommodities = () => [
   host.append(el('div', { class: 'card' }, el('h3', { text: 'Add an item by hand' }), el('div', { class: 'row fm-form' }, nName, nQty, nCat), el('div', { class: 'row mt8 fm-form' }, nPlace, add), hint, dl),
     el('div', { class: 'card mt12' }, el('div', { class: 'row fm-form' }, f, pf), where, body));
   f.addEventListener('input', draw); pf.addEventListener('change', draw);
+  const pItem = strictPick(nName, { onChange: () => sync() });
+  const pPlace = strictPick(nPlace, { onChange: () => sync() });
   pItem.setSource(invItemSource(nCat.value, ctx)); pPlace.setSource(placeSource(ctx));
 
   function draw() {
