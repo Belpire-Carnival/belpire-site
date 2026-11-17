@@ -3,6 +3,8 @@
 import { cleanBp, keyOf } from './plan-core.js';
 import { cleanObjectives, addUnlock, addGather, setHave, setDone, removeObjective, progress, sortObjectives, nextObjective, openCount } from './obj-core.js';
 import { meter } from './viz.js';
+import { strictPick } from './pick-ui.js';
+import { blueprintNames } from './catalog.js';
 
 const K_OBJ = 'arsenal.plan.obj';
 const K_BP = 'arsenal.plan.bp';
@@ -36,11 +38,14 @@ export function initObjectives(host, { toast = () => {} } = {}) {
   const add = el('button', { type: 'button', class: 'primary', text: 'Track this unlock' });
   const list = el('div', { class: 'mt12' });
   host.append(el('div', { class: 'row pfrow' }, el('label', { class: 'pf' }, el('span', { class: 'small muted', text: 'Blueprint to unlock' }), name), add), list);
+  const pName = strictPick(name, { onChange: (ok) => { add.disabled = !ok; } });
+  pName.setSource({ get: blueprintNames });
+  name.placeholder = 'Start typing a blueprint you want to unlock';
   add.addEventListener('click', () => {
-    const n = name.value.trim();
-    if (!n) { toast('Type a blueprint name first'); return; }
+    const n = pName.value();
+    if (!n) { toast('Pick a blueprint from the list'); return; }
     toast(trackUnlock({ name: n }) ? 'Added to your objectives' : 'Already in your objectives');
-    name.value = '';
+    pName.reset();
   });
   name.addEventListener('keydown', (e) => { if (e.key === 'Enter') add.click(); });
 

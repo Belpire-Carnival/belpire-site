@@ -12,7 +12,9 @@ export const shipRecord = async (name) => (await builder()).ships.find((s) => s.
 export const shipNames = async () => uniq((await builder()).ships.map((s) => s.name));
 export const gunNames = async () => uniq(((await builder()).parts || []).filter((p) => p.type === 'WeaponGun').map((p) => p.name));
 export const componentNames = async () => uniq(((await builder()).parts || []).filter((p) => p.type !== 'WeaponGun').map((p) => p.name));
-export const blueprintNames = () => once('blueprints', async () => { const j = await getJson('/api/sc-blueprints'); if (!j || !j.ready || !Array.isArray(j.blueprints)) throw new Error('not ready'); return uniq(j.blueprints.map((b) => b.name)); });
+const blueprintList = () => once('blueprints', async () => { const j = await getJson('/api/sc-blueprints'); if (!j || !j.ready || !Array.isArray(j.blueprints)) throw new Error('not ready'); return j.blueprints; });
+export const blueprintNames = async () => uniq((await blueprintList()).map((b) => b.name));
+export const blueprintType = async (name) => String((await blueprintList().catch(() => [])).find((b) => b.name === name)?.type || '');
 
 // Wiki item search by slot (see TYPE_MAP in the worker): the server does the matching, so these need two letters.
 export async function itemNames(keys, q) {

@@ -3,6 +3,7 @@
 // Data comes from our own /api/sc-blueprints and /api/sc-blueprint.
 import { multiplier, qualityFor, pct, arrow, verdict, clampQuality, materialList, statRows, isModelled, START_QUALITY } from './fab-core.js';
 import { keyOf } from './plan-core.js';
+import { strictPick } from './pick-ui.js';
 
 const API_LIST = '/api/sc-blueprints';
 const API_ONE = '/api/sc-blueprint';
@@ -28,6 +29,13 @@ export function initFabricator(host, { toast = () => {}, onGoal = null } = {}) {
   host.append(el('div', { class: 'row pfrow' }, field('Find a blueprint', q), field('Pick one', pick)), note, body);
 
   let all = [], bp = null, quality = {}, picks = {}, crafts = 1, loadedId = '';
+  // Choosing a suggestion selects that blueprint in the box beside it and opens it.
+  const finder = strictPick(q, { onChange: (ok) => {
+    const r = ok ? all.find((x) => x.name === finder.value()) : null;
+    if (!r) return;
+    choices(); pick.value = r.id; pick.dispatchEvent(new Event('change'));
+  } });
+  finder.setSource({ get: async () => { if (!all.length) throw new Error('loading'); return all.map((r) => r.name); } });
 
   function choices() {
     const needle = keyOf(q.value);
