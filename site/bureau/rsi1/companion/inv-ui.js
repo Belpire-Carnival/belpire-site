@@ -1,5 +1,7 @@
 // Inventory pane (Hangar hub): what you have stored and where, filled by a screenshot scan or by hand.
 // Text nodes only. Stored under arsenal.inventory, which the companion profile sync carries between devices. The maths is in inv-core.js.
+import { strictPick } from './pick-ui.js';
+import { invItemSource, placeSource } from './catalog.js';
 import { CATEGORIES, cleanInv, addItem, setQty, removeItem, importRows, search, places, whereIs } from './inv-core.js';
 
 const K = 'arsenal.inventory';
@@ -16,24 +18,36 @@ const el = (tag, attrs = {}, ...kids) => {
 };
 const ago = (t) => { if (!t) return 'never'; const d = Math.floor((Date.now() - t) / 864e5); return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`; };
 
-export function initInventory(host, { toast = () => {} } = {}) {
+export function initInventory(host, { toast = () => {}, getCommodities = () => [], getPlaces = () => [] } = {}) {
   if (!host) return null;
   const save = (v) => { write(v); draw(); };
   const f = el('input', { type: 'text', maxlength: '60', placeholder: 'Search items, categories', 'aria-label': 'Search your inventory' });
   const pf = el('select', { 'aria-label': 'Filter by place' });
   const where = el('div', { class: 'small muted' }), body = el('div', { class: 'mt12' });
-  const nName = el('input', { type: 'text', maxlength: '80', placeholder: 'Item', 'aria-label': 'Item name' });
+  const nName = el('input', { type: 'text', maxlength: '80', placeholder: 'Start typing an item', 'aria-label': 'Item name' });
   const nQty = el('input', { type: 'number', min: '1', step: '1', value: '1', 'aria-label': 'Quantity' });
-  const nPlace = el('input', { type: 'text', maxlength: '80', placeholder: 'Where (Lorville, Seraphim Station, my Carrack...)', 'aria-label': 'Where it is stored', list: 'invPlaces' });
+  const nPlace = el('input', { type: 'text', maxlength: '80', placeholder: 'Where (start typing a station, city or your ship)', 'aria-label': 'Where it is stored' });
   const dl = el('datalist', { id: 'invPlaces' });
   const nCat = el('select', { 'aria-label': 'Category' }, ...CATEGORIES.map((c) => el('option', { value: c, text: c })));
+  const hint = el('div', { class: 'small muted pickhint' });
   const add = el('button', { type: 'button', class: 'primary', text: 'Add item', onclick: () => {
-    if (!nName.value.trim() || !nPlace.value.trim()) { toast('Give the item and where it is'); return; }
-    save(addItem(read(), { name: nName.value, qty: nQty.value, place: nPlace.value, cat: nCat.value })); nName.value = ''; nQty.value = '1';
+    const item = pItem.value(), where = pPlace.value();
+    if (!item || !where) { toast('Pick the item and where it is from the lists'); return; }
+    save(addItem(read(), { name: item, qty: nQty.value, place: where, cat: nCat.value })); pItem.reset(); nQty.value = '1'; nName.focus();
   } });
-  host.append(el('div', { class: 'card' }, el('h3', { text: 'Add an item by hand' }), el('div', { class: 'row fm-form' }, nName, nQty, nCat), el('div', { class: 'row mt8 fm-form' }, nPlace, add), dl),
+  const fleetShips = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.fleet')); return (Array.isArray(v) ? v : []).map((s) => s && s.name).filter((n) => typeof n === 'string' && n); } catch { return []; } };
+  const ctx = { commodities: getCommodities, places: getPlaces, ships: fleetShips, used: () => places(read()).map((p) => p.place) };
+  const pItem = strictPick(nName, { onChange: () => sync() });
+  const pPlace = strictPick(nPlace, { onChange: () => sync() });
+  function sync() {
+    add.disabled = !(pItem.valid() && pPlace.valid());
+    hint.textContent = !nName.value.trim() || pItem.valid() ? (nPlace.value.trim() && !pPlace.valid() ? 'Choose where it is from the list.' : '') : 'Choose the item from the list.';
+  }
+  nCat.addEventListener('change', () => { pItem.setSource(invItemSource(nCat.value, ctx)); pItem.reset(); });
+  host.append(el('div', { class: 'card' }, el('h3', { text: 'Add an item by hand' }), el('div', { class: 'row fm-form' }, nName, nQty, nCat), el('div', { class: 'row mt8 fm-form' }, nPlace, add), hint, dl),
     el('div', { class: 'card mt12' }, el('div', { class: 'row fm-form' }, f, pf), where, body));
   f.addEventListener('input', draw); pf.addEventListener('change', draw);
+  pItem.setSource(invItemSource(nCat.value, ctx)); pPlace.setSource(placeSource(ctx));
 
   function draw() {
     const inv = read(), pl = places(inv), cur = pf.value;

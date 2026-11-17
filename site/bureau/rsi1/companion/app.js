@@ -9,6 +9,7 @@ import { initLocal } from './local-ui.js';
 import { initBridge } from './bridge.js';
 import { initFleetManager } from './fleet-ui.js';
 import { initInventory } from './inv-ui.js';
+import { buildPlaces } from './near-core.js';
 import { initWaypoint } from './near-ui.js';
 import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
 import { staleLabel, cleanBp } from './plan-core.js';
@@ -1386,7 +1387,9 @@ scanner('#scan-contracts', { kind: 'contracts', view: 'contracts', title: 'any m
 
 // Waypoint (OmniOps) and Inventory (Hangar)
 initWaypoint($('#waypointHost'), { getRows: () => M.freshRows(MK.prices), getServices: () => MK.services || [] });
-const inventory = initInventory($('#inventoryHost'), { toast });
+const inventory = initInventory($('#inventoryHost'), { toast,
+  getCommodities: () => [...new Set(MK.prices.map((r) => r.commodity).filter(Boolean))],
+  getPlaces: () => buildPlaces(M.freshRows(MK.prices), MK.services || []).map((p) => p.name) });
 scanner('#scan-inv', { kind: 'inventory', view: 'inventory', title: 'a storage screen',
   hint: 'A hangar or station item list, an item bank or a ship cargo list. One screen or a short scroll per place.',
   render: (d, res) => {

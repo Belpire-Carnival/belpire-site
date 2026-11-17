@@ -18,6 +18,30 @@ export async function itemNames(keys, q) {
 }
 export const ARMOR_KEYS = ['helmet', 'core', 'arms', 'legs', 'undersuit', 'backpack'];
 
+// Inventory: what an item may be, by the category chosen. ctx.commodities() is read from the live price feed.
+export function invItemSource(cat, ctx = {}) {
+  const wiki = (keys, min = 2) => ({ min, delay: 300, get: (q) => itemNames(keys, q) });
+  switch (cat) {
+    case 'Weapon': return { get: async (q) => uniq([...(await gunNames().catch(() => [])), ...(q.length >= 2 ? await itemNames(['weapon'], q).catch(() => []) : [])]) };
+    case 'Armor': return wiki(ARMOR_KEYS);
+    case 'Attachment': return wiki(['attach']);
+    case 'Gadget / medical': return wiki(['gadget']);
+    case 'Ship component': return { get: async () => uniq([...(await componentNames()), ...(await gunNames())]) };
+    case 'Commodity':
+    case 'Material': return { get: async () => { const l = uniq((ctx.commodities ? ctx.commodities() : []) || []); if (!l.length) throw new Error('no commodity list'); return l; } };
+    default: return wiki(['']);
+  }
+}
+
+// Inventory places: game places, the player's ships (as "My <ship>") and places the inventory already holds.
+export function placeSource(ctx = {}) {
+  return { get: async () => {
+    const l = uniq([...(ctx.places ? ctx.places() : []), ...(ctx.ships ? ctx.ships().map((n) => `My ${n}`) : []), ...(ctx.used ? ctx.used() : [])]);
+    if (!l.length) throw new Error('no places');
+    return l;
+  } };
+}
+
 // What each wishlist kind may be: null means free text, since there is no list for it.
 export function wishSource(kind) {
   switch (kind) {
