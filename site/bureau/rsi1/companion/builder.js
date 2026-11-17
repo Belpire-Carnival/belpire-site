@@ -94,6 +94,7 @@ export function initBuilder(host) {
   let hiddenShips = [];
   let armGaps = { placed: [], listed: [], none: [] };
   let status = '';
+  const foldOpen = {}; // section name -> open, kept across repaints
 
   const persist = () => store.write(saved);
   const ship = () => data?.ships.find((s) => s.id === saved.ship) || null;
@@ -131,6 +132,13 @@ export function initBuilder(host) {
 
   // ------------------------------------------------------------ pieces
   const title = (name, text) => el('div', { class: 'sectitle' }, icon(name), el('h3', { text }));
+  // A collapsible section. Its open state survives a repaint (every swap repaints the page).
+  function fold(name, open, ...kids) {
+    const d = el('details', { class: 'fold calcfold' }, el('summary', { text: name }), ...kids);
+    d.open = name in foldOpen ? foldOpen[name] : open;
+    d.addEventListener('toggle', () => { foldOpen[name] = d.open; });
+    return d;
+  }
   const card = (cls, ...kids) => el('div', { class: `card ${cls || ''}`.trim() }, ...kids);
   const kv = (rows) => {
     const g = el('div', { class: 'kv' });
@@ -242,7 +250,7 @@ export function initBuilder(host) {
     if (!st) return null;
     return card('', title('cargo', 'Hull'),
       el('div', { class: 'big3' }, bigstat(num(st.hull), 'Hull HP'), bigstat(num(st.mass), 'Mass (kg)'), bigstat(st.dim?.[0] != null ? `${num(st.dim[0], 1)}` : '—', 'Length (m)')),
-      kv([['Dimensions', dims(st.dim), ''], ['Armor HP', num(st.armor?.hp), ''], ['Insurance claim', st.insure?.claim != null ? `${num(st.insure.claim, 1)} min` : '—', ''],
+      kv([['Dimensions', dims(st.dim), ''], ['Insurance claim', st.insure?.claim != null ? `${num(st.insure.claim, 1)} min` : '—', ''],
         ['Expedite', st.insure?.expedite != null ? `${num(st.insure.expedite, 1)} min · ${num(st.insure.cost)} aUEC` : '—', '']]));
   }
 
@@ -537,13 +545,21 @@ export function initBuilder(host) {
     host.append(topBar(s));
     host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), acquireCard(s), summaryCard(base, mine, s)));
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
-    host.append(el('div', { class: 'calc-cols' },
-      el('div', { class: 'calc' }, damagePanel(s, base, mine, ov), defensePanel(s, base, mine), hullPanel(s), powerPanel(s, base, mine), flightPanel(s)),
-      el('div', { class: 'calc' }, armamentPanel(s, ov), ordnancePanel(s, ov), systemsPanel(s, ov, ['MissileLauncher'])),
-      el('div', { class: 'calc' }, systemsPanel(s, ov, SYS_TYPES.filter((t) => t !== 'MissileLauncher')))));
-    host.append(simPanel(s, partsById, ov));
-    host.append(el('div', { class: 'grid g2' }, totalsPanel(s, base, mine), costPanel(s, ov)));
-    host.append(el('div', { class: 'grid g2' }, comparePanel(s, mine), savedPanel(s)));
+    // What you change comes first, then what it does to the ship, then the reference sheets.
+    host.append(fold('Loadout', true, el('div', { class: 'calc-cols' },
+      el('div', { class: 'calc' }, armamentPanel(s, ov)),
+      el('div', { class: 'calc' }, ordnancePanel(s, ov), systemsPanel(s, ov, ['MissileLauncher'])),
+      el('div', { class: 'calc' }, systemsPanel(s, ov, SYS_TYPES.filter((t) => t !== 'MissileLauncher'))))));
+    host.append(fold('Results', true, el('div', { class: 'calc-cols' },
+      el('div', { class: 'calc' }, damagePanel(s, base, mine, ov)),
+      el('div', { class: 'calc' }, defensePanel(s, base, mine)),
+      el('div', { class: 'calc' }, powerPanel(s, base, mine)))));
+    host.append(fold('Ship data', false, el('div', { class: 'calc-cols' },
+      el('div', { class: 'calc' }, hullPanel(s)),
+      el('div', { class: 'calc' }, flightPanel(s)))));
+    host.append(fold('Simulations', false, simPanel(s, partsById, ov)));
+    host.append(fold('Stock vs your build and upgrade cost', true, el('div', { class: 'grid g2' }, totalsPanel(s, base, mine), costPanel(s, ov))));
+    host.append(fold('Compare and saved builds', false, el('div', { class: 'grid g2' }, comparePanel(s, mine), savedPanel(s))));
     host.append(el('p', { class: 'small muted', text: `Data: Star Citizen Wiki API (api.star-citizen.wiki), game version ${data.version}, updated ${String(data.updatedAt || '').slice(0, 10)}. Shop prices come from UEX through the same API. Unofficial fan tool; figures follow the game data and can change each patch.` }));
   }
 
