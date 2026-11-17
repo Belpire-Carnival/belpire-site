@@ -756,3 +756,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .simtable{width:100%;border-collapse:collapse;font-size:.9rem}
 .simtable th,.simtable td{text-align:left;padding:4px 8px;border-bottom:1px solid #2c2418}
 .simtable td.bad{color:#d97a6c}.simtable td.good{color:#8fc27a}
+
+/* Calculator tidy 7a */
+.tabs button[aria-selected=true]{color:var(--hi);border-color:var(--bronze-hi);background:#3a2713}
+.calc-top{align-items:start}
+.gun.ordn>:first-child{width:44px;max-width:44px;height:28px;overflow:hidden}
+.simbody>*{max-width:680px}
+.simtabs{margin:8px 0}
