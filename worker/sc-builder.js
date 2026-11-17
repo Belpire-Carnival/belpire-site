@@ -27,7 +27,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 9;
+export const SCHEMA = 10;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -164,7 +164,10 @@ export function collectSlots(ports) {
       if (!p || typeof p !== 'object') continue;
       const here = [...trail, str(p.name, 60)];
       const rack = p.type === 'MissileLauncher' && !p.editable; // racks are fixed on most ships, but their missiles are not
-      if ((p.editable || rack) && SLOT_TYPES.has(p.type)) {
+      // A gun bolted to the hull (an Ares' ion cannon, a Glaive's cannons) cannot be swapped, but it is still a gun with
+      // real numbers. Only the ship's own top-level ports count: guns inside turrets are described by the turret.
+      const bolted = !trail.length && p.type === WEAPON_TYPE && !p.editable && !!(p.equipped_item_uuid || p.equipped_item?.uuid);
+      if ((p.editable || rack || bolted) && SLOT_TYPES.has(p.type)) {
         let id = here.join('/');
         const n = (seen.get(id) || 0) + 1;
         seen.set(id, n);
@@ -176,7 +179,8 @@ export function collectSlots(ports) {
           max: num(p.sizes?.max) ?? 0,
           stock: p.equipped_item_uuid || p.equipped_item?.uuid || null,
           group: trail.length ? trail[trail.length - 1] : '',
-          ...(rack ? { locked: true } : {})
+          ...(rack || bolted ? { locked: true } : {}),
+          ...(bolted && p.equipped_item?.name ? { stockName: str(p.equipped_item.name, 60) } : {})
         });
       }
       walk(p.ports, here);
@@ -305,25 +309,56 @@ export function turretGunSlots(turrets, have = []) {
       const hp = str(t?.hardpoint_name, 60);
       if (!hp || have.some((s) => s.id.startsWith(`${hp}/`))) continue; // its guns are already ordinary ports
       const mounts = Array.isArray(t.mounts) ? t.mounts : [];
+      const takesGun = (m) => Array.isArray(m?.payload_types) && m.payload_types.some((x) => String(x).startsWith(WEAPON_TYPE));
+      const gunMounts = mounts.filter(takesGun);
+      const listed = Array.isArray(t.weapons) ? t.weapons : [];
       mounts.forEach((m, i) => {
-        if (!(Array.isArray(m?.payload_types) && m.payload_types.some((x) => String(x).startsWith(WEAPON_TYPE)))) return;
+        if (!takesGun(m)) return;
         const mp = str(m.hardpoint_name, 60) || `mount_${i + 1}`;
         let id = `${hp}/${mp}`;
         for (let n = 2; taken.has(id); n++) id = `${hp}/${mp}#${n}`;
         taken.add(id);
         const size = num(m.weapon_sizes?.[0]) ?? num(m.payload_sizes?.[0]) ?? num(m.size) ?? 0;
-        const gun = Array.isArray(t.weapons) && t.weapons.length === mounts.length ? t.weapons[i] : null;
-        out.push({ id, type: WEAPON_TYPE, min: size, max: size, stock: str(gun?.uuid, 40) || null, group: hp });
+        // The gun list lines up with every mount, or (a turret that also carries missile racks) with the gun mounts only.
+        const gun = listed.length === mounts.length ? listed[i] : listed.length === gunMounts.length ? listed[gunMounts.indexOf(m)] : null;
+        if (/placeholder/i.test(String(gun?.name || ''))) { taken.delete(id); return; } // the game's stand-in, not a real gun
+        out.push({ id, type: WEAPON_TYPE, min: size, max: size, stock: str(gun?.uuid, 40) || null, group: hp, ...(gun?.name ? { stockName: str(gun.name, 60) } : {}) });
       });
     }
   }
   return out;
 }
 
+// Some mounts have no name to match: the wiki lists more or fewer guns than gimbals, so the order cannot be trusted.
+// One case is still certain. After the named slots take their guns, if the guns that are left are all one model and
+// there are exactly as many of them as open gun slots, every open slot holds that model.
+export function nameLeftoverGuns(slots, fixedWeapons) {
+  const names = (Array.isArray(fixedWeapons) ? fixedWeapons : []).map((w) => str(w?.name, 60));
+  if (!names.length || !names.every(Boolean)) return;
+  const used = new Map();
+  for (const s of slots) if (s.type === WEAPON_TYPE && s.stockName) used.set(s.stockName, (used.get(s.stockName) || 0) + 1);
+  const left = [];
+  for (const n of names) {
+    if ((used.get(n) || 0) > 0) used.set(n, used.get(n) - 1); else left.push(n);
+  }
+  const open = slots.filter((s) => s.type === WEAPON_TYPE && !s.stock && !s.stockName);
+  if (open.length && left.length === open.length && left.every((n) => n === left[0])) for (const s of open) s.stockName = left[0];
+}
+
+// The gun a slot's stock name stands for. The wiki gives a *mount's* size, not the gun's: a gimbal can carry smaller
+// guns and some mounts are listed smaller than the gun in them. So a gun in the slot's size range wins; failing that,
+// the name alone decides, but only when every part with that name is the same size (otherwise it would be a guess).
+export function gunByName(guns, name, slot) {
+  const same = guns.filter((p) => p.name === name);
+  const inRange = same.find((p) => p.size >= slot.min && p.size <= slot.max);
+  if (inRange) return inRange;
+  return same.length && new Set(same.map((p) => p.size)).size === 1 ? same[0] : null;
+}
+
 // Stock parts that sit in the ship's slots, so parts the catalogue lacks can still be shown.
 export function stockParts(ports, into = new Map()) {
   for (const p of Array.isArray(ports) ? ports : []) {
-    if ((p?.editable || p?.type === 'MissileLauncher') && SLOT_TYPES.has(p.type) && p.equipped_item) {
+    if ((p?.editable || p?.type === 'MissileLauncher' || p?.type === WEAPON_TYPE) && SLOT_TYPES.has(p.type) && p.equipped_item) {
       const part = slimPart(p.equipped_item);
       if (part && !into.has(part.id)) into.set(part.id, part);
     }
@@ -397,6 +432,12 @@ export function slimShip(v) {
     slots.push(...pilot);
     slots.push(...baseTurretSlots(v.ports, fixed, pilot.length));
   }
+  // A turret the ship's own `turrets` list describes gun by gun (a Spartan's remote turret) is not also a pilot mount.
+  const described = new Set(['manned', 'remote', 'pdc'].flatMap((c) => (Array.isArray(v.turrets?.[c]) ? v.turrets[c] : [])
+    .filter((t) => Array.isArray(t?.mounts) && t.mounts.some((m) => Array.isArray(m?.payload_types) && m.payload_types.some((x) => String(x).startsWith(WEAPON_TYPE))))
+    .map((t) => str(t.hardpoint_name, 60))).filter(Boolean));
+  for (let i = slots.length - 1; i >= 0; i--) if (described.has(slots[i].id) && !slots[i].stock && !slots[i].stockName) slots.splice(i, 1);
+  nameLeftoverGuns(slots, fixed);
   slots.push(...turretGunSlots(v.turrets, slots));
   return {
     id: str(v.uuid, 40),
@@ -440,9 +481,9 @@ export function buildSnapshot(version, ships, catalogue, stock = []) {
     if (!s || !s.slots.length) continue;
     // Slots that only know their stock gun by name get its id from the catalogue (the same size and name).
     const slots = s.slots.map(({ stockName, ...slot }) => {
-      if (slot.stock || !stockName) return slot;
-      const hit = guns.find((p) => p.name === stockName && p.size >= slot.min && p.size <= slot.max);
-      return { ...slot, stock: hit ? hit.id : null };
+      if (!stockName || (slot.stock && parts.has(slot.stock))) return slot;
+      const hit = gunByName(guns, stockName, slot);
+      return { ...slot, stock: hit ? hit.id : slot.stock || null };
     });
     byId.set(s.id, { ...s, slots });
   }
