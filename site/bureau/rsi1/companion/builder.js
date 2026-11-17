@@ -130,6 +130,16 @@ export function initBuilder(host) {
     if (retry) host.firstChild.append(el('button', { type: 'button', class: 'ghost', text: 'Try again', onclick: () => { started = false; show(); } }));
   }
 
+  // Placeholder cards while the ship data loads, so the page does not jump when it arrives.
+  function skeleton() {
+    host.textContent = '';
+    const line = (w) => el('div', { class: `skel-line w${w}` });
+    const box = (...w) => el('div', { class: 'card skel', 'aria-hidden': 'true' }, ...w.map(line));
+    host.append(
+      el('div', { class: 'card skel', role: 'status', 'aria-busy': 'true', 'aria-label': 'Loading ship data' }, line(40), line(90), line(70)),
+      el('div', { class: 'calc-top' }, box(60, 95, 80), box(60, 95, 80), box(60, 95, 80)));
+  }
+
   // ------------------------------------------------------------ pieces
   const title = (name, text) => el('div', { class: 'sectitle' }, icon(name), el('h3', { text }));
   // A collapsible section. Its open state survives a repaint (every swap repaints the page).
@@ -543,6 +553,12 @@ export function initBuilder(host) {
     const base = summaryOf(s, {});
     const mine = summaryOf(s, ov);
     host.append(topBar(s));
+    // On a phone the full bar scrolls away, so this slim copy of the ship name and the main actions stays under the header.
+    const nSwaps = changedSlots(s, ov).length;
+    host.append(el('div', { class: 'shipbar', role: 'group', 'aria-label': 'Current ship' },
+      el('b', { text: s.name }), nSwaps ? el('span', { class: 'tag2', text: `${nSwaps} swap${nSwaps === 1 ? '' : 's'}` }) : null,
+      el('button', { type: 'button', class: 'primary', text: 'Save', 'aria-label': 'Save to fleet', onclick: () => addToHangar(s, nSwaps ? 'custom build' : 'stock') }),
+      el('button', { type: 'button', class: 'ghost', text: 'Reset', 'aria-label': 'Reset to stock', onclick: () => { setBuild(s, {}); status = ''; paint(); } })));
     host.append(el('div', { class: 'calc-top' }, shipCard(s, base, mine, ov), acquireCard(s), summaryCard(base, mine, s)));
     if (!s.stats) host.append(el('div', { class: 'note info', text: 'Hull, armor, flight and fuel figures arrive with the next data refresh (about a day after a deploy).' }));
     // What you change comes first, then what it does to the ship, then the reference sheets.
@@ -576,7 +592,7 @@ export function initBuilder(host) {
   async function show() {
     if (started) { if (data) { applyLink(); paint(); } return; }
     started = true;
-    message('Loading ship data…');
+    skeleton();
     try {
       const res = await fetch(API, { cache: 'no-cache', headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error('bad status');
