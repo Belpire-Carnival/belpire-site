@@ -27,7 +27,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 7;
+export const SCHEMA = 8;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -252,6 +252,51 @@ export function baseTurretSlots(ports, fixedWeapons, pilotCount = 0) {
   return out;
 }
 
+// Gun mounts the wiki lists as childless Turret ports (gimbals and turret bases alike), in port order. The ship's
+// fixed_weapons list names the guns in that same order, so a run of identical names belongs to a run of same-size
+// mounts. It is trusted only when the runs line up one to one with the size groups and split evenly; otherwise null.
+export function runGunSlots(ports, fixedWeapons) {
+  const mounts = [];
+  const walk = (list) => {
+    for (const p of Array.isArray(list) ? list : []) {
+      if (!p || typeof p !== 'object') continue;
+      const kids = Array.isArray(p.ports) ? p.ports.length : 0;
+      if (p.type === 'Turret' && !kids && num(p.sizes?.max) > 0 && !/tractor/i.test(str(p.name, 60))) mounts.push(p);
+      walk(p.ports);
+    }
+  };
+  walk(ports);
+  const names = (Array.isArray(fixedWeapons) ? fixedWeapons : []).map((w) => str(w?.name, 60));
+  if (!mounts.length || !names.length || !names.every(Boolean)) return null;
+  const groups = [];
+  for (const m of mounts) {
+    const size = num(m.sizes.max);
+    const g = groups[groups.length - 1];
+    if (g && g.size === size) g.mounts.push(m); else groups.push({ size, mounts: [m] });
+  }
+  const runs = [];
+  for (const n of names) {
+    const r = runs[runs.length - 1];
+    if (r && r.name === n) r.count++; else runs.push({ name: n, count: 1 });
+  }
+  if (groups.length !== runs.length || runs.some((r, i) => r.count % groups[i].mounts.length)) return null;
+  const out = [];
+  const seen = new Set();
+  groups.forEach((g, i) => {
+    const each = runs[i].count / g.mounts.length;
+    for (const m of g.mounts) {
+      const hp = str(m.name, 60) || 'gun';
+      for (let k = 1; k <= each; k++) {
+        let id = each === 1 ? hp : `${hp}/mount_${k}`;
+        for (let n = 2; seen.has(id); n++) id = `${hp}#${n}`;
+        seen.add(id);
+        out.push({ id, type: WEAPON_TYPE, min: each === 1 ? (num(m.sizes?.min) ?? g.size) : g.size, max: g.size, stock: null, group: each === 1 ? '' : hp, stockName: runs[i].name });
+      }
+    }
+  });
+  return out;
+}
+
 export function turretGunSlots(turrets, have = []) {
   const out = [];
   const taken = new Set(have.map((s) => s.id));
@@ -340,9 +385,15 @@ export function slimArmament(v) {
 export function slimShip(v) {
   if (!v || typeof v !== 'object' || !v.uuid || !v.name) return null;
   const slots = collectSlots(v.ports);
-  const pilot = pilotGunSlots(v.ports, v.weaponry?.fixed_weapons?.weapons);
-  slots.push(...pilot);
-  slots.push(...baseTurretSlots(v.ports, v.weaponry?.fixed_weapons?.weapons, pilot.length));
+  const fixed = v.weaponry?.fixed_weapons?.weapons;
+  const pilot = pilotGunSlots(v.ports, fixed);
+  // When the pilot mounts could not all be named, try matching whole runs of guns to runs of same-size mounts.
+  const runs = pilot.length && pilot.every((x) => x.stockName) ? null : runGunSlots(v.ports, fixed);
+  if (runs) slots.push(...runs);
+  else {
+    slots.push(...pilot);
+    slots.push(...baseTurretSlots(v.ports, fixed, pilot.length));
+  }
   slots.push(...turretGunSlots(v.turrets, slots));
   return {
     id: str(v.uuid, 40),
