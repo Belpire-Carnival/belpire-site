@@ -9,7 +9,8 @@ import { initLocal } from './local-ui.js';
 import { initBridge } from './bridge.js';
 import { initFleetManager } from './fleet-ui.js';
 import { initInventory } from './inv-ui.js';
-import { builderSchema } from './catalog.js';
+import { builderSchema, shipNames, shipRecord } from './catalog.js';
+import { strictPick } from './pick-ui.js';
 import { buildPlaces } from './near-core.js';
 import { initWaypoint } from './near-ui.js';
 import { initObjectives, initNextObjective, trackGather } from './obj-ui.js';
@@ -661,15 +662,21 @@ $('#loBrief').addEventListener('click', () => copyText(briefRun('Ground Loadout'
 
 // ---------------- FLEET ----------------
 const fl = {};
-fields($('#flFields'), [{ k: 'name', label: 'Ship', type: 'text', ph: 'e.g. Vulture' }, { k: 'role', label: 'Role', type: 'text' },
-  { k: 'scm', label: 'SCM (m/s)' }, { k: 'nav', label: 'NAV (m/s)' }, { k: 'pitch', label: 'Pitch (°/s)' }, { k: 'yaw', label: 'Yaw (°/s)' },
-  { k: 'roll', label: 'Roll (°/s)' }, { k: 'accel', label: 'Fwd accel (m/s²)' }], fl, () => {});
-$('#flAdd').addEventListener('click', () => {
-  const name = (fl.name || '').trim(); if (!name) return toast('Give the ship a name');
-  const ship = { name: name.slice(0, 60), role: (fl.role || '').slice(0, 40) };
-  for (const k of ['scm', 'nav', 'pitch', 'yaw', 'roll', 'accel']) ship[k] = C.nOrNull(fl[k]);
-  S.fleet = [...S.fleet.filter((s) => s.name !== ship.name), ship].slice(0, 60);
-  Store.saveFleet(); renderFleet(); toast('Ship saved');
+fields($('#flFields'), [{ k: 'name', label: 'Ship', type: 'text', ph: 'Search for a ship' }], fl, () => {});
+const flPick = strictPick($('#flFields input'), { onChange: (ok) => { $('#flAdd').disabled = !ok; } });
+flPick.setSource({ get: shipNames });
+$('#flAdd').addEventListener('click', async () => {
+  const name = flPick.value();
+  if (!name) return toast('Pick a ship from the list');
+  if (S.fleet.some((s) => s.name === name)) return toast(name + ' is already in your hangar');
+  let r = null;
+  try { r = await shipRecord(name); } catch { /* ship data unavailable: the ship is still saved by name */ }
+  const ag = r?.stats?.agility || {}, dps = (Number(r?.api?.pilotDps) || 0) + (Number(r?.api?.turretDps) || 0);
+  const ship = { name: name.slice(0, 60), role: String(r?.role || '').slice(0, 40), img: cleanImg(r?.img || ''),
+    scm: C.nOrNull(r?.scm), nav: C.nOrNull(r?.max), pitch: C.nOrNull(ag.pitch), yaw: C.nOrNull(ag.yaw), roll: C.nOrNull(ag.roll),
+    cargo: C.nOrNull(r?.cargo), hull: C.nOrNull(r?.stats?.hull), shieldHp: C.nOrNull(r?.api?.shieldHp), burst: dps > 0 ? dps : null, qtRange: C.nOrNull(r?.stats?.quantum?.range) };
+  S.fleet = [...S.fleet, ship].slice(0, 60);
+  Store.saveFleet(); renderFleet(); flPick.reset(); toast(r ? 'Ship saved' : 'Ship saved without stats (the ship data is unavailable right now)');
 });
 // Axes of the flight and combat envelope. A value comes from a calculator build's stat sheet, or from the
 // basic figures typed in by hand.
@@ -1090,22 +1097,6 @@ const SHIP_PATHS = {
   scm: ['speed.scm', 'scm_speed', 'scm'], nav: ['speed.max', 'speed.nav', 'nav_speed', 'max_speed'],
   pitch: ['agility.pitch', 'pitch'], yaw: ['agility.yaw', 'yaw'], roll: ['agility.roll', 'roll'],
 };
-$('#flLookup').addEventListener('click', async () => {
-  const name = String(fl.name || '').trim();
-  if (name.length < 2) return toast('Type a ship name first');
-  try {
-    const r = await fetch('/api/sc-ship?name=' + encodeURIComponent(name), { headers: { Accept: 'application/json' } });
-    const j = await r.json();
-    if (!r.ok || !j.ship) return toast(r.ok ? 'No ship by that name in the database' : 'Ship database is unavailable right now');
-    const found = {};
-    for (const [k, paths] of Object.entries(SHIP_PATHS)) { const v = pickNum(j.ship, paths); if (v != null) found[k] = v; }
-    if (typeof j.ship.name === 'string') found.name = j.ship.name.slice(0, 60);
-    const stats = Object.keys(found).filter((k) => k !== 'name');
-    if (!stats.length) return toast('Found the ship but no flight stats I could read. Enter them from SPViewer.');
-    Object.assign(fl, found); setInputs($('#flFields'), fl, Object.keys(found));
-    toast(`Filled ${stats.join(', ')} from the Star Citizen Wiki. Check units against SPViewer, then Save ship.`);
-  } catch { toast('Could not reach the ship database'); }
-});
 
 loadStatus(); loadMarket();
 setInterval(() => { if (!document.hidden) { loadMarket(); loadStatus(); } }, 10 * 60 * 1000);
@@ -1347,12 +1338,6 @@ scanner('#scan-weapon', { kind: 'weapon', title: 'weapon stats',
     ls.set('tk.inputs', tk); setInputs($('#tkFields'), tk, Object.keys(o)); calcTTK();
   }) });
 
-// Ship stats
-scanner('#scan-ship', { kind: 'ship', title: 'ship stats',
-  hint: 'A ship page on SPViewer or Erkul.',
-  render: (d, res) => review(res, d, [['name', 'Ship', 'text'], ['role', 'Role', 'text'], ['scm', 'SCM'], ['nav', 'NAV'], ['pitch', 'Pitch'], ['yaw', 'Yaw'], ['roll', 'Roll'], ['accel', 'Fwd accel']], (o) => {
-    Object.assign(fl, o); setInputs($('#flFields'), fl, Object.keys(o));
-  }, 'Fill the form (then Save ship)') });
 
 
 // Item Fabricator blueprint list -> the Blueprints pane

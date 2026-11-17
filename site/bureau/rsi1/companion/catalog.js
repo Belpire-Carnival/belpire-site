@@ -7,6 +7,8 @@ const uniq = (a) => [...new Set(a.filter(Boolean))];
 const builder = () => once('builder', async () => { const j = await getJson('/api/sc-builder'); if (!j || !j.ready || !Array.isArray(j.ships)) throw new Error('not ready'); return j; });
 // Which version of the ship data the site is serving (shown in the status line).
 export const builderSchema = async () => (await builder()).schema;
+// One ship's record from the ship data (null when the data is unavailable or the name is not in it).
+export const shipRecord = async (name) => (await builder()).ships.find((s) => s.name === name) || null;
 export const shipNames = async () => uniq((await builder()).ships.map((s) => s.name));
 export const gunNames = async () => uniq(((await builder()).parts || []).filter((p) => p.type === 'WeaponGun').map((p) => p.name));
 export const componentNames = async () => uniq(((await builder()).parts || []).filter((p) => p.type !== 'WeaponGun').map((p) => p.name));
