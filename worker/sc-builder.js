@@ -27,7 +27,7 @@ const MAX_PRICES = 6;
 
 // Part types a player can swap, by the wiki API's item `type`.
 // Bump when the snapshot gains fields, so the next cron tick rebuilds it without waiting for a game patch.
-export const SCHEMA = 8;
+export const SCHEMA = 9;
 export const PART_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MissileLauncher', 'Missile'];
 export const WEAPON_TYPE = 'WeaponGun';
 // Hardpoint types the builder treats as slots (only ports the game marks `editable`).
@@ -346,7 +346,10 @@ export function slimStats(v) {
     hull: r2(v?.health, 0),
     mass: r2(v?.mass_total ?? v?.mass, 0),
     dim: [r2(dim.length, 1), r2(dim.width, 1), r2(dim.height, 1)],
-    armor: { hp: r2(a.health, 0), phys: r2(a.damage_physical, 3), energy: r2(a.damage_energy, 3), dist: r2(a.damage_distortion, 3) },
+    armor: { hp: r2(a.health, 0), phys: r2(a.damage_physical, 3), energy: r2(a.damage_energy, 3), dist: r2(a.damage_distortion, 3),
+      defl: { phys: r2(a.deflection?.physical, 0), energy: r2(a.deflection?.energy, 0), dist: r2(a.deflection?.distortion, 0) },
+      pen: { phys: r2(a.penetration_resistance?.physical, 3), energy: r2(a.penetration_resistance?.energy, 3), dist: r2(a.penetration_resistance?.distortion, 3) } },
+    penMul: { fuse: r2(v?.penetration_multiplier?.fuse, 3), components: r2(v?.penetration_multiplier?.components, 3) },
     shield: { face: str(v?.shield?.face_type, 20), resist: side(v?.shield?.resistance), absorb: side(v?.shield?.absorption), regenTime: r2(v?.shield?.regeneration_time, 1) },
     agility: { pitch: r2(ag.pitch, 0), yaw: r2(ag.yaw, 0), roll: r2(ag.roll, 0), pitchB: r2(ag.pitch_boosted, 0), yawB: r2(ag.yaw_boosted, 0), rollB: r2(ag.roll_boosted, 0) },
     speed: { boostF: r2(sp.boost_forward, 0), boostB: r2(sp.boost_backward, 0), toScm: r2(sp.zero_to_scm, 2) },

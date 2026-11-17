@@ -745,3 +745,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .pickwrap{position:relative;min-width:0}
 .pickwrap input{width:100%}
 .pfrow.hasPick{position:relative}
+
+/* Simulations card (Calculator) */
+.simtabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.simtabs button[aria-pressed="true"],.simchips button[aria-pressed="true"]{background:#2a1c0e;border-color:#d8a24a}
+.simrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.simchips{display:flex;gap:6px;flex-wrap:wrap}
+.simpick{display:inline-flex;gap:6px;align-items:center;margin:4px 0 8px}
+.simpick select,.simpick input{max-width:100%}
+.simtable{width:100%;border-collapse:collapse;font-size:.9rem}
+.simtable th,.simtable td{text-align:left;padding:4px 8px;border-bottom:1px solid #2c2418}
+.simtable td.bad{color:#d97a6c}.simtable td.good{color:#8fc27a}
