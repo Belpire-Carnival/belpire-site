@@ -53,7 +53,15 @@ export function initLink(host, { toast = () => {} } = {}) {
       };
       host.append(el('div', { class: 'note info mt8' },
         el('div', { class: 'small', text: 'In OmniGlass Desktop, choose “Link to my profile” and type:' }),
-        el('div', {}, el('b', { text: code.text })), left));
+        el('div', { class: 'row' },
+          el('b', { class: 'linkcode', text: code.text, title: 'Click to select', onclick: (e) => { const r = document.createRange(); r.selectNodeContents(e.currentTarget); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } }),
+          el('button', { type: 'button', class: 'ghost', text: 'Copy', onclick: async (e) => {
+            const b = e.currentTarget;
+            try { await navigator.clipboard.writeText(code.text); b.textContent = 'Copied'; }
+            catch { b.textContent = 'Select and press Ctrl+C'; }
+            setTimeout(() => { b.textContent = 'Copy'; }, 2000);
+          } })),
+        left));
       tick();
       clearInterval(codeTimer);
       if (code) codeTimer = setInterval(tick, 1000);
