@@ -86,7 +86,7 @@ function travelView(s, ov, partsById, draw) {
   const drive = driveOf(part);
   if (!drive) return note('No quantum drive with full jump figures is fitted on this ship.');
   const input = el('input', { type: 'number', min: '0.1', step: 'any', value: String(state.gm), 'aria-label': 'Distance in gigametres', onchange: () => { const v = Number(input.value); if (v > 0) state.gm = v; draw(); } });
-  const chips = el('div', { class: 'simchips' }, ...[1, 10, 50, 100].map((g) => el('button', { type: 'button', class: 'ghost', text: `${g} Gm`, 'aria-pressed': String(state.gm === g), onclick: () => { state.gm = g; draw(); } })));
+  const chips = el('div', { class: 'simchips', role: 'group', 'aria-label': 'Distance presets' }, ...[1, 10, 50, 100].map((g) => el('button', { type: 'button', class: 'ghost', text: `${g} Gm`, 'aria-pressed': String(state.gm === g), onclick: () => { state.gm = g; draw(); } })));
   const r = travelTime(drive, state.gm * 1e9);
   const ten = travelTime(drive, 1e10);
   return el('div', {},
@@ -105,11 +105,11 @@ function travelView(s, ov, partsById, draw) {
 export function simPanel(s, partsById, ov) {
   const guns = fittedGuns(s, partsById, ov);
   const body = el('div', { class: 'simbody' });
-  const tabs = el('div', { class: 'simtabs', role: 'tablist' });
+  const tabs = el('div', { class: 'tabs simtabs', role: 'tablist', 'aria-label': 'Simulation type' });
   const card = el('div', { class: 'card' }, el('div', { class: 'sectitle' }, icon('combat'), el('h3', { text: 'Simulations' })), tabs, body);
   function draw() {
     tabs.textContent = '';
-    for (const [id, label] of TABS) tabs.append(el('button', { type: 'button', role: 'tab', class: 'ghost', text: label, 'aria-pressed': String(state.tab === id), onclick: () => { state.tab = id; draw(); } }));
+    for (const [id, label] of TABS) tabs.append(el('button', { type: 'button', role: 'tab', text: label, 'aria-selected': String(state.tab === id), tabindex: state.tab === id ? '0' : '-1', onclick: () => { state.tab = id; draw(); } }));
     body.textContent = '';
     if (state.tab === 'travel') { body.append(travelView(s, ov, partsById, draw)); return; }
     if (!guns.length) { body.append(note('This ship has no swappable guns to test. Pick a ship with weapon slots, or add guns in Armament.')); return; }
