@@ -10,6 +10,7 @@ import { openSwap, openDetail } from './builder-holo.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
 import { lazyPhoto } from './partimg.js';
+import { strictPick } from './pick-ui.js';
 import { riskOf } from './risk.js';
 
 const API = '/api/sc-builder';
@@ -420,7 +421,7 @@ export function initBuilder(host) {
 
   // ------------------------------------------------------------ the page
   function topBar(s) {
-    const search = el('input', { type: 'search', placeholder: 'Find a ship or maker', 'aria-label': 'Find a ship', value: filter });
+    const search = el('input', { type: 'search', placeholder: 'Find a ship or maker', 'aria-label': 'Find a ship' });
     const pick = el('select', { 'aria-label': 'Ship' });
     const view = viewOf(s);
     const fillPick = () => {
@@ -431,7 +432,16 @@ export function initBuilder(host) {
     };
     fillPick();
     // Typing only narrows the list; the page is not rebuilt, so the cursor stays where it is.
-    search.addEventListener('input', () => { filter = search.value; fillPick(); });
+    // The search suggests ships of the list being viewed, by name or maker. Choosing one, or pressing Enter, selects it.
+    const labelOf = (x) => `${x.name} — ${x.mfr}`;
+    const byLabel = new Map(data.ships.filter((y) => viewOf(y) === view).map((x) => [labelOf(x), x]));
+    const finder = strictPick(search, { onChange: (ok) => {
+      const hit = ok ? byLabel.get(finder.value()) : null;
+      if (!hit) return;
+      if (hit.id === saved.ship) { finder.reset(); return; }
+      setShip(hit.id); filter = ''; status = ''; paint();
+    } });
+    finder.setSource({ get: async () => [...byLabel.keys()] });
     pick.addEventListener('change', () => { setShip(pick.value); status = ''; paint(); });
     const link = () => `${location.origin}${location.pathname}#calc?b=${encodeBuild(s, overrides(s))}`;
     const share = el('button', { type: 'button', text: 'Share link', onclick: async () => {
@@ -465,7 +475,7 @@ export function initBuilder(host) {
       armGaps.listed.length ? el('p', { class: 'small muted', text: names(armGaps.listed) }) : null,
       armGaps.none.length ? el('p', { class: 'small m0 mt8', text: `No weapons recorded at all (${armGaps.none.length}). Unarmed ships, or a data gap:` }) : null,
       armGaps.none.length ? el('p', { class: 'small muted', text: names(armGaps.none) }) : null) : null;
-    return el('div', { class: 'card' }, seg, el('div', { class: 'calc-bar' }, search, pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
+    return el('div', { class: 'card' }, seg, el('div', { class: 'calc-bar' }, el('div', { class: 'pickwrap' }, search), pick, el('div', { class: 'btnrow' }, toFleet, share, reset)), tabs.childNodes.length ? tabs : null, why,
       status ? el('p', { class: 'small mt8', role: 'status', text: status }) : null);
   }
 
