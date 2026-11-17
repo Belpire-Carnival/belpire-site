@@ -8,6 +8,8 @@ import { MEDIA_HOST, IMG_PATH, WIKI_API, imgPath } from './sc-builder.js';
 const UA = 'BelpireCarnival/1.0 (+https://bureau.belpire.com/rsi1/companion/)';
 const MAX_BYTES = 3 * 1024 * 1024;
 const TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+// A resized thumbnail path that does not already end in .webp (the wiki stores those as name.png.webp).
+const THUMB_NO_WEBP = /\/\d{2,4}px-[^/]+\.(?:png|jpe?g|gif)$/i;
 
 export async function handleImg(url, ctx) {
   const p = url.searchParams.get('p') || '';
@@ -32,6 +34,13 @@ export async function handleImg(url, ctx) {
     return new Response(`image host unreachable (${String(err?.message || err).slice(0, 80)})`, { status: 502, headers: { 'Cache-Control': 'no-store' } });
   }
   const type = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (res.status === 404 && THUMB_NO_WEBP.test(p)) {
+    const retry = new URL(url);
+    retry.searchParams.set('p', `${p}.webp`);
+    const again = await handleImg(retry, ctx);
+    if (again.ok && cache && ctx?.waitUntil) ctx.waitUntil(cache.put(key, again.clone()));
+    return again;
+  }
   if (!res.ok || !TYPES.has(type)) return new Response(`no image (host answered ${res.status} ${type || 'no type'})`, { status: res.status === 404 ? 404 : 502, headers: { 'Cache-Control': 'public, max-age=300' } });
   const buf = await res.arrayBuffer();
   if (buf.byteLength > MAX_BYTES) return new Response('image too large', { status: 502, headers: { 'Cache-Control': 'no-store' } });
