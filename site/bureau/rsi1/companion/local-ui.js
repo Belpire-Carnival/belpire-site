@@ -9,17 +9,27 @@ const STATUS = {
   waiting: 'Trying again…',
   on: 'Connected to OmniGlass Desktop.',
   failed: 'Could not connect. In OmniGlass Desktop, open Settings and switch on "Website link on this PC". Your browser may also ask whether to let this site reach your PC.',
+  needcode: 'Type the pairing code shown in OmniGlass Desktop (Settings, Website link on this PC).',
+  denied: 'That code did not work. Check it, or press New code in OmniGlass Desktop and try again.',
+  locked: 'Too many wrong tries. Wait a minute, then try again.',
 };
+const IDLE = ['off', 'failed', 'needcode', 'denied', 'locked'];
 
-// A Connect / Disconnect button for the browser link, or null when the link is not available (inside the app, or an old page).
+// A pairing code box (first time only), and a Connect / Disconnect button for the browser link, or null when the link is not available (inside the app, or an old page).
 function connectRow() {
   const link = window.omniglass;
   if (!link) return null;
-  const st = link.status().state;
+  const { state: st, paired } = link.status();
+  const idle = IDLE.includes(st);
   const row = el('p', 'small');
-  const btn = el('button', null, st === 'off' || st === 'failed' ? 'Connect to OmniGlass Desktop' : 'Disconnect');
+  let box = null;
+  if (idle && !paired) {
+    box = el('input'); box.type = 'text'; box.maxLength = 12; box.autocomplete = 'off'; box.spellcheck = false; box.placeholder = 'ABCD-2345'; box.setAttribute('aria-label', 'Pairing code from OmniGlass Desktop');
+    row.append(box, document.createTextNode(' '));
+  }
+  const btn = el('button', null, idle ? 'Connect to OmniGlass Desktop' : 'Disconnect');
   btn.type = 'button';
-  btn.addEventListener('click', () => { const now = link.status().state; if (now === 'off' || now === 'failed') link.connect(); else link.disconnect(); });
+  btn.addEventListener('click', () => { if (idle) link.connect(box ? box.value : ''); else link.disconnect(); });
   row.append(btn);
   if (STATUS[st]) row.append(el('span', 'muted', ' ' + STATUS[st]));
   return row;
