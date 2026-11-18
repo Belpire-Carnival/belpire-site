@@ -4,6 +4,7 @@
 // Blueprints pane uses.
 
 import { cleanBp, addOwned, keyOf } from './plan-core.js';
+import { cleanRanks, mergeRank } from './rep-core.js';
 
 export const MAX_FEED = 100;
 
@@ -25,6 +26,8 @@ export function describeEvent(e) {
     }
     case 'vehicle_destroyed': { const v = firstText(d, ['vehicle', 'ship', 'name']); return `${d.ownShip === true ? 'Your ship was destroyed' : d.ownKill === true ? 'You destroyed a ship' : 'Ship destroyed'}${v ? `: ${v}` : ''}`; }
     case 'incapacitated': return 'You were incapacitated';
+    case 'rank_set': { const r = clip(d.rank, 60); return r ? `Rank set in the app: ${r}` : 'Rank cleared in the app'; }
+    case 'owned_set': return ''; // a sync batch: the toast says how many were new
     default: return '';
   }
 }
@@ -32,8 +35,9 @@ export function describeEvent(e) {
 // events: what GET /api/companion/inbox returned ({ dev, id, kind, at, data }).
 // → { bp, feed, added, keys }: the new blueprint state, the new feed (newest first, capped), how many blueprints were new
 // to the list, and every event key to acknowledge (including ones the page has no wording for, so they do not pile up).
-export function applyInbox(events, bpRaw, feedRaw, now = Date.now(), contractsRaw = []) {
+export function applyInbox(events, bpRaw, feedRaw, now = Date.now(), contractsRaw = [], ranksRaw = {}) {
   let bp = cleanBp(bpRaw);
+  let ranks = cleanRanks(ranksRaw);
   const seen = new Set();
   const feed = [];
   for (const f of Array.isArray(feedRaw) ? feedRaw : []) {
@@ -55,13 +59,19 @@ export function applyInbox(events, bpRaw, feedRaw, now = Date.now(), contractsRa
       // A blueprint you already own is left exactly as it is (its category and tier came from a fabricator scan).
       if (!bp.owned[keyOf(name)]) { added++; bp = addOwned(bp, name, null, at); }
     }
+    // two-way sync from the app: owned names (add-only, never removes) and a rank chosen there (the newer choice wins)
+    if (e.kind === 'owned_set') for (const n of Array.isArray(e.data && e.data.names) ? e.data.names.slice(0, 100) : []) {
+      const name = clip(n, 80);
+      if (name && !bp.owned[keyOf(name)]) { added++; bp = addOwned(bp, name, null, at); }
+    }
+    if (e.kind === 'rank_set' && e.data) ranks = mergeRank(ranks, e.data.ladder, e.data.rank, Number.isFinite(e.data.at) ? e.data.at : at);
     const text = describeEvent(e);
     if (!text) continue;
     seen.add(k);
     feed.push({ k, kind: clip(e.kind, 30), at, text });
   }
   feed.sort((a, b) => b.at - a.at);
-  return { bp, feed: feed.slice(0, MAX_FEED), added, keys, contracts: applyContracts(events, contractsRaw, now) };
+  return { bp, feed: feed.slice(0, MAX_FEED), added, keys, contracts: applyContracts(events, contractsRaw, now), ranks };
 }
 
 // ---- Contract history: each contract the app saw, accepted and (once finished) its result. The app sends a mission id

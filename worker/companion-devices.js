@@ -10,6 +10,7 @@
 //   DELETE /api/companion/devices?id=…  (signed-in page) revoke a device and drop its waiting events
 //   POST   /api/companion/inbox      (desktop app, Bearer token) { events: [...] } → { accepted }
 //   POST   /api/companion/wishlist   (desktop app, Bearer token) → { wishlist: [{ n, prio }], at }   only the names of Blueprint wishlist items not yet received
+//   POST   /api/companion/state      (desktop app, Bearer token) → { owned: [names], ranks: { ladderId: { rank, at } }, wishlist, at }   for two-way sync
 //   GET    /api/companion/inbox      (signed-in page)   → { events: [...] }
 //   POST   /api/companion/inbox/ack  (signed-in page)   { keys: ["dev:eid", ...] }
 //
@@ -26,7 +27,8 @@ const MAX_BATCH = 100;
 const MAX_BODY = 64 * 1024;
 // Crockford base32: exactly 32 symbols (so a 5-bit mask picks one with no bias), without I, L, O or U.
 const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-export const EVENT_KINDS = new Set(['blueprint', 'contract_accepted', 'mission_end', 'vehicle_destroyed', 'incapacitated']);
+export const EVENT_KINDS = new Set(['blueprint', 'contract_accepted', 'mission_end', 'vehicle_destroyed', 'incapacitated', 'owned_set', 'rank_set']);
+export const MAX_OWNED_SET = 100; // names in one owned_set event
 const TOKEN_PREFIX = 'ogd_';
 
 const enc = new TextEncoder();
@@ -145,6 +147,16 @@ export function cleanEvent(raw, now = Date.now()) {
     else if (typeof v === 'boolean') data[k] = v;
   }
   if (raw.kind === 'blueprint' && !clipText(data.name, 80)) return null;
+  // owned_set: a batch of blueprint names the app knows you own (from the log, older logs, imports). The only list a value may be.
+  if (raw.kind === 'owned_set') {
+    const names = [];
+    for (const n of Array.isArray(src.names) ? src.names.slice(0, MAX_OWNED_SET) : []) { const c = typeof n === 'string' ? clipText(n, 80) : ''; if (c && !names.includes(c)) names.push(c); }
+    if (!names.length) return null;
+    for (const k of Object.keys(data)) delete data[k];
+    data.names = names;
+  }
+  // rank_set: the rank chosen on one reputation ladder (an empty rank means "not set"), and when it was chosen.
+  if (raw.kind === 'rank_set' && (!/^[A-Za-z0-9_.|-]{1,120}$/.test(String(data.ladder || '')) || typeof data.rank !== 'string')) return null;
   const at = Number.isFinite(raw.at) ? Math.min(Math.max(raw.at, 0), now + 86_400_000) : now;
   return { eid, kind: raw.kind, at, data };
 }
@@ -173,6 +185,30 @@ export function wishlistFrom(data) {
     if (n) out.push({ n, prio: [1, 2, 3].includes(Number(w.prio)) ? Number(w.prio) : 2 });
   }
   return out.sort((a, b) => a.prio - b.prio || a.n.localeCompare(b.n)).slice(0, MAX_WISHLIST);
+}
+
+// What the app may read back for two-way sync, besides the wishlist: the names of blueprints you own and the rank you chose on
+// each reputation ladder. Nothing else in the profile is readable with an app token.
+export const MAX_OWNED_READ = 1500;
+const parseKey = (data, key) => { try { return JSON.parse(data && data[key]); } catch { return null; } };
+export function ownedFrom(data) {
+  const bp = parseKey(data, 'arsenal.plan.bp');
+  const out = [];
+  for (const v of Object.values(bp && typeof bp.owned === 'object' && bp.owned ? bp.owned : {})) {
+    const n = v && typeof v.name === 'string' ? clipText(v.name, 80) : '';
+    if (n && !out.includes(n)) out.push(n);
+    if (out.length >= MAX_OWNED_READ) break;
+  }
+  return out.sort((a, b) => a.localeCompare(b));
+}
+export function ranksFrom(data) {
+  const r = parseKey(data, 'arsenal.rep.ranks');
+  const out = {};
+  for (const [id, v] of Object.entries(r && typeof r === 'object' && !Array.isArray(r) ? r : {}).slice(0, 200)) {
+    if (!/^[A-Za-z0-9_.|-]{1,120}$/.test(id) || !v || typeof v !== 'object') continue;
+    out[id] = { rank: typeof v.rank === 'string' ? clipText(v.rank, 60) : '', at: Number.isFinite(v.at) ? v.at : 0 };
+  }
+  return out;
 }
 
 const bearer = (request) => {
@@ -237,6 +273,18 @@ export async function handleDevices(request, env) {
     await store.touch(dev.id, now);
     let data = null; try { data = row ? JSON.parse(row.data) : null; } catch { /* a damaged profile has no wishlist */ }
     return json({ wishlist: wishlistFrom(data), at: row ? row.updated_at : 0 });
+  }
+
+  // ---- the desktop app: read back what two-way sync needs (owned blueprint names, chosen ranks, wishlist names)
+  if (path === '/api/companion/state') {
+    if (m !== 'POST') return json({ error: 'method not allowed' }, 405, { Allow: 'POST' });
+    const token = bearer(request);
+    const dev = token ? await store.byToken(await sha256Hex(token)) : null;
+    if (!dev) return json({ error: 'unauthorized' }, 401);
+    const row = await profileStore(env.DB).get(dev.uid);
+    await store.touch(dev.id, now);
+    let data = null; try { data = row ? JSON.parse(row.data) : null; } catch { /* a damaged profile reads as empty */ }
+    return json({ owned: ownedFrom(data), ranks: ranksFrom(data), wishlist: wishlistFrom(data), at: row ? row.updated_at : 0 });
   }
 
   // ---- everything below is the signed-in page

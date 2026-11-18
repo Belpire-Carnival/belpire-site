@@ -11,6 +11,7 @@ const API_ACK = '/api/companion/inbox/ack';
 const K_BP = 'arsenal.plan.bp';
 const K_FEED = 'arsenal.link.feed';
 const K_CONTRACTS = 'arsenal.link.contracts';
+const K_RANKS = 'arsenal.rep.ranks';
 const POLL_MS = 30000;
 const CODE_POLL_MS = 3000;
 
@@ -134,8 +135,9 @@ export function initLink(host, { toast = () => {} } = {}) {
       if (!r.ok) return;
       const { events } = await r.json();
       if (!Array.isArray(events) || !events.length) return;
-      const res = applyInbox(events, read(K_BP, null), read(K_FEED, []), Date.now(), read(K_CONTRACTS, []));
-      write(K_BP, res.bp); write(K_FEED, res.feed); write(K_CONTRACTS, res.contracts);
+      const res = applyInbox(events, read(K_BP, null), read(K_FEED, []), Date.now(), read(K_CONTRACTS, []), read(K_RANKS, {}));
+      write(K_BP, res.bp); write(K_FEED, res.feed); write(K_CONTRACTS, res.contracts); write(K_RANKS, res.ranks);
+      window.dispatchEvent(new CustomEvent('arsenal:ranks'));
       window.dispatchEvent(new CustomEvent('arsenal:plan'));
       window.dispatchEvent(new CustomEvent('arsenal:contracts'));
       if (res.keys.length) await post(API_ACK, { keys: res.keys });
