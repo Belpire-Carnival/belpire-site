@@ -508,14 +508,14 @@
 <section class="view" id="v-desktop" aria-labelledby="h-desktop">
   <div class="hero"><div><h2 id="h-desktop">OmniGlass Desktop</h2><span class="daemon">sys://desktop.readme</span><p class="tag">A Windows tray app that reads your own game logs and feeds this site. Read me, how-to and download.</p><div class="chips"><span class="chip">Read me</span><span class="chip">How to</span><span class="chip">Download</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="desktop"></div></div>
   <div class="card accent mb12" id="desktopDownload"><h3>Download</h3>
-    <p class="small"><b>OmniGlass Desktop 0.1.1</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
-    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.1.1-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
-    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">3059776b7babf542daba0d6332f7d8e457693b1186c57565b14ec0e6f43c3b25</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.1.1-x64-setup.exe SHA256</span>. The result must match the line above.</p>
+    <p class="small"><b>OmniGlass Desktop 0.2.0</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
+    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.2.0-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
+    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">a516a529c3700ad2a1b939dd6d078ffce4ccad4ef4917cfd582d7d17321f412d</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.2.0-x64-setup.exe SHA256</span>. The result must match the line above.</p>
     <p class="small muted">This installer is <b>not code-signed</b>, so Windows SmartScreen will say it is from an unknown publisher. Choose <i>More info</i>, then <i>Run anyway</i>. Only install it from this page or the releases page above: do not install copies from other places.</p></div>
   <div class="grid g2">
     <div class="card"><h3>Read me</h3>
       <p class="small">OmniGlass Desktop sits in your system tray. While Star Citizen runs it reads the Game.log file the game already writes, and it reads the RSI Launcher log once to find out which install you launched. From that it shows your blueprint, contract, mission and ship-loss events, your blueprints from the game files, minerals, reputation ladders, and an optional in-game overlay.</p>
-      <p class="small"><b>It never</b> reads game memory, injects code, or sends keystrokes or mouse input. It reads your Game.log, your archived logs and the game's own data file (Data.p4k) read-only, and draws its own windows.</p>
+      <p class="small"><b>It never</b> reads game memory, injects code, or sends keystrokes or mouse input. To open its windows inside the game it listens for its own keys only (F3, F5 to F8) while Star Citizen has the keyboard, and always passes them on to the game. It reads your Game.log, your archived logs and the game's own data file (Data.p4k) read-only, and draws its own windows.</p>
       <p class="small"><b>The one optional feature that writes</b> is <i>Field Notes</i>. It is off until you switch it on in Settings. When you press Apply it writes the game's English text file (global.ini, built from your own install) and makes sure user.cfg selects English, after saving your originals. <i>Roll back</i> restores them exactly. It refuses to write while the game is running. CIG allows community text files but does not endorse them, so it is your choice.</p>
       <p class="small"><b>What it sends here</b> (only while the PC is linked and sending is on): blueprints you receive, contracts, missions and your own ship losses. Never other players' names or ids.</p>
       <p class="small muted">Game data (blueprints, ores, reputation) comes from the site, one file set per channel (LIVE and PTU), extracted from the game files by us. Check for updates after each patch.</p></div>
@@ -550,16 +550,17 @@
       <p class="small muted">The address works only on your own PC (127.0.0.1) and contains a secret: treat it like a password. <i>Make a new secret</i> replaces it, then paste the new address into scmdb.</p></div>
     <div class="card"><h3>Hotkey guide</h3>
       <ul class="tight small">
-        <li><span class="mono">Ctrl+Shift+O</span>: open or close the overlay drawer (the Recent, Watching and This session cards). Alerts and running timers show even when it is closed.</li>
-        <li><span class="mono">Ctrl+Shift+F</span>: search a blueprint or mineral. Type, press <b>Enter</b> to pin the top result to Watching, <b>Esc</b> (or the hotkey again) to close. Clicking another program also closes it. The keyboard goes back to the game.</li>
-        <li><span class="mono">Ctrl+Shift+E</span>: move and resize the overlay cards. <b>Esc</b>, <i>Done</i> or the hotkey again saves and finishes.</li>
-        <li>These work while the app is running, even with the game in front. The overlay only shows over the game in <b>borderless windowed</b> mode, not exclusive fullscreen.</li>
-        <li>Hotkeys cannot be changed yet. If another program already holds one, the app starts without it and the rest still works.</li>
+        <li><span class="mono">F3</span> or <span class="mono">F5</span>: open the OmniGlass window over the game. Press again to hide it; the keyboard goes back to the game.</li>
+        <li><span class="mono">F6</span>: show or hide the overlay cards (Recent, Watching, This session, Timers).</li>
+        <li><span class="mono">F7</span>: move and resize the overlay cards. <b>Esc</b>, <i>Done</i> or <span class="mono">F7</span> again saves and finishes.</li>
+        <li><span class="mono">F8</span>: search a blueprint or mineral. Type, press <b>Enter</b> to pin the top result to Watching, <b>Esc</b> (or <span class="mono">F8</span> again) to close. The keyboard goes back to the game.</li>
+        <li>These work in menus and in the world, while the app is running. Settings shows the last key the app received and how it arrived. The overlay only shows over the game in <b>borderless windowed</b> mode.</li>
+        <li>If Star Citizen or the RSI Launcher runs as administrator, run OmniGlass as administrator too, or Windows keeps the keys from reaching it.</li>
       </ul></div>
     <div class="card"><h3>How to: set up the in-game overlay</h3>
       <ol class="tight small">
-        <li>Run Star Citizen in borderless windowed mode, then press <span class="mono">Ctrl+Shift+O</span>.</li>
-        <li>Press <span class="mono">Ctrl+Shift+E</span>. The screen dims and a bar appears. Drag a card to move it; drag its bottom-right corner to resize it. Tick or untick <i>Recent</i>, <i>Watching</i>, <i>Alerts</i>, <i>Session</i> and <i>Timers</i> to show or hide each card.</li>
+        <li>Run Star Citizen in borderless windowed mode, then press <span class="mono">F6</span>.</li>
+        <li>Press <span class="mono">F7</span>. The screen dims and a bar appears. Drag a card to move it; drag its bottom-right corner to resize it. Tick or untick <i>Recent</i>, <i>Watching</i>, <i>Alerts</i>, <i>Session</i> and <i>Timers</i> to show or hide each card.</li>
         <li>There are two saved layouts, <i>Flying</i> and <i>On foot</i>. Choose one in the bar before you arrange; you switch between them by hand. <i>Reset layout</i> puts the current one back to the default.</li>
         <li>Press <i>Done</i> (or Esc). Positions are kept on this PC as a share of your screen, so they survive a change of resolution.</li>
       </ol>
@@ -588,9 +589,9 @@
     <div class="card"><h3>If something looks wrong</h3>
       <ul class="tight small">
         <li><b>Stuck on "Starting..."</b> or empty fields: quit the app from the tray and start it again. Report it with the first red line from the console if it repeats.</li>
-        <li><b>"Hotkey already registered"</b>: another program, or an older copy of the app, holds <span class="mono">Ctrl+Shift+O</span>. Quit the old copy; the rest of the app still works.</li>
+        <li><b>A key says "taken by another program"</b> in Settings: another program, or an older copy of the app, holds it. Quit the old copy; the rest of the app still works.</li>
         <li><b>No overlay over the game</b>: switch the game to borderless windowed mode. Check <i>Game.log</i> shows your install.</li>
-        <li><b>A card is off screen or in the wrong place</b> after changing monitors: press <span class="mono">Ctrl+Shift+E</span>, then <i>Reset layout</i>.</li>
+        <li><b>A card is off screen or in the wrong place</b> after changing monitors: press <span class="mono">F7</span>, then <i>Reset layout</i>.</li>
         <li><b>Data for another build</b>: the data bar warns when the game data is for a different patch than your install. Press <i>Check for updates</i>.</li>
         <li><b>Nothing arrives from scmdb</b>: make sure the app is running with the box ticked, then press Resync in scmdb.</li>
       </ul></div>
