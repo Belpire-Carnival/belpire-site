@@ -145,7 +145,7 @@ test('events are cleaned: unknown kinds and bad ids are dropped, values are shor
   assert.ok(!c.data.title.includes('\u0000'));
   assert.deepEqual(Object.keys(c.data).sort(), ['bp', 'reward', 'title']);
   assert.ok(cleanEvent({ id: 'a', kind: 'blueprint', at: Date.now() + 9e12, data: { name: 'x' } }).at < Date.now() + 90_000_000);
-  assert.deepEqual([...EVENT_KINDS].sort(), ['blueprint', 'contract_accepted', 'incapacitated', 'mission_end', 'vehicle_destroyed']);
+  assert.deepEqual([...EVENT_KINDS].sort(), ['blueprint', 'contract_accepted', 'incapacitated', 'mission_end', 'owned_set', 'rank_set', 'vehicle_destroyed']);
 });
 
 test('bad bodies and oversize batches are refused, and a batch past 100 is trimmed', async () => {
@@ -215,4 +215,49 @@ test('wishlist read-back: needs a valid app token, only by POST; the signed-in p
   assert.equal((await page(env, 'POST', '/api/companion/wishlist')).status, 401);
   await page(env, 'DELETE', `/api/companion/devices?id=${got.deviceId}`);
   assert.equal((await app(env, 'POST', '/api/companion/wishlist', { token: got.token })).status, 401);
+});
+
+// ------------------------------------------------------------ two-way sync
+import { ownedFrom, ranksFrom, MAX_OWNED_SET } from '../companion-devices.js';
+
+test('owned_set carries a list of plain names (max 100, no repeats); rank_set needs a ladder id and a rank', () => {
+  const o = cleanEvent({ id: 'o1', kind: 'owned_set', at: 5, data: { names: ['Arden Core', 'Arden Core', '  ', 7, 'X'.repeat(200), ...Array.from({ length: 150 }, (_, i) => `N${i}`)], extra: 'dropped' } });
+  assert.equal(o.data.names[0], 'Arden Core'); assert.equal(o.data.names[1].length, 80);
+  assert.ok(o.data.names.length <= MAX_OWNED_SET); assert.deepEqual(Object.keys(o.data), ['names']);
+  assert.equal(cleanEvent({ id: 'o2', kind: 'owned_set', data: { names: [] } }), null);
+  assert.equal(cleanEvent({ id: 'o3', kind: 'owned_set', data: { names: 'nope' } }), null);
+  const r = cleanEvent({ id: 'r1', kind: 'rank_set', at: 9, data: { ladder: 'FactionReputation_X|Scope', rank: 'Contractor', at: 9 } });
+  assert.deepEqual(r.data, { ladder: 'FactionReputation_X|Scope', rank: 'Contractor', at: 9 });
+  assert.ok(cleanEvent({ id: 'r2', kind: 'rank_set', data: { ladder: 'A|B', rank: '' } }));
+  assert.equal(cleanEvent({ id: 'r3', kind: 'rank_set', data: { ladder: 'bad ladder!', rank: 'x' } }), null);
+  assert.equal(cleanEvent({ id: 'r4', kind: 'rank_set', data: { ladder: 'A|B' } }), null);
+});
+
+test('ownedFrom and ranksFrom read only owned names and chosen ranks, plain and capped', () => {
+  const data = {
+    'arsenal.plan.bp': JSON.stringify({ owned: { b: { name: 'Beta', category: 'x', tier: 'Q3' }, a: { name: 'Alpha' }, bad: { name: 5 } }, scannedAt: 1 }),
+    'arsenal.rep.ranks': JSON.stringify({ 'F|S': { rank: 'Contractor', at: 7 }, 'bad id!': { rank: 'x', at: 1 }, 'G|S': { rank: 3 } }),
+    'arsenal.plan.secret': '"nope"'
+  };
+  assert.deepEqual(ownedFrom(data), ['Alpha', 'Beta']);
+  assert.deepEqual(ranksFrom(data), { 'F|S': { rank: 'Contractor', at: 7 }, 'G|S': { rank: '', at: 0 } });
+  assert.deepEqual(ownedFrom(null), []); assert.deepEqual(ranksFrom({ 'arsenal.rep.ranks': 'not json' }), {});
+});
+
+test('state read-back: the app token gets owned names, ranks and wishlist of its owner only; POST only', async () => {
+  const env = envWith(), { got } = await pair(env);
+  await profileStore(env.DB).save(UID, 'Pilot One', JSON.stringify({
+    'arsenal.plan.bp': JSON.stringify({ owned: { a: { name: 'Arden Core' } } }),
+    'arsenal.rep.ranks': JSON.stringify({ 'F|S': { rank: 'Contractor', at: 7 } }),
+    'arsenal.plan.wish': JSON.stringify([wish({ name: 'Karna Rifle', prio: 1 })]),
+    'arsenal.plan.secret': '"nope"' }), 0, 5000);
+  const res = await app(env, 'POST', '/api/companion/state', { token: got.token });
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.deepEqual(j, { owned: ['Arden Core'], ranks: { 'F|S': { rank: 'Contractor', at: 7 } }, wishlist: [{ n: 'Karna Rifle', prio: 1 }], at: 5000 });
+  assert.equal((await app(env, 'GET', '/api/companion/state', { token: got.token })).status, 405);
+  assert.equal((await app(env, 'POST', '/api/companion/state')).status, 401);
+  assert.equal((await page(env, 'POST', '/api/companion/state')).status, 401);
+  const other = await pair(env, OTHER, 'Other PC');
+  assert.deepEqual((await (await app(env, 'POST', '/api/companion/state', { token: other.got.token })).json()).owned, []);
 });

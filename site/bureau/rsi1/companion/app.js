@@ -5,6 +5,7 @@ import { initSync } from './sync.js';
 import { initBuilder } from './builder.js';
 import { initWishlist, initBlueprints, initCatalog } from './plan-ui.js';
 import { initLink, initContracts } from './link-ui.js';
+import { initRanks } from './rep-ui.js';
 import { initLocal } from './local-ui.js';
 import { initBridge } from './bridge.js';
 import { initFleetManager } from './fleet-ui.js';
@@ -99,6 +100,7 @@ const blueprints = initBlueprints($('#blueprintList'), { toast: (m) => toast(m) 
 initCatalog($('#blueprintCatalog'), { toast: (m) => toast(m) });
 initLink($('#desktopLink'), { toast: (m) => toast(m) });
 initContracts($('#opsContracts'));
+initRanks($('#opsRep'));
 initBridge();
 initLocal();
 const fabricator = initFabricator($('#fabricatorHost'), { toast: (m) => toast(m), onGoal: (g) => trackGather(g) });
