@@ -17,3 +17,6 @@ id_*
 *.env
 .env.*
 !.env.example
+
+# local helper scripts (not part of the site)
+apply-*.mjs
