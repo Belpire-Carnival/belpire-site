@@ -18,7 +18,11 @@ export function describeEvent(e) {
   switch (e && e.kind) {
     case 'blueprint': { const n = clip(d.name, 80); return n ? `Blueprint received: ${n}` : ''; }
     case 'contract_accepted': { const t = firstText(d, ['title', 'name']); return `Contract accepted${t ? `: ${t}` : ''}${d.bp === true ? ' (blueprint reward)' : ''}`; }
-    case 'mission_end': { const t = firstText(d, ['title', 'name']); return `Mission ended${t ? `: ${t}` : ''}`; }
+    case 'mission_end': {
+      const t = firstText(d, ['title', 'name']), c = clip(d.completion, 30);
+      const head = c === 'Complete' ? 'Contract completed' : c ? `Contract ended (${c})` : 'Mission ended';
+      return `${head}${t ? `: ${t}` : ''}`;
+    }
     case 'vehicle_destroyed': { const v = firstText(d, ['vehicle', 'ship', 'name']); return `${d.ownShip === true ? 'Your ship was destroyed' : d.ownKill === true ? 'You destroyed a ship' : 'Ship destroyed'}${v ? `: ${v}` : ''}`; }
     case 'incapacitated': return 'You were incapacitated';
     default: return '';
@@ -28,7 +32,7 @@ export function describeEvent(e) {
 // events: what GET /api/companion/inbox returned ({ dev, id, kind, at, data }).
 // → { bp, feed, added, keys }: the new blueprint state, the new feed (newest first, capped), how many blueprints were new
 // to the list, and every event key to acknowledge (including ones the page has no wording for, so they do not pile up).
-export function applyInbox(events, bpRaw, feedRaw, now = Date.now()) {
+export function applyInbox(events, bpRaw, feedRaw, now = Date.now(), contractsRaw = []) {
   let bp = cleanBp(bpRaw);
   const seen = new Set();
   const feed = [];
@@ -57,7 +61,58 @@ export function applyInbox(events, bpRaw, feedRaw, now = Date.now()) {
     feed.push({ k, kind: clip(e.kind, 30), at, text });
   }
   feed.sort((a, b) => b.at - a.at);
-  return { bp, feed: feed.slice(0, MAX_FEED), added, keys };
+  return { bp, feed: feed.slice(0, MAX_FEED), added, keys, contracts: applyContracts(events, contractsRaw, now) };
+}
+
+// ---- Contract history: each contract the app saw, accepted and (once finished) its result. The app sends a mission id
+// (`mid`) with both events, so the two are paired; an event without one is kept on its own.
+export const MAX_CONTRACTS = 300;
+const RESULT = { Complete: 'completed', Fail: 'failed', Failed: 'failed', Abandon: 'abandoned', Abandoned: 'abandoned', Withdraw: 'abandoned' };
+export const resultOf = (completion) => { const c = clip(completion, 30); return c ? (RESULT[c] || c.toLowerCase()) : ''; };
+
+export function cleanContracts(raw) {
+  const out = [];
+  const seen = new Set();
+  for (const c of Array.isArray(raw) ? raw : []) {
+    if (!c || typeof c !== 'object') continue;
+    const k = clip(c.k, 80); if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push({ k, title: clip(c.title, 120), bp: c.bp === true, rep: clip(c.rep, 40), acceptedAt: Number.isFinite(c.acceptedAt) ? c.acceptedAt : null, endedAt: Number.isFinite(c.endedAt) ? c.endedAt : null, result: clip(c.result, 30) });
+  }
+  return out;
+}
+
+export function applyContracts(events, raw, now = Date.now()) {
+  const list = cleanContracts(raw);
+  const byKey = new Map(list.map((c) => [c.k, c]));
+  const sorted = (Array.isArray(events) ? events : []).filter((e) => e && (e.kind === 'contract_accepted' || e.kind === 'mission_end') && typeof e.dev === 'string' && typeof e.id === 'string')
+    .sort((a, b) => (Number(a.at) || 0) - (Number(b.at) || 0));
+  for (const e of sorted) {
+    const d = e.data && typeof e.data === 'object' ? e.data : {};
+    const mid = clip(d.mid, 60);
+    const k = mid ? `m:${mid}` : `e:${evKey(e)}`;
+    const at = Number.isFinite(e.at) ? e.at : now;
+    let c = byKey.get(k);
+    if (!c) { c = { k, title: '', bp: false, rep: '', acceptedAt: null, endedAt: null, result: '' }; byKey.set(k, c); list.push(c); }
+    const title = firstText(d, ['title', 'name']);
+    if (title && !c.title) c.title = title;
+    if (e.kind === 'contract_accepted') { if (c.acceptedAt == null) c.acceptedAt = at; if (d.bp === true) c.bp = true; if (!c.rep) c.rep = clip(d.rep, 40); }
+    else { c.endedAt = at; c.result = resultOf(d.completion) || 'ended'; }
+  }
+  const when = (c) => c.endedAt ?? c.acceptedAt ?? 0;
+  return list.sort((a, b) => when(b) - when(a)).slice(0, MAX_CONTRACTS);
+}
+
+// Counts for the card: completed today and in the last 7 days (local time), and still open.
+export function contractStats(list, now = Date.now()) {
+  const day = new Date(now); day.setHours(0, 0, 0, 0);
+  const today = day.getTime(), week = now - 7 * 86400000;
+  let doneToday = 0, doneWeek = 0, done = 0, open = 0;
+  for (const c of cleanContracts(list)) {
+    if (c.result === 'completed') { done++; if (c.endedAt >= today) doneToday++; if (c.endedAt >= week) doneWeek++; }
+    else if (!c.result) open++;
+  }
+  return { doneToday, doneWeek, done, open };
 }
 
 // "3 minutes ago" for the device list and the feed.

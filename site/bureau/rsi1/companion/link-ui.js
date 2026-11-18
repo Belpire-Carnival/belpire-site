@@ -1,7 +1,7 @@
 // The "OmniGlass Desktop" card on the Blueprints pane: make a pairing code, see and revoke linked devices, and apply what the
 // desktop app has sent (blueprints become owned blueprints; the rest shows in a short feed). Text nodes only.
 // The page stays the only writer of your saved data: events wait in an inbox until this page applies them and acknowledges.
-import { applyInbox, ago } from './link-core.js';
+import { applyInbox, ago, contractStats, cleanContracts } from './link-core.js';
 
 const API_DEVICES = '/api/companion/devices';
 const API_PAIR_NEW = '/api/companion/pair/new';
@@ -10,6 +10,7 @@ const API_ACK = '/api/companion/inbox/ack';
 
 const K_BP = 'arsenal.plan.bp';
 const K_FEED = 'arsenal.link.feed';
+const K_CONTRACTS = 'arsenal.link.contracts';
 const POLL_MS = 30000;
 const CODE_POLL_MS = 3000;
 
@@ -133,9 +134,10 @@ export function initLink(host, { toast = () => {} } = {}) {
       if (!r.ok) return;
       const { events } = await r.json();
       if (!Array.isArray(events) || !events.length) return;
-      const res = applyInbox(events, read(K_BP, null), read(K_FEED, []));
-      write(K_BP, res.bp); write(K_FEED, res.feed);
+      const res = applyInbox(events, read(K_BP, null), read(K_FEED, []), Date.now(), read(K_CONTRACTS, []));
+      write(K_BP, res.bp); write(K_FEED, res.feed); write(K_CONTRACTS, res.contracts);
       window.dispatchEvent(new CustomEvent('arsenal:plan'));
+      window.dispatchEvent(new CustomEvent('arsenal:contracts'));
       if (res.keys.length) await post(API_ACK, { keys: res.keys });
       if (res.added) toast(`${res.added} blueprint${res.added === 1 ? '' : 's'} added from the game`);
       draw();
@@ -147,4 +149,40 @@ export function initLink(host, { toast = () => {} } = {}) {
   setInterval(() => { if (!document.hidden) pull(); }, POLL_MS);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
   return { refresh: () => loadDevices().then(pull) };
+}
+
+// The "Contracts from the game" card on OmniOps: what you completed today and this week, and the latest contracts with
+// their result, from what OmniGlass Desktop sent. Saved with your profile like everything else ("arsenal.link.contracts").
+const RESULT_CLASS = { completed: 'chip ok', failed: 'chip warn', abandoned: 'chip warn' };
+export function initContracts(host) {
+  if (!host) return null;
+  const draw = () => {
+    const list = cleanContracts(read(K_CONTRACTS, []));
+    const s = contractStats(list);
+    host.replaceChildren(el('h3', { text: 'Contracts from the game' }));
+    if (!list.length) {
+      host.append(el('p', { class: 'small muted', text: 'Link OmniGlass Desktop (OmniGlass card above) and the contracts you accept and finish in game show here.' }));
+      return;
+    }
+    host.append(el('div', { class: 'chips' },
+      el('span', { class: 'chip', text: `${s.doneToday} completed today` }),
+      el('span', { class: 'chip', text: `${s.doneWeek} this week` }),
+      el('span', { class: 'chip', text: `${s.done} in all` }),
+      s.open ? el('span', { class: 'chip', text: `${s.open} open` }) : null));
+    const tb = el('tbody');
+    for (const c of list.slice(0, 15)) {
+      const res = c.result || 'in progress';
+      tb.append(el('tr', {},
+        el('td', {}, el('b', { text: c.title || 'Contract' }), c.bp ? el('span', { class: 'chip', text: 'BP' }) : null),
+        el('td', {}, el('span', { class: RESULT_CLASS[c.result] || 'chip', text: res })),
+        el('td', { class: 'small', text: c.rep ? `Rep ${c.rep}` : '' }),
+        el('td', { class: 'small muted', text: ago(c.endedAt ?? c.acceptedAt) })));
+    }
+    host.append(el('div', { class: 'scrollx mt8' }, el('table', { 'aria-label': 'Latest contracts' },
+      el('thead', {}, el('tr', {}, el('th', { text: 'Contract' }), el('th', { text: 'Result' }), el('th', { text: 'Reward' }), el('th', { text: 'When' }))), tb)));
+  };
+  draw();
+  window.addEventListener('arsenal:contracts', draw);
+  window.addEventListener('storage', (e) => { if (e.key === K_CONTRACTS) draw(); });
+  return { refresh: draw };
 }
