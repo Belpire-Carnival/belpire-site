@@ -450,6 +450,11 @@ const SV_PRICES = [
 for (const [l, s, p, d] of SV_PRICES) $('#svPrices').append(el('tr', {}, el('td', { text: l }), el('td', { text: s }), el('td', { class: 'num', text: C.fmt(p) }), el('td', { class: 'mono small muted', text: d })));
 $('#svPrices').append(el('tr', {}, el('td', { colspan: '4', class: 'small muted' }, 'Source: timesaver.gg Alpha 4.10 salvage guide, priced on 4.10.0. ', el('a', { href: 'https://timesaver.gg/blog/star-citizen-salvage-guide-alpha-4-10', target: '_blank', rel: 'noopener', text: 'Open source' }))));
 
+// Shared by the Mining and Salvage lines and the live-data code below: these must exist before the first paint.
+const MK = { enabled: false, prices: [], services: [], updatedAt: null, version: null, partial: false, byName: new Map() };
+const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const DAY = 864e5;
+
 // ---------------- MINING ----------------
 const mn = ls.get('mn.inputs', { crew: 1, lines: [{ ore: '', raw: '', yieldPct: '', price: '' }] });
 const mnPlacePaints = [];
@@ -930,9 +935,6 @@ function renderContracts() {
 
 
 // ---------------- LIVE DATA (our own Worker; nothing leaves this origin) ----------------
-const MK = { enabled: false, prices: [], services: [], updatedAt: null, version: null, partial: false, byName: new Map() };
-const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-const DAY = 864e5;
 const tsMs = (t) => (t == null ? null : t < 1e12 ? t * 1000 : t);
 const ago = (iso) => {
   const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
