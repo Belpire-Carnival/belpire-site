@@ -10,6 +10,8 @@ import { openSwap, openDetail } from './builder-holo.js';
 import { icon, meter, ring, pips, duo } from './viz.js';
 import { shipArt, partArt, photo } from './art.js';
 import { lazyPhoto } from './partimg.js';
+import { withMiningGear } from './mining-gear.js';
+import { withGunRates } from './gun-rates.js';
 import { strictPick } from './pick-ui.js';
 import { riskOf } from './risk.js';
 import { simPanel } from './sim-ui.js';
@@ -80,9 +82,9 @@ const riskChip = (r) => el('span', { class: `risk risk-${r.level}`, title: r.not
 const aUEC = (v) => `${Number(v).toLocaleString('en-US')} aUEC`;
 
 const fmt1 = (v) => Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 });
-const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? 0;
-const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive', 'MissileLauncher'];
-const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet', MissileLauncher: 'combat' };
+const sortKey = (p) => p.shield?.hp ?? p.wpn?.burst ?? p.gen ?? p.cool ?? (p.fx ? -(p.fx.resistance || 0) : 0);
+const SYS_TYPES = ['Shield', 'PowerPlant', 'Cooler', 'Radar', 'QuantumDrive', 'JumpDrive', 'MissileLauncher', 'MiningLaser', 'MiningModule', 'SalvageHead', 'SalvageModifier'];
+const SYS_ICON = { Shield: 'combat', PowerPlant: 'ops', Cooler: 'mining', Radar: 'ops', QuantumDrive: 'fleet', JumpDrive: 'fleet', MissileLauncher: 'combat', MiningLaser: 'mining', MiningModule: 'mining', SalvageHead: 'mining', SalvageModifier: 'mining' };
 
 export function initBuilder(host) {
   let data = null;
@@ -361,6 +363,7 @@ export function initBuilder(host) {
     const c = card('', title('log', 'Stock vs your build'), el('div', { class: 'scrollx' }, el('table', { class: 'cmp' },
       el('thead', {}, el('tr', {}, el('th', { text: 'Stat' }), el('th', { class: 'num', text: 'Stock' }), el('th', { class: 'num', text: 'Your build' }), el('th', { class: 'num', text: 'Change' }), el('th', { text: '' }))), body)));
     if (mine.missing) c.append(el('p', { class: 'small muted', text: `${mine.missing} part${mine.missing === 1 ? '' : 's'} not in the catalogue were left out.` }));
+    if (mine.gameGuns) c.append(el('p', { class: 'small muted', text: `Game-data DPS comes from the game's own firing sequences and covers ${mine.gameGuns} of ${mine.guns} gun${mine.guns === 1 ? '' : 's'}; the rest use the wiki figure.${mine.gameUneven ? ` ${mine.gameUneven} gun${mine.gameUneven === 1 ? ' has' : 's have'} fire-rate records that disagree with each other: open the gun's details for both readings.` : ''}` }));
     return c;
   }
 
@@ -598,7 +601,7 @@ export function initBuilder(host) {
       if (!res.ok) throw new Error('bad status');
       const json = await res.json();
       if (!json.ready) { started = false; return message('Ship data is still being collected. Check back in a little while.', true); }
-      data = json;
+      data = await withGunRates(await withMiningGear(json));
       const tidy = tidyShips(data.ships);
       data.ships = tidy.ships;
       hiddenShips = tidy.dropped;

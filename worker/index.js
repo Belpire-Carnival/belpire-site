@@ -17,6 +17,8 @@ import { handleBlueprints, handleBlueprint } from './sc-blueprints.js';
 import { hasGameBlueprints, handleGameList, handleGameOne } from './sc-bpdata.js';
 import { handleZones } from './sc-zones.js';
 import { handleLocations } from './sc-locations.js';
+import { handleMiningGear } from './sc-mining-gear.js';
+import { handleGunRates } from './sc-gun-rates.js';
 import { handleLogin, handleCallback, handleLogout, inviteFor } from './auth.js';
 import { handlePolls, purgeOldBallots } from './polls.js';
 import { handleOddities, purgeStaleUploads } from './oddities.js';
@@ -153,6 +155,14 @@ export default {
     if (pathname === '/api/sc-partimg') {
       const { status, body } = await handlePartImg(url, env);
       return json(body, status, { 'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store' });
+    }
+    if (pathname === '/api/sc-gun-rates') {
+      const { status, body } = handleGunRates();
+      return json(body, status, { 'Cache-Control': 'public, max-age=3600' });
+    }
+    if (pathname === '/api/sc-mining-gear') {
+      const { status, body } = handleMiningGear();
+      return json(body, status, { 'Cache-Control': 'public, max-age=3600' });
     }
     if (pathname === '/api/sc-locations') {
       const { status, body } = handleLocations();
