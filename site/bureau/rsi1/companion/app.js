@@ -10,6 +10,8 @@ import { initDash } from './dash-ui.js';
 import { initLocal } from './local-ui.js';
 import { initBridge } from './bridge.js';
 import { initFleetManager } from './fleet-ui.js';
+import { initItemSearch } from './item-ui.js';
+import { initRockCalc } from './mining-calc-ui.js';
 import { initInventory } from './inv-ui.js';
 import { builderSchema, shipNames, shipRecord } from './catalog.js';
 import { strictPick } from './pick-ui.js';
@@ -82,7 +84,7 @@ const HUBS = [
   { id: 'ops', label: 'OmniOps', icon: 'hubops', blurb: 'Your day at a glance, open contracts and shortcuts.', panes: [['ops', 'Overview'], ['waypoint', 'Waypoint'], ['contracts', 'TacBoard']] },
   { id: 'hangar', label: 'Hangar', icon: 'fleet', blurb: 'Your ships and how they compare.', panes: [['fleet', 'Hangar Command'], ['fleetmgr', 'Fleet Manager'], ['inventory', 'Inventory']] },
   { id: 'plan', label: 'Plan', icon: 'hubplan', blurb: 'What you want, and the blueprints you own.', panes: [['wishlist', 'Wishlist'], ['blueprints', 'Blueprints'], ['fabricator', 'Fabricator'], ['objectives', 'Objectives']] },
-  { id: 'armory', label: 'Armory', icon: 'hubarmory', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix']] },
+  { id: 'armory', label: 'Armory', icon: 'hubarmory', blurb: 'Build ship loadouts, rank weapons and check time-to-kill.', panes: [['calc', 'Avionics Lab'], ['combat', 'Ballistics Matrix'], ['items', 'Item Search']] },
   { id: 'dress', label: 'Dressing Room', icon: 'wardrobe', blurb: 'Dress your character and save ground kits for each mission.', panes: [['wardrobe', 'Wardrobe'], ['loadouts', 'Ground Loadouts']] },
   { id: 'earn', label: 'Earn', icon: 'hubearn', blurb: 'Salvage, mining, trade routes and cargo loading.', panes: [['salvage', 'Slag & Scrape'], ['mining', 'Extraction OS'], ['trade', 'OmniRoute'], ['cargo', 'GridMaster']] },
   { id: 'log', label: 'Log', icon: 'log', blurb: 'Everything you have logged, totalled and sorted.', panes: [['log', 'OmniLog']] },
@@ -450,16 +452,40 @@ $('#svPrices').append(el('tr', {}, el('td', { colspan: '4', class: 'small muted'
 
 // ---------------- MINING ----------------
 const mn = ls.get('mn.inputs', { crew: 1, lines: [{ ore: '', raw: '', yieldPct: '', price: '' }] });
+const mnPlacePaints = [];
 function renderMnLines() {
   const tb = $('#mnLines'); tb.textContent = '';
+  mnPlacePaints.length = 0;
   mn.lines.forEach((L, i) => {
     const mk = (k, type = 'number') => { const x = el('input', { type, step: 'any', min: '0', 'aria-label': k }); if (k === 'ore') x.setAttribute('list', 'oreList'); x.value = L[k] ?? ''; x.addEventListener('input', () => { L[k] = x.value; save(); }); return x; };
     const del = el('button', { class: 'ghost', type: 'button', 'aria-label': 'Remove line', text: '✕' });
     del.addEventListener('click', () => { mn.lines.splice(i, 1); if (!mn.lines.length) mn.lines.push({}); renderMnLines(); save(); });
-    tb.append(el('tr', {}, el('td', {}, mk('ore', 'text')), el('td', {}, mk('raw')), el('td', {}, mk('yieldPct')), el('td', {}, mk('price')), el('td', {}, del)));
+    const oreIn = mk('ore', 'text'), priceIn = mk('price');
+    // Sell at: any place that pays for this ore. Empty means "best live price" when you press Fill sell prices.
+    const dl = el('datalist', { id: `mnAt${i}` });
+    const atIn = el('input', { type: 'text', list: `mnAt${i}`, placeholder: 'Best live', 'aria-label': 'Sell at (place)' });
+    atIn.value = L.at ?? '';
+    const sellsOf = () => (MK.byName.get(norm(L.ore)) || { sells: [] }).sells;
+    const paint = () => { dl.textContent = ''; for (const r of sellsOf().slice(0, 120)) dl.append(el('option', { value: M.placeLabel(r), label: `${C.fmt(r.sell)} aUEC / SCU` })); };
+    paint(); mnPlacePaints.push(paint);
+    oreIn.addEventListener('change', paint);
+    atIn.addEventListener('change', () => {
+      L.at = atIn.value.trim();
+      atIn.removeAttribute('aria-invalid'); atIn.title = '';
+      if (L.at) {
+        const hit = M.findSellPlace(sellsOf(), L.at);
+        if (hit) { L.price = String(hit.row.sell); priceIn.value = L.price; atIn.title = priceNote(hit.row, hit); }
+        else { atIn.setAttribute('aria-invalid', 'true'); atIn.title = 'No place matching that pays for this ore right now.'; toast(L.ore ? `No place matching "${L.at}" pays for ${L.ore} right now` : 'Pick the ore first, then the place'); }
+      }
+      save();
+    });
+    // Typing a price by hand means it no longer comes from a place.
+    priceIn.addEventListener('input', () => { if (L.at) { L.at = ''; atIn.value = ''; atIn.removeAttribute('aria-invalid'); atIn.title = ''; save(); } });
+    tb.append(el('tr', {}, el('td', {}, oreIn), el('td', {}, mk('raw')), el('td', {}, mk('yieldPct')), el('td', {}, atIn, dl), el('td', {}, priceIn), el('td', {}, del)));
   });
   function save() { ls.set('mn.inputs', mn); calcMining(); }
 }
+window.addEventListener('arsenal:market', () => { for (const p of mnPlacePaints) p(); });
 $('#mnAdd').addEventListener('click', () => { mn.lines.push({ ore: '', raw: '', yieldPct: '', price: '' }); renderMnLines(); });
 fields($('#mnFields'), [{ k: 'minutes', label: 'Session time (min)' }, { k: 'crew', label: 'Crew', min: '1', step: '1' },
   { k: 'fee', label: 'Refinery fee' }, { k: 'expenses', label: 'Other costs' }], mn, () => { ls.set('mn.inputs', mn); calcMining(); });
@@ -488,7 +514,7 @@ $('#mnBrief').addEventListener('click', () => {
 // ---------------- TRADE ----------------
 const tr = ls.get('tr.inputs', { capital: '', hold: '', legs: [{}] });
 fields($('#trFields'), [{ k: 'capital', label: 'Starting capital (aUEC)' }, { k: 'hold', label: 'Hold capacity (SCU)', step: '1' }],
-  tr, () => { ls.set('tr.inputs', tr); calcTrade(); });
+  tr, () => { ls.set('tr.inputs', tr); calcTrade(); if (MK.prices.length) renderRoutes(); });
 function renderLegs() {
   const tb = $('#trLegs'); tb.textContent = '';
   tr.legs.forEach((L, i) => {
@@ -666,6 +692,8 @@ tickBDL();
   initLoadouts($('#groundLoadouts'), { toast, copy: copyPlain });
   const readLoadouts = () => { try { const v = JSON.parse(localStorage.getItem('arsenal.loadouts')); return Array.isArray(v) ? v.map(normLoadout) : []; } catch { return []; } };
   initOutfits($('#wardrobe'), { toast, copy: copyPlain, getLoadouts: readLoadouts });
+  initItemSearch($('#itemSearch'));
+  initRockCalc($('#rockCalc'));
   const fm = initFleetManager($('#fleetMgr'), { toast, copy: copyPlain }); if (fm) Store.onChange(() => fm.draw());
 }
 $('#loSave').addEventListener('click', () => { S.settings.loadout = $('#loNotes').value.slice(0, 4000); Store.saveSettings(); toast('Notes saved in this browser'); });
@@ -973,7 +1001,8 @@ function renderRoutes() {
   const systems = M.systemsIn(rows);
   paintSystemTabs(systems);
   const q = norm($('#mkSearch').value);
-  const opts = { q: q.toLowerCase(), avoidHigh: $('#mkSafe').checked };
+  const size = { hold: C.n(tr.hold), capital: C.n(tr.capital) };
+  const opts = { q: q.toLowerCase(), avoidHigh: $('#mkSafe').checked, size: size.hold > 0 || size.capital > 0 ? size : null };
   // Areas: the best three in every system on "All systems", every area of one system otherwise.
   for (const sys of mkSys ? [mkSys] : systems) {
     const board = M.areaBoard(rows, sys, opts);
@@ -985,6 +1014,7 @@ function renderRoutes() {
   $('#mkRunsHead').textContent = mkSys ? `Best runs inside ${mkSys}` : 'Best runs, any system';
   const list = M.bestRuns(rows, { ...opts, system: mkSys }).slice(0, 12);
   if (!list.length) { wrap.append(el('p', { class: 'small muted', text: 'No profitable buy/sell pair found for that search.' })); renderSafeRuns(rows, systems, opts); return; }
+  if (opts.size) wrap.append(el('p', { class: 'small muted m0', text: `Sized to your hold (${C.fmt(opts.size.hold)} SCU) and capital (${money(opts.size.capital)}) from the Route planner below; ranked by profit per trip. Stock and demand come from UEX reports and can be stale.` }));
   wrap.append(runsTable(list));
   renderSafeRuns(rows, systems, opts);
 }
@@ -998,11 +1028,14 @@ function runsTable(list) {
       if (tr.legs.length === 1 && !Object.values(tr.legs[0]).some(Boolean)) tr.legs[0] = leg; else tr.legs.push(leg);
       ls.set('tr.inputs', tr); renderLegs(); toast(r.cross ? 'Leg added. This run crosses systems: check the jump and the price in game' : 'Leg added: check the price in game before you buy');
     });
+    const sized = r.scu != null;
     tb.append(el('tr', {}, el('td', {}, r.commodity, r.cross ? el('span', { class: 'chip warn', text: 'JUMP' }) : null), el('td', { class: 'small' }, where(r.from), el('div', {}, riskChip(r.buyRisk))), el('td', { class: 'num', text: C.fmt(r.from.buy) }),
-      el('td', { class: 'small' }, where(r.to), el('div', {}, riskChip(r.sellRisk))), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }), el('td', {}, runChip(r.risk)), el('td', {}, use)));
+      el('td', { class: 'small' }, where(r.to), el('div', {}, riskChip(r.sellRisk))), el('td', { class: 'num', text: C.fmt(r.to.sell) }), el('td', { class: 'num pay', text: C.fmt(r.margin) }),
+      ...(sized ? [el('td', { class: 'num', text: r.scu ? `${C.fmt(r.scu)} (${r.limit})` : '—' }), el('td', { class: 'num pay', text: C.fmt(r.profit) })] : []), el('td', {}, runChip(r.risk)), el('td', {}, use)));
   }
+  const heads = ['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', ...(list[0]?.scu != null ? ['SCU per trip', 'Profit per trip'] : []), 'Run risk', ''];
   return (el('div', { class: 'scrollx' }, el('table', {},
-    el('thead', {}, el('tr', {}, ...['Commodity', 'Buy at', 'Buy / SCU', 'Sell at', 'Sell / SCU', 'Margin / SCU', 'Run risk', ''].map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 ? 'num' : '', text: h })))), tb)));
+    el('thead', {}, el('tr', {}, ...heads.map((h, i) => el('th', { class: i === 2 || i === 4 || i === 5 || h.endsWith('per trip') ? 'num' : '', text: h })))), tb)));
 }
 
 // PvP-free runs: both the buy end and the sell end are Safe. One short list per system.
@@ -1011,15 +1044,23 @@ function renderSafeRuns(rows, systems, opts) {
   head.textContent = mkSys ? `Best PvP-free runs inside ${mkSys}` : 'Best PvP-free runs, by system';
   box.append(el('p', { class: 'small muted m0', text: 'Both ends are Safe: an armistice zone at the shop and the pad. The flight between them is still open to attack.' }));
   for (const sys of mkSys ? [mkSys] : systems) {
-    const list = M.safeRuns(rows, { q: opts.q, system: sys }).slice(0, mkSys ? 12 : 4);
+    const list = M.safeRuns(rows, { q: opts.q, system: sys, size: opts.size }).slice(0, mkSys ? 12 : 4);
     box.append(el('div', { class: 'lbl mt8', text: sys }));
     if (list.length) box.append(runsTable(list));
     else box.append(el('p', { class: 'small muted m0', text: sys === 'Pyro' ? 'Nothing PvP-free in Pyro: every place there counts as PvP risk.' : `No profitable run between two Safe places in ${sys} right now.` }));
   }
 }
 
-// Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab).
-function sellList(container, pattern, onUse) {
+// Top sell points for commodities matching a pattern, with a "use this price" button (Salvage tab), plus a box to type
+// any place and use its price instead ("Sell at"). The best live price stays the default; typing a place is optional.
+const placeLabel = (r) => M.placeLabel(r);
+const priceNote = (r, hit) => `${C.fmt(r.sell)} aUEC / SCU at ${placeLabel(r)}${r.at ? ', ' + ago(new Date(tsMs(r.at)).toISOString()) : ''}${hit && hit.matches > 1 ? ` (best of ${hit.matches} matches)` : ''}.`;
+function sellsFor(pattern) {
+  const rows = [];
+  for (const [k, c] of MK.byName) if (pattern.test(k)) rows.push(...c.sells);
+  return rows.sort((a, b) => b.sell - a.sell);
+}
+function sellList(container, pattern, onUse, atKey) {
   container.textContent = '';
   const rows = [];
   for (const [k, c] of MK.byName) if (pattern.test(k)) for (const r of c.sells.slice(0, 5)) rows.push({ c: c.name, r });
@@ -1031,10 +1072,32 @@ function sellList(container, pattern, onUse) {
     tb.append(el('tr', {}, el('td', { text: c }), el('td', { class: 'small' }, where(r), ' ', riskChip(M.riskOfRow(r))), el('td', { class: 'num', text: C.fmt(r.sell) }), el('td', {}, use)));
   }
   container.append(el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Commodity' }), el('th', { text: 'Pays at' }), el('th', { class: 'num', text: 'aUEC / SCU' }), el('th'))), tb));
+  // Sell at another place: any terminal, outpost or system that pays for this commodity.
+  const all = sellsFor(pattern);
+  const listId = `${container.id}Places`;
+  const dl = el('datalist', { id: listId });
+  for (const r of all.slice(0, 120)) dl.append(el('option', { value: placeLabel(r), label: `${C.fmt(r.sell)} aUEC / SCU` }));
+  const input = el('input', { type: 'text', class: 'grow', list: listId, placeholder: 'Sell at another place: Port Tressler, Lorville, Pyro…', 'aria-label': 'Sell at another place' });
+  input.value = (atKey && sv[atKey]) || '';
+  const note = el('p', { class: 'small muted m0', role: 'status' });
+  const go = el('button', { type: 'button', class: 'ghost', text: 'Use this place' });
+  const apply = () => {
+    const text = input.value.trim();
+    if (atKey) { sv[atKey] = text; ls.set('sv.inputs', sv); }
+    if (!text) { note.textContent = 'Type a place name, or pick one from the list.'; return; }
+    const hit = M.findSellPlace(all, text);
+    if (!hit) { input.setAttribute('aria-invalid', 'true'); note.textContent = `No place matching "${text}" pays for this right now. Pick one from the list, or type the price yourself.`; return; }
+    input.removeAttribute('aria-invalid');
+    onUse(hit.row.sell);
+    note.textContent = priceNote(hit.row, hit);
+  };
+  go.addEventListener('click', apply);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); apply(); } });
+  container.append(el('div', { class: 'row mt8' }, input, go), dl, note);
 }
 function renderSalvageLive() {
-  sellList($('#svLiveRmc'), /^recycled material composite$|^rmc$/, (p) => { sv.rmcPrice = p; ls.set('sv.inputs', sv); setInputs($('#svFields'), sv, ['rmcPrice']); calcSalvage(); toast('RMC price set'); });
-  sellList($('#svLiveCm'), /^construction materials?$/, (p) => { sv.cmPrice = p; ls.set('sv.inputs', sv); setInputs($('#svFields'), sv, ['cmPrice']); calcSalvage(); toast('Construction Materials price set'); });
+  sellList($('#svLiveRmc'), /^recycled material composite$|^rmc$/, (p) => { sv.rmcPrice = p; ls.set('sv.inputs', sv); setInputs($('#svFields'), sv, ['rmcPrice']); calcSalvage(); toast('RMC price set'); }, 'rmcAt');
+  sellList($('#svLiveCm'), /^construction materials?$/, (p) => { sv.cmPrice = p; ls.set('sv.inputs', sv); setInputs($('#svFields'), sv, ['cmPrice']); calcSalvage(); toast('Construction Materials price set'); }, 'cmAt');
 }
 
 function fillOreList() {
@@ -1044,13 +1107,19 @@ function fillOreList() {
   for (const c of [...MK.byName.values()].sort((a, b) => a.name.localeCompare(b.name))) dl2.append(el('option', { value: c.name }));
 }
 $('#mnLive').addEventListener('click', () => {
-  let hit = 0;
+  let filled = 0, atMissed = 0;
   for (const L of mn.lines) {
     const c = MK.byName.get(norm(L.ore));
-    if (c && c.sells[0]) { L.price = c.sells[0].sell; hit++; }
+    if (!c) continue;
+    const typed = L.at ? M.findSellPlace(c.sells, L.at) : null;
+    if (L.at && !typed) { atMissed++; continue; } // a place was typed but nothing there pays for this ore: leave the price alone
+    const row = typed ? typed.row : c.sells[0];
+    if (row) { L.price = row.sell; filled++; }
   }
   ls.set('mn.inputs', mn); renderMnLines(); calcMining();
-  toast(hit ? `Filled ${hit} price${hit > 1 ? 's' : ''} with the best live sell price` : 'No ore name matched a live commodity. Pick names from the list.');
+  toast(filled || atMissed
+    ? `Filled ${filled} price${filled === 1 ? '' : 's'}${atMissed ? `; ${atMissed} typed place${atMissed === 1 ? '' : 's'} pay nothing for that ore right now` : ''}`
+    : 'No ore name matched a live commodity. Pick names from the list.');
 });
 
 // Patch + network status from the Worker's existing snapshot

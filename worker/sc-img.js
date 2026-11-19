@@ -3,7 +3,7 @@
 // and caches it. Only that host, only plain image paths, only image responses under 3 MB are passed through.
 // GET /api/sc-item?q=<name> searches the wiki API for a weapon, armor piece, clothing item or ship component
 // and returns the few fields the page uses, with the picture path.
-import { MEDIA_HOST, IMG_PATH, WIKI_API, imgPath } from './sc-builder.js';
+import { MEDIA_HOST, IMG_PATH, WIKI_API, imgPath, slimPrices, detailOf } from './sc-builder.js';
 
 const UA = 'BelpireCarnival/1.0 (+https://bureau.belpire.com/rsi1/companion/)';
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -99,10 +99,10 @@ export function weaponStats(it) {
   if (rpmFrom) out.rpmFrom = rpmFrom;
   return out.phys || out.energy ? out : null;
 }
-export function slimItem(it) {
+export function slimItem(it, full = false) {
   if (!it || typeof it !== 'object' || !it.name) return null;
   const s = (v, n) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim().slice(0, n));
-  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it), wpn: weaponStats(it) };
+  return { id: s(it.uuid, 40), name: s(it.name, 80), type: s(it.type, 40), kind: s(it.classification_label || it.type_label, 30), sub: s(it.sub_type ?? it.subtype, 40), cls: s(it.class, 20), mfr: s(it.manufacturer?.name, 40), size: Number.isFinite(Number(it.size)) ? Number(it.size) : null, img: imgPath(it), info: itemInfo(it), wpn: weaponStats(it), ...(full ? { buy: slimPrices(it.uex_prices), detail: detailOf(it) } : {}) };
 }
 
 // What each picker slot may search, as the wiki's own item types. Only these keys are accepted from the page.
@@ -138,7 +138,7 @@ export async function handleItem(url, env, ctx) {
   const seen = new Set();
   const rows = ok.flatMap((r) => (Array.isArray(r.value?.data) ? r.value.data : [])).filter((x) => { const id = x?.uuid || x?.name; if (seen.has(id)) return false; seen.add(id); return true; });
   if (url.searchParams.get('raw') === '1') return { status: 200, body: { raw: rows[0] ?? null, count: rows.length } };
-  return { status: 200, body: { items: rows.map(slimItem).filter(Boolean).slice(0, 12) } };
+  return { status: 200, body: { items: rows.map((r) => slimItem(r, url.searchParams.get('full') === '1')).filter(Boolean).slice(0, 12) } };
 }
 
 const BROWSE_SIZE = 48;

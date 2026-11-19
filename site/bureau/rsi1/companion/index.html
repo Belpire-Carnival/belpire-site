@@ -188,7 +188,7 @@
   <div class="grid g2 mt12">
     <div class="card">
       <h3>4 · Live sell prices <span class="chip ok">UEX</span></h3>
-      <p class="small muted">Top places that pay for each material right now. "Use" fills the price in the run calculator.</p>
+      <p class="small muted">Top places that pay for each material right now. "Use" fills the price in the run calculator, or type any place under the list and use its price instead.</p>
       <h3 class="mt8">Recycled Material Composite</h3><div id="svLiveRmc"></div>
       <h3 class="mt12">Construction Materials</h3><div id="svLiveCm"></div>
     </div>
@@ -223,12 +223,16 @@
 <!-- ================= MINING ================= -->
 <section class="view" id="v-mining" aria-labelledby="h-mining">
   <div class="hero"><div><h2 id="h-mining">Extraction OS</h2><span class="daemon">sys://mining.yield</span><p class="tag">Plan the refinery job, price the ore and log the haul.</p><div class="kpis"><div class="kpi"><div class="lbl">Mining runs</div><div class="val" data-k="mining.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="mining.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="mining.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="mining"></div></div>
-  <div class="grid g2">
+  <div class="card">
+    <h3>Rock breaker</h3>
+    <div id="rockCalc"></div>
+  </div>
+  <div class="grid g2 mt12">
     <div class="card">
       <h3>Refinery job calculator</h3>
-      <p class="small muted">One line per ore. Yield % and fee come from the refinery terminal's estimate for the method you pick. Type an ore name from the list, then "Fill sell prices" uses the best live sell price. Edit any number.</p>
+      <p class="small muted">One line per ore. Yield % and fee come from the refinery terminal's estimate for the method you pick. Type an ore name from the list. "Fill sell prices" uses the best live sell price, or the place you type under Sell at. Edit any number.</p>
       <div id="scan-mining"></div>
-      <div class="table-wrap"><table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th>Sell at</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table></div>
       <div class="row mt8"><button id="mnAdd">Add ore</button><button id="mnLive" class="ghost">Fill sell prices (live)</button><datalist id="oreList"></datalist></div>
       <div class="fields mt12" id="mnFields"></div>
       <div class="out" id="mnOut"></div>
@@ -424,6 +428,11 @@
     <p class="small muted">Open a hangar, station or ship item list and scan it. Each place remembers when you last updated it, because the game has no live inventory feed. Items stay in your browser and in your Discord profile if you are signed in.</p>
     <div id="scan-inv"></div></div>
   <div id="inventoryHost" class="mt12"></div>
+</section>
+
+<section class="view" id="v-items" aria-labelledby="h-items">
+  <div class="hero"><div><h2 id="h-items">Item Search</h2><span class="daemon">sys://armory.items</span><p class="tag">Look up a weapon, armor piece, gadget or ship part: its numbers, whether shops sell it, and where.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="inventory"></div></div>
+  <div id="itemSearch"></div>
 </section>
 
 <section class="view" id="v-fleetmgr" aria-labelledby="h-fleetmgr">

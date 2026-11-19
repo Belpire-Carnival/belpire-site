@@ -32,7 +32,7 @@ export function totals(ship, partsById, overrides = {}) {
   const fitted = Object.entries(resolve(ship, overrides))
     .map(([slotId, partId]) => ({ slot: ship.slots.find((s) => s.id === slotId), part: partsById.get(partId) || null }))
     .filter((x) => x.slot);
-  const missing = fitted.filter((x) => x.slot && !x.part).length;
+  const missing = fitted.filter((x) => x.slot && !x.part && !x.slot.empty).length;
   const parts = fitted.map((x) => x.part).filter(Boolean);
   const weapons = parts.filter((p) => p.wpn);
   return {
@@ -48,6 +48,10 @@ export function totals(ship, partsById, overrides = {}) {
     alpha: Math.round(sum(weapons, (p) => p.wpn.alpha) * 10) / 10,
     mass: sum(parts, (p) => p.mass),
     guns: weapons.length,
+    // Game-derived DPS (from the game's own firing sequences) where it covers the gun, the wiki's burst figure where it does not.
+    gameDps: Math.round(sum(weapons, (p) => p.game?.dps ?? p.wpn.burst) * 10) / 10,
+    gameGuns: weapons.filter((p) => p.game).length,
+    gameUneven: weapons.filter((p) => p.game?.uneven).length,
     missing
   };
 }
@@ -89,8 +93,8 @@ export function upgradeCost(ship, partsById, overrides = {}, now = Date.now()) {
 
 // ---------------------------------------------------------------- labels for the page
 
-export const TYPE_ORDER = ['WeaponGun', 'MissileLauncher', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar'];
-export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars', MissileLauncher: 'Missile racks' };
+export const TYPE_ORDER = ['WeaponGun', 'MissileLauncher', 'Shield', 'PowerPlant', 'Cooler', 'QuantumDrive', 'JumpDrive', 'Radar', 'MiningLaser', 'MiningModule', 'SalvageHead', 'SalvageModifier'];
+export const TYPE_LABEL = { WeaponGun: 'Weapons', Shield: 'Shields', PowerPlant: 'Power plants', Cooler: 'Coolers', QuantumDrive: 'Quantum drives', JumpDrive: 'Jump drives', Radar: 'Radars', MissileLauncher: 'Missile racks', MiningLaser: 'Mining lasers', MiningModule: 'Mining modules', SalvageHead: 'Salvage heads', SalvageModifier: 'Scraper modules' };
 
 // 'hardpoint_shield_generator_l' → 'shield generator l'. A turret gun keeps the turret in its name, so eight
 // guns read 'turret back rear · turret left', not eight identical 'class 2' rows.
@@ -110,6 +114,7 @@ export function partStat(p) {
   if (p.wpn?.burst != null) return `${fmtN(p.wpn.burst)} dps`;
   if (p.gen != null) return `${fmtN(p.gen)} power`;
   if (p.cool != null) return `${fmtN(p.cool)} cooling`;
+  if (p.fxt) return p.fxt;
   return '';
 }
 
@@ -119,7 +124,7 @@ export function partLabel(p) {
 
 // Rows of the totals table: key in totals(), label, whether a bigger number is better.
 export const TOTAL_ROWS = [
-  ['burstDps', 'Burst DPS', true], ['sustainedDps', 'Sustained DPS (60 s)', true], ['alpha', 'Alpha damage', true],
+  ['burstDps', 'Burst DPS', true], ['gameDps', 'Burst DPS (game data)', true], ['sustainedDps', 'Sustained DPS (60 s)', true], ['alpha', 'Alpha damage', true],
   ['shieldHp', 'Shield HP', true], ['shieldRegen', 'Shield regen / s', true],
   ['powerGen', 'Power output (these parts)', true], ['powerDraw', 'Power draw (these parts)', false],
   ['coolGen', 'Cooling output (these parts)', true], ['coolDraw', 'Cooling draw (these parts)', false]
@@ -278,6 +283,10 @@ const SPEC = {
   PowerPlant: [col('gen', 'Power seg.', (p) => p.gen, true, true)],
   Cooler: [col('cool', 'Cooling', (p) => p.cool, true, true)],
   Missile: [col('dmg', 'Damage', (p) => p.msl?.dmg, true, true), col('lock', 'Lock (s)', (p) => p.msl?.lock, false), col('speed', 'Speed m/s', (p) => p.msl?.speed), col('rng', 'Lock range m', (p) => p.msl?.rmax), col('sig', 'Tracking', (p) => p.msl?.sig || null)],
+  MiningLaser: [col('mres', 'Resistance %', (p) => p.fx?.resistance ?? 0, false), col('minst', 'Instability %', (p) => p.fx?.instability ?? 0, false), col('mwin', 'Charge window %', (p) => p.fx?.window ?? 0, true), col('mslots', 'Module slots', (p) => p.moduleSlots)],
+  SalvageHead: [col('sslots', 'Scraper slots', (p) => p.moduleSlots), col('ssize', 'Size', (p) => p.size)],
+  SalvageModifier: [col('sspd', 'Salvage speed', (p) => p.speed, true), col('srad', 'Radius', (p) => p.radius, true), col('seff', 'Recovery %', (p) => Math.round((p.eff || 0) * 100), true)],
+  MiningModule: [col('mres', 'Resistance %', (p) => p.fx?.resistance ?? 0, false), col('minst', 'Instability %', (p) => p.fx?.instability ?? 0, false), col('mwin', 'Charge window %', (p) => p.fx?.window ?? 0, true), col('mchg', 'Charges', (p) => p.charges || null)],
   MissileLauncher: [col('tubes', 'Tubes', (p) => p.rack?.count), col('msize', 'Missile size', (p) => p.rack?.size)]
 };
 const COMMON = [col('size', 'Size', (p) => p.size), col('grade', 'Grade', (p) => p.grade || null), col('pw', 'Power', (p) => p.pw, false), col('cw', 'Heat', (p) => p.cw, false), col('mass', 'Mass', (p) => p.mass, false), col('price', 'aUEC', (p) => cheapest(p)?.price ?? null, false)];
