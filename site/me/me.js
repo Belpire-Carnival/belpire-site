@@ -1,5 +1,5 @@
 // Your Ticket Booth (/me/): what's waiting for you, your Slivers and Sliver coin, the daily punch card,
-// Find the Pea, game-night check-in, the Prize Booth, High Scores and your Sliver ledger. Every outcome is decided by the
+// the Midway's booths, game-night check-in, the Prize Booth, High Scores and your Sliver ledger. Every outcome is decided by the
 // server; this page only shows it.
 (() => {
   const gate = document.getElementById('tb-gate');
@@ -197,7 +197,7 @@
   let peaBusy = false;
   let peaLast = ''; // the last result stays on screen after the table resets
   function pea() {
-    const left = t.games.shell.left;
+    const left = leftOf('find-the-pea');
     $('tb-pea-left').textContent = `${left} ${left === 1 ? 'game' : 'games'} left today`;
     const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [peaLast, left ? (peaLast ? 'Play again?' : 'Pick a shell.') : 'That\'s all for today. The barker reopens at midnight Eastern.'].filter(Boolean).join(' ') });
     const table = el('div', { class: 'tb-shells' });
@@ -232,7 +232,7 @@
       peaLast = r.win ? `Found it! +${tickets(r.amount)}.` : `Not under that one. It was shell ${r.pea + 1}.`;
       msg.textContent = peaLast;
       won(r);
-      t.games.shell.left = r.playsLeft;
+      used('find-the-pea', r.playsLeft);
       wallet();
       announce();
       await new Promise((res) => setTimeout(res, 1600)); // time to see the shells, even with reduced motion
@@ -247,9 +247,10 @@
   let ringsBusy = false;
   let ringsLast = '';
   function rings() {
-    const left = t.games.rings.left;
+    const left = leftOf('ring-toss');
     $('tb-rings-left').textContent = `${left} ${left === 1 ? 'ring' : 'rings'} left today`;
-    const rows = t.rules.ringRows;
+    const odds = gameOf('ring-toss').odds;
+    const rows = Object.fromEntries(['front', 'middle', 'back'].map((row) => [row, { chance: odds[row].at(-1).chance, prize: odds[row].at(-1).pay }]));
     const crate = el('div', { class: 'tb-crate', 'aria-hidden': 'true' });
     const bottles = {};
     for (const row of ['back', 'middle', 'front']) {
@@ -262,7 +263,7 @@
     const buttons = ['front', 'middle', 'back'].map((row) => {
       const b = el('button', { type: 'button', class: 'btn btn-ghost btn-sm tb-row-btn', disabled: !left }, [
         el('strong', { text: `${row[0].toUpperCase()}${row.slice(1)} row` }),
-        el('span', { class: 'meta', text: `${rows[row].odds / 10}% · ${rows[row].prize} Slivers` })
+        el('span', { class: 'meta', text: `${rows[row].chance}% · ${rows[row].prize} Slivers` })
       ]);
       b.addEventListener('click', () => toss(row));
       return b;
@@ -287,7 +288,7 @@
       ringsLast = r.win ? `Clink! A ringer on the ${r.row} row: +${tickets(r.amount)}.` : 'It bounced off the bottle necks.';
       msg.textContent = ringsLast;
       won(r);
-      t.games.rings.left = r.playsLeft;
+      used('ring-toss', r.playsLeft);
       wallet();
       announce();
       await new Promise((res) => setTimeout(res, 1600));
@@ -302,16 +303,16 @@
   let strikerBusy = false;
   let strikerLast = '';
   function striker() {
-    const left = t.games.striker.left;
+    const left = leftOf('high-striker');
     $('tb-striker-left').textContent = `${left} ${left === 1 ? 'swing' : 'swings'} left today`;
     const puck = el('span', { class: 'tb-puck' });
     const bell = el('span', { class: 'tb-bell', text: '🔔' });
     const scale = el('ol', { class: 'tb-scale', reversed: true });
     for (let i = 10; i >= 1; i--) scale.append(el('li', { text: String(i) }));
     const tower = el('div', { class: 'tb-tower', 'aria-hidden': 'true' }, [bell, el('div', { class: 'tb-track' }, puck), scale]);
-    const tiers = el('ul', { class: 'tb-tiers' }, t.rules.strikerTiers.slice().reverse().map((x) => el('li', {}, [
+    const tiers = el('ul', { class: 'tb-tiers' }, gameOf('high-striker').odds.slice().reverse().map((x) => el('li', {}, [
       el('strong', { text: x.label }),
-      el('span', { class: 'meta', text: `${x.heights.length > 1 ? `${x.heights[0]}–${x.heights.at(-1)}` : x.heights[0]} · ${x.prize ? `${x.prize} Slivers` : 'no prize'}` })
+      el('span', { class: 'meta', text: `${x.chance}% · ${x.pay ? `${x.pay} Slivers` : 'no prize'}` })
     ])));
     const msg = el('p', { class: 'tb-pea-msg', role: 'status', text: [strikerLast, left ? (strikerLast ? 'Swing again?' : 'Step up and swing.') : 'Your arms need a rest. Back at midnight Eastern.'].filter(Boolean).join(' ') });
     const btn = el('button', { type: 'button', class: 'btn btn-gold', text: '🔨 Swing the mallet', disabled: !left });
@@ -337,7 +338,7 @@
       strikerLast = r.bell ? `DING DING DING! You rang the bell: +${tickets(r.amount)}.` : `${r.label}! The puck reached ${r.height}.${r.amount ? ` +${tickets(r.amount)}.` : ''}`;
       msg.textContent = strikerLast;
       won(r);
-      t.games.striker.left = r.playsLeft;
+      used('high-striker', r.playsLeft);
       wallet();
       announce();
       await new Promise((res) => setTimeout(res, 1800));
@@ -347,23 +348,161 @@
     $('tb-striker').replaceChildren(el('div', { class: 'tb-striker' }, [tower, el('div', { class: 'tb-striker-side' }, [tiers, btn])]), msg);
   }
 
+  // ---------------------------------------------------------------- The Midway (hub + booth panel)
+  // 25 booths, 4 to 6 open a week (site/midway/rotation.js, the same code the server runs). Find the Pea, Ring Toss and
+  // the High Striker keep their own tables below when open; every other booth plays in the booth panel. The server
+  // rolls every outcome; the panel only shows it.
+
+  const gameOf = (id) => t.midway.games.find((g) => g.id === id);
+  const leftOf = (id) => { const g = gameOf(id); return g && g.isOpen ? g.playsMax - g.playsUsed : 0; };
+  const used = (id, left) => { const g = gameOf(id); g.playsUsed = g.playsMax - left; midway(); };
+  const OWN_TABLE = { 'find-the-pea': 'games', 'ring-toss': 'rings', 'high-striker': 'striker' };
+  const dayName = (key) => new Date(`${key}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+  function midway() {
+    const m = t.midway;
+    const open = m.games.filter((g) => g.isOpen);
+    const shut = m.games.filter((g) => !g.isOpen);
+    const turnover = `The Midway turns over ${dayName(m.rotation.nextRotationDateKey)} at midnight Eastern.`;
+    $('tb-midway-week').textContent = `Week ${m.rotation.week} of ${m.rotation.of} · ${open.length} booths open`;
+    const card = (g) => {
+      const left = g.playsMax - g.playsUsed;
+      const kids = [
+        el('div', { class: 'mw-head' }, [el('h3', { text: g.name }), el('span', { class: g.isOpen ? 'mw-badge' : 'mw-plaque', text: g.isOpen ? 'OPEN' : 'SHUTTERED' })]),
+        el('p', { class: 'meta', text: g.isOpen ? g.blurb : g.closedCopy })
+      ];
+      if (g.isOpen) {
+        kids.push(el('p', { class: 'mw-stats' }, [
+          el('strong', { text: `${left} of ${g.playsMax} ${g.playsMax === 1 ? 'play' : 'plays'} left today` }),
+          el('span', { class: 'meta', text: ` · about ${g.avgPerDay} Slivers a day, up to ${g.maxPerDay}` })
+        ]));
+        const btn = el('button', { type: 'button', class: 'btn btn-gold btn-sm', text: left ? 'Step up' : 'See the odds', 'aria-label': `${left ? 'Play' : 'See the odds for'} ${g.name}` });
+        btn.addEventListener('click', () => (OWN_TABLE[g.id] ? document.getElementById(OWN_TABLE[g.id]).scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth' }) : booth(g.id)));
+        kids.push(el('div', { class: 'btn-row' }, [btn]));
+      }
+      return el('li', { class: `mw-booth ${g.isOpen ? 'open' : 'shut'}` }, kids);
+    };
+    $('tb-midway-open').replaceChildren(...open.map(card));
+    $('tb-midway-shut').replaceChildren(...shut.map(card));
+    $('tb-midway-turnover').textContent = turnover;
+    for (const [id, section] of Object.entries(OWN_TABLE)) document.getElementById(section).hidden = !gameOf(id).isOpen;
+    for (const grid of document.querySelectorAll('.tb-grid[data-midway]')) grid.hidden = [...grid.children].every((c) => c.hidden);
+  }
+
+  // What the stage would show, in words, from the server's visualParams.
+  function describe(g, r) {
+    const v = r.visualParams || {};
+    switch (g.id) {
+      case 'milk-bottle-knockdown': return `${v.knocked} of 6 bottles went down.`;
+      case 'skee-ball': return `The ball dropped into the ${v.points} ring.`;
+      case 'water-gun-race': return `Your balloon finished ${['', '1st', '2nd', '3rd', '4th'][v.place]}.`;
+      case 'whac-a-mole': return `${v.hits} moles whacked${v.golden ? ', including the golden one' : ''}.`;
+      case 'rope-ladder-climb': return v.rung === 10 ? 'You reached the top bell.' : `The ladder flipped you at rung ${v.rung}.`;
+      case 'plinko': return `Dropped in lane ${v.lane}; it landed in slot ${v.slot}.`;
+      case 'big-six': return `The wheel stopped on ${v.wedge === 200 ? 'the jackpot' : v.wedge}.`;
+      case 'duck-pond': return `Duck ${v.duck} had ${{ blank: 'nothing', 'red-dot': 'a red dot', 'silver-star': 'a silver star', 'gold-crown': 'a gold crown' }[v.mark]} underneath.`;
+      case 'coin-pusher': return `Your coin dropped through slot ${v.slot}.`;
+      case 'derby-race': return v.winner === v.lane ? `Horse ${v.lane} by a nose!` : `Horse ${v.winner} won; yours came in ${['', '1st', '2nd', '3rd', '4th'][v.order.indexOf(v.lane) + 1]}.`;
+      case 'hall-of-mirrors': return v.exit === v.mirror ? 'You walked straight through into golden light.' : `Bonk. The way out was mirror ${v.exit}.`;
+      case 'guess-the-jar': return `You guessed ${v.guess}; the jar held ${v.actual}.`;
+      default: return '';
+    }
+  }
+
+  let boothBusy = false;
+  function booth(id) {
+    const g = gameOf(id);
+    const dlg = $('mw-dialog');
+    let pick = null;
+    const msg = el('p', { class: 'tb-pea-msg', role: 'status' });
+    const leftLine = el('p', { class: 'meta' });
+    const btn = el('button', { type: 'button', class: 'btn btn-gold', text: 'Play' });
+    const refresh = () => {
+      const left = g.playsMax - g.playsUsed;
+      leftLine.textContent = `${left} of ${g.playsMax} ${g.playsMax === 1 ? 'play' : 'plays'} left today${g.sweep ? '. Hit the top prize on all 3 plays today for a 50-Sliver sweep bonus.' : '.'}`;
+      btn.disabled = !left || boothBusy || (g.choice?.required && pick === null);
+      if (!left) msg.textContent ||= 'That\'s all for today. Back at midnight Eastern.';
+    };
+    const odds = el('table', { class: 'mw-odds' }, [
+      el('thead', {}, el('tr', {}, [el('th', { scope: 'col', text: 'Result' }), el('th', { scope: 'col', text: 'Chance' }), el('th', { scope: 'col', text: 'Slivers' })])),
+      el('tbody', {}, g.odds.slice().reverse().map((o) => el('tr', {}, [el('td', { text: o.label }), el('td', { text: `${o.chance}%` }), el('td', { text: String(o.pay) })])))
+    ]);
+    const kids = [el('h2', { id: 'mw-dialog-h', text: g.name }), el('p', { class: 'meta', text: g.blurb }), odds, leftLine];
+    if (g.choice) {
+      const label = el('p', { class: 'mw-choice-label', text: `${g.choice.label}${g.choice.required ? '' : ' (just for show; the odds are the same)'}` });
+      if (g.choice.options) {
+        const opts = g.choice.options.map((o) => {
+          const b = el('button', { type: 'button', class: 'btn btn-ghost btn-sm mw-opt', 'aria-pressed': 'false', text: o });
+          b.addEventListener('click', () => {
+            pick = pick === o && !g.choice.required ? null : o;
+            for (const x of opts) x.setAttribute('aria-pressed', String(x.textContent === pick));
+            refresh();
+          });
+          return b;
+        });
+        kids.push(label, el('div', { class: 'mw-opts', role: 'group', 'aria-label': g.choice.label }, opts));
+      } else {
+        const input = el('input', { type: 'number', id: 'mw-guess', min: String(g.choice.range[0]), max: String(g.choice.range[1]), step: '1', inputmode: 'numeric' });
+        input.addEventListener('input', () => {
+          const n = Number(input.value);
+          pick = Number.isInteger(n) && n >= g.choice.range[0] && n <= g.choice.range[1] ? String(n) : null;
+          refresh();
+        });
+        kids.push(el('div', { class: 'field' }, [el('label', { for: 'mw-guess', text: `${g.choice.label} (${g.choice.range[0]}–${g.choice.range[1]})` }), input]));
+      }
+    }
+    btn.addEventListener('click', async () => {
+      if (boothBusy) return;
+      boothBusy = true;
+      refresh();
+      msg.textContent = 'The barker takes your Sliver…';
+      try {
+        const [r] = await Promise.all([api(`/api/midway/play/${g.id}`, pick === null ? {} : { choice: pick }), sleep(700)]);
+        const what = describe(g, r);
+        msg.textContent = `${r.label}. ${what ? `${what} ` : ''}${r.totalPayout ? `+${tickets(r.totalPayout)}${r.sweepBonus ? ` (with the ${r.sweepBonus}-Sliver sweep bonus!)` : ''}.` : 'No prize this time.'}`;
+        won(r);
+        g.playsUsed = r.playsUsed;
+        wallet();
+        announce();
+        midway();
+      } catch (err) {
+        msg.textContent = err.message;
+        if (err.status === 403) load();
+      }
+      boothBusy = false;
+      refresh();
+    });
+    const close = el('button', { type: 'button', class: 'btn btn-ghost btn-sm mw-close', text: 'Leave the booth' });
+    close.addEventListener('click', () => dlg.close());
+    kids.push(el('div', { class: 'btn-row' }, [btn, close]), msg);
+    dlg.replaceChildren(el('div', { class: 'mw-dialog-body' }, kids));
+    refresh();
+    dlg.showModal();
+  }
+
   // ---------------------------------------------------------------- Prize Booth
 
   function prizes() {
     const list = $('tb-prize-list');
     list.replaceChildren();
-    const waiting = new Set(t.orders.filter((o) => o.status === 'pending').map((o) => o.prize));
+    const waiting = {};
+    for (const o of t.orders) if (o.status === 'pending') waiting[o.prize] = (waiting[o.prize] || 0) + 1;
+    const LOCKED = { pending: 'Pending approval', gate: (p) => `Needs the ${p.gateCoin} coin`, soldout: 'Sold out this quarter', member: 'You\'ve had your share this quarter' };
     for (const p of t.prizes) {
       const short = t.wallet.balance < p.cost;
-      const li = el('li', { class: 'tb-prize' });
+      const full = (waiting[p.id] || 0) >= p.limit;
+      const locked = p.locked ? (typeof LOCKED[p.locked] === 'function' ? LOCKED[p.locked](p) : LOCKED[p.locked]) : null;
+      const li = el('li', { class: `tb-prize${p.locked ? ' locked' : ''}` });
       const head = el('div', { class: 'tb-prize-head' }, [el('strong', { text: p.name }), el('span', { class: 'tb-cost', text: `🎟 ${p.cost.toLocaleString()}` })]);
+      const off = Boolean(locked) || short || full;
       const btn = el('button', {
-        type: 'button', class: short || waiting.has(p.id) ? 'btn btn-ghost btn-sm' : 'btn btn-gold btn-sm',
-        text: waiting.has(p.id) ? 'Waiting for a Ringleader' : short ? `${(p.cost - t.wallet.balance).toLocaleString()} more to go` : 'Redeem',
-        disabled: short || waiting.has(p.id)
+        type: 'button', class: off ? 'btn btn-ghost btn-sm' : 'btn btn-gold btn-sm',
+        text: locked || (full ? 'Waiting for a Ringleader' : short ? `${(p.cost - t.wallet.balance).toLocaleString()} more to go` : 'Redeem'),
+        disabled: off
       });
       btn.addEventListener('click', () => openRedeem(p, li, btn));
-      li.append(head, el('p', { class: 'meta', text: p.blurb }), el('div', { class: 'btn-row' }, [btn]));
+      const stock = p.left != null && !p.locked ? el('p', { class: 'meta', text: `${p.left} of ${p.cap} left this quarter · the booth restocks on ${t.prizeResets}` }) : null;
+      li.append(head, el('p', { class: 'meta', text: p.blurb }), stock, el('div', { class: 'btn-row' }, [btn]));
       list.append(li);
     }
     const mine = t.orders;
@@ -385,7 +524,7 @@
     let input = null;
     if (p.needs === 'note') {
       input = el('input', { type: 'text', id: `tb-note-${p.id}`, maxlength: '200', required: true, autocomplete: 'off' });
-      form.append(el('div', { class: 'field' }, [el('label', { for: input.id, text: p.id === 'name-color' ? 'Which colour?' : p.id === 'pin-oddity' ? 'Which oddity? (its title)' : 'Your pick' }), input]));
+      form.append(el('div', { class: 'field' }, [el('label', { for: input.id, text: p.noteLabel || 'Your pick' }), input]));
     }
     if (p.needs === 'game') {
       input = el('select', { id: `tb-game-${p.id}`, required: true }, [el('option', { value: '', text: 'Choose a game…' })]);
@@ -476,9 +615,10 @@
     wallet();
     punchCard();
     show();
-    if (!peaBusy) pea();
-    if (!ringsBusy) rings();
-    if (!strikerBusy) striker();
+    midway();
+    if (!peaBusy && gameOf('find-the-pea').isOpen) pea();
+    if (!ringsBusy && gameOf('ring-toss').isOpen) rings();
+    if (!strikerBusy && gameOf('high-striker').isOpen) striker();
     prizes();
     scores();
     history();

@@ -121,6 +121,41 @@
     ]);
   }
 
+  // The quarterly Golden Ticket drawing: each entry is one chance; drawing picks one winner and closes every entry.
+  function drawPanel(drawing, doubles) {
+    const status = el('p', { class: 'odd-review-status', role: 'status' });
+    const btn = el('button', { type: 'button', class: 'btn btn-gold', text: 'Draw the winner', disabled: !drawing.entries });
+    let armed = false;
+    btn.addEventListener('click', async () => {
+      if (!armed) {
+        armed = true;
+        btn.textContent = 'Click again to draw now';
+        setTimeout(() => { armed = false; btn.textContent = 'Draw the winner'; }, 4000);
+        return;
+      }
+      armed = false;
+      btn.disabled = true;
+      try {
+        const r = await api('/api/tickets/draw', {});
+        status.textContent = `${r.winner} won, out of ${r.entries} ${r.entries === 1 ? 'entry' : 'entries'} from ${r.players} ${r.players === 1 ? 'member' : 'members'}. They've been told by DM. Sort out their $25 gift card.`;
+        setTimeout(load, 1500);
+      } catch (err) {
+        status.textContent = err.message;
+        btn.disabled = false;
+      }
+      btn.textContent = 'Draw the winner';
+    });
+    return el('div', { class: 'panel' }, [
+      el('div', { class: 'panel-head' }, [el('h2', { text: 'Golden Ticket drawing' })]),
+      el('p', { class: 'meta', text: drawing.entries
+        ? `${drawing.entries} ${drawing.entries === 1 ? 'entry' : 'entries'} from ${drawing.players} ${drawing.players === 1 ? 'member' : 'members'} so far. Draw at the end of the quarter; the winner gets a $25 gift card.`
+        : 'No entries yet. Members buy entries at the Prize Booth, up to 5 each per quarter.' }),
+      el('p', { class: 'meta', text: doubles ? `${doubles} Double ${doubles === 1 ? 'Night is' : 'Nights are'} waiting. The next game night uses one up on its own, and only one runs per night.` : 'No Double Nights waiting.' }),
+      el('div', { class: 'btn-row' }, [btn]),
+      status
+    ]);
+  }
+
   function scoresPanel(ready) {
     const status = el('p', { class: 'odd-review-status', role: 'status' });
     const btn = el('button', { type: 'button', class: 'btn btn-ghost', text: 'Post the High Scores now', disabled: !ready });
@@ -172,6 +207,7 @@
         el('div', { class: 'panel-head' }, [el('h2', { text: `Orders waiting (${d.orders.length})` })]),
         d.orders.length ? list : el('p', { class: 'gn-note', text: 'Nobody at the counter.' })
       ]),
+      drawPanel(d.drawing || { entries: 0, players: 0 }, d.doubleNights || 0),
       give,
       scores
     );

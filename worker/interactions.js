@@ -10,11 +10,16 @@ import { pollConfig, sendOpenPost } from './polls.js';
 import { handleAlpha, isAlphaInteraction } from './alpha.js';
 import { pollStore } from './poll-db.js';
 import { PRIZES, prizeById } from './prizes.js';
-import { punch, playShell, playRings, swingStriker, checkIn, redeem, award, awardEveryone, summary, highScores, concession, ticketsText, RULES, TicketError } from './tickets.js';
+import { GAMES, play as playBooth, midwayState, MidwayError } from './midway.js';
+import { punch, playShell, playRings, swingStriker, checkIn, redeem, shelf, award, awardEveryone, summary, highScores, concession, ticketsText, RULES, TicketError } from './tickets.js';
 
 const EPHEMERAL = 64;
 const enc = new TextEncoder();
 const PEA_SHELLS = ['🥫', '🥫', '🥫'];
+const ringRow = (row) => {
+  const [, ringer] = GAMES['ring-toss'].rows[row];
+  return `${ringer[2] / 10}% · ${ringer[3]} Slivers`;
+};
 
 export const COMMANDS = [
   { name: 'slivers', description: 'Your Slivers: balance, streak and rank', type: 1 },
@@ -26,12 +31,18 @@ export const COMMANDS = [
   {
     name: 'ring-toss', description: 'Toss a ring at the bottles: near rows are easier, far rows pay more', type: 1,
     options: [{ type: 3, name: 'row', description: 'Which row?', required: true, choices: [
-      { name: `Front (${RULES.ringRows.front.odds / 10}% · ${RULES.ringRows.front.prize} Slivers)`, value: 'front' },
-      { name: `Middle (${RULES.ringRows.middle.odds / 10}% · ${RULES.ringRows.middle.prize} Slivers)`, value: 'middle' },
-      { name: `Back (${RULES.ringRows.back.odds / 10}% · ${RULES.ringRows.back.prize} Slivers)`, value: 'back' }
+      ...['front', 'middle', 'back'].map((row) => ({ name: `${row[0].toUpperCase()}${row.slice(1)} (${ringRow(row)})`, value: row }))
     ] }]
   },
   { name: 'high-striker', description: 'Swing the mallet. Ring the bell for the jackpot', type: 1 },
+  { name: 'midway', description: 'Which Midway booths are open this week, and your plays left today', type: 1 },
+  {
+    name: 'play', description: 'Play any Midway booth that\'s open this week', type: 1,
+    options: [
+      { type: 3, name: 'booth', description: 'Which booth?', required: true, choices: Object.entries(GAMES).map(([value, g]) => ({ name: g.name, value })) },
+      { type: 3, name: 'pick', description: 'If the booth asks: shell 1–3, row front/middle/back, horse or mirror 1–4, jar guess 100–500…', required: false, max_length: 6 }
+    ]
+  },
   {
     name: 'concession', description: 'The Concession Tent: spend Slivers on a snack', type: 1,
     options: [
@@ -46,7 +57,7 @@ export const COMMANDS = [
     name: 'redeem', description: 'Spend Slivers at the Prize Booth', type: 1,
     options: [
       { type: 3, name: 'prize', description: 'Which prize?', required: true, choices: PRIZES.map((p) => ({ name: `${p.name} (${p.cost})`, value: p.id })) },
-      { type: 3, name: 'note', description: 'What you want (which oddity, which colour…)', required: false, max_length: 200 }
+      { type: 3, name: 'note', description: 'What you want (which game, what to draw, your title…)', required: false, max_length: 200 }
     ]
   },
   { name: 'poll', description: 'Ringleaders: post the open game-night poll to #general again', type: 1 },
@@ -141,6 +152,18 @@ async function run(env, interaction, ctx) {
       const left = r.playsLeft ? `${r.playsLeft} ${r.playsLeft === 1 ? 'swing' : 'swings'} left today.` : 'That\'s all your swings for today.';
       return reply(`🔨 *WHAM!* ${meter} ${r.bell ? '🔔 **DING DING DING!**' : `**${r.label}**`}${r.amount ? ` +${ticketsText(r.amount)}.` : '.'} Balance: ${ticketsText(r.balance)}. ${left}`);
     }
+    case 'midway': {
+      const st = await midwayState(env, uid);
+      const open = st.games.filter((g) => g.isOpen).map((g) => `• **${g.name}**: ${g.playsMax - g.playsUsed} of ${g.playsMax} ${g.playsMax === 1 ? 'play' : 'plays'} left today · about ${g.avgPerDay} Slivers a day`);
+      return reply(`🎪 **This week on the Midway** (week ${st.rotation.week} of ${st.rotation.of}):\n${open.join('\n')}\n${st.games.length - open.length} booths are shuttered until the Midway turns over on Monday ${st.rotation.nextRotationDateKey} at midnight Eastern. Play with \`/play\` or at ${site}`);
+    }
+    case 'play': {
+      const id = String(opt(data, 'booth') || '');
+      const r = await playBooth(env, uid, name, id, opt(data, 'pick'));
+      const g = GAMES[id];
+      const left = r.playsLeft ? `${r.playsLeft} ${r.playsLeft === 1 ? 'play' : 'plays'} left today.` : `That's all your ${g.name} for today.`;
+      return reply(`🎪 **${g.name}**: ${r.label}${r.totalPayout ? `, **+${ticketsText(r.totalPayout)}**${r.sweepBonus ? ` (with a ${r.sweepBonus}-Sliver sweep bonus!)` : ''}.` : '. No prize this time.'} Balance: ${ticketsText(r.balance)}. ${left}`);
+    }
     case 'checkin': {
       const r = await checkIn(env, uid, name);
       return reply(`🎪 You're checked in to **${r.show}**. ${r.earned ? `+${ticketsText(r.earned)} now, and` : 'You'} earn ${RULES.attendPerCheck} every 10 minutes you're in The Main Stage (up to ${r.cap} a show; ${r.paid} so far).`);
@@ -158,8 +181,11 @@ async function run(env, interaction, ctx) {
       const curds = r.curdsAllTime ? ` That's order **#${r.curdsAllTime}** of curds.` : '';
       return reply(`${r.icon} ${r.line}${curds}${tail}`);
     }
-    case 'prizes':
-      return reply(`🎁 **The Prize Booth**\n${PRIZES.map((p) => `• **${p.name}**: ${ticketsText(p.cost)}. ${p.blurb}`).join('\n')}\nRedeem with \`/redeem\` or at ${site}`);
+    case 'prizes': {
+      const mark = (p) => (p.locked === 'pending' ? ' (pending approval)' : p.locked === 'gate' ? ` (needs ${p.gateCoin})` : p.locked === 'soldout' ? ' (sold out this quarter)' : p.locked === 'member' ? ' (you\'ve had your share this quarter)' : p.left != null ? ` (${p.left} left this quarter)` : '');
+      const items = await shelf(env, uid, (await summary(env, uid)).lifetime);
+      return reply(`🎁 **The Prize Booth**\n${items.map((p) => `• **${p.name}**: ${ticketsText(p.cost)}${mark(p)}. ${p.blurb}`).join('\n')}\nRedeem with \`/redeem\` or at ${site}`);
+    }
     case 'redeem': {
       const prize = prizeById(opt(data, 'prize'));
       if (prize?.needs === 'game') return reply(`🗳️ Picking a game needs the list, so redeem **${prize.name}** at ${site}`);
@@ -235,7 +261,7 @@ export async function handleInteraction(request, env, ctx) {
   try {
     return await run(env, interaction, ctx);
   } catch (err) {
-    if (err instanceof TicketError) return reply(`🎪 ${err.message}`);
+    if (err instanceof TicketError || err instanceof MidwayError) return reply(`🎪 ${err.message}`);
     console.error(`Interaction error: ${err.stack || err.message}`);
     return reply('🎪 The ticket booth jammed. Try again in a moment.');
   }
