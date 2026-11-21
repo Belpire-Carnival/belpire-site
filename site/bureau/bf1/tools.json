@@ -1,0 +1,35 @@
+{
+  "_readme": "Reference links shown in this division's Quartermaster. Edit freely: url must be https; kind is one of official, wiki, map, web, app, overlay, bureau.",
+  "categories": [
+    {
+      "name": "Intel",
+      "blurb": "Stats, overlays and official news for Battlefield 6.",
+      "tools": [
+        {
+          "name": "Battlefield Tracker",
+          "url": "https://tracker.gg/bf6",
+          "kind": "web",
+          "description": "Battlefield 6 stats by mode, class, weapon, gadget, map and vehicle, plus sessions and leaderboards."
+        },
+        {
+          "name": "Tracker desktop overlay",
+          "url": "https://tracker.gg/bf6/desktop-app",
+          "kind": "overlay",
+          "description": "In-game overlay to check your own stats or look up a squadmate."
+        },
+        {
+          "name": "EA Help",
+          "url": "https://help.ea.com/",
+          "kind": "official",
+          "description": "Account help, known issues and server notices from EA."
+        },
+        {
+          "name": "Battlefield 6 on Steam",
+          "url": "https://store.steampowered.com/news/app/2807960",
+          "kind": "official",
+          "description": "Official patch notes and news, the same feed as Bureau Patches."
+        }
+      ]
+    }
+  ]
+}

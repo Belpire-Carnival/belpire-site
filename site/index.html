@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Belpire Carnival — Multiplayer horror &amp; party games</title>
+  <meta name="description" content="The Belpire Carnival is a community for multiplayer horror and party games. Join us on Discord.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Belpire Carnival">
+  <meta property="og:title" content="Belpire Carnival">
+  <meta property="og:description" content="A community for multiplayer horror and party games. Step right up.">
+  <meta property="og:url" content="https://belpire.com/">
+  <meta property="og:image" content="https://belpire.com/og/home.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Belpire Carnival: a striped big-top tent under marquee lights">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0E0B10">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/cinzel-decorative-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header.css">
+  <link rel="stylesheet" href="/fx.css">
+  <script type="module" src="/app.js"></script>
+  <script src="/oddities.js" defer></script>
+  <script src="/live.js" defer></script>
+  <script src="/account.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body>
+  <div class="stripe" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="#top">BELPIRE</a>
+      <div class="nav-links">
+        <a href="#midway">The Midway</a>
+        <a class="nav-bureau" href="https://bureau.belpire.com/">The Bureau <span class="nav-tag">[TCC]</span></a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/">The Big Tent</a>
+        <a href="/oddities/">Oddities</a>
+        <a href="#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm acct-signin" data-account href="/auth/login?return=/me/">Sign in</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <div class="hero-stage">
+      <div class="stage-sky" aria-hidden="true"></div>
+      <div class="beams" aria-hidden="true"><span class="beam beam-l"></span><span class="beam beam-r"></span></div>
+      <svg class="bunting" viewBox="0 0 1300 70" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 18 Q650 60 1300 18" fill="none" stroke="#5A4A52" stroke-width="2"/>
+        <g class="bunting-flags"><path d="M20 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M100 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M180 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M260 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M340 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M420 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M500 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M580 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M660 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M740 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M820 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M900 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M980 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M1060 24 l40 0 l-20 34z" fill="#D9B26A"/><path d="M1140 18 l40 0 l-20 34z" fill="#7A1625"/><path d="M1220 24 l40 0 l-20 34z" fill="#D9B26A"/></g>
+      </svg>
+      <svg class="bigtop" viewBox="0 0 1200 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <defs>
+          <clipPath id="bigtop-roof"><path d="M600 40 C520 120 380 170 170 210 L1030 210 C820 170 680 120 600 40Z"/></clipPath>
+          <linearGradient id="bigtop-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A0F15"/><stop offset="1" stop-color="#0E0B10"/></linearGradient>
+        </defs>
+        <line x1="600" y1="40" x2="600" y2="4" stroke="#5A4A52" stroke-width="4"/>
+        <path class="bigtop-flag" d="M602 6 L640 15 L602 24Z" fill="#7A1625"/>
+        <g clip-path="url(#bigtop-roof)">
+          <rect x="150" y="30" width="900" height="190" fill="#1E1118"/>
+          <path d="M600 40 L250 220 L330 220Z M600 40 L410 220 L490 220Z M600 40 L570 220 L630 220Z M600 40 L710 220 L790 220Z M600 40 L870 220 L950 220Z" fill="#2A1119"/>
+        </g>
+        <path d="M170 210 Q215 238 260 210 Q305 238 350 210 Q395 238 440 210 Q485 238 530 210 Q575 238 620 210 Q665 238 710 210 Q755 238 800 210 Q845 238 890 210 Q935 238 980 210 Q1005 228 1030 210" fill="#2A1119" stroke="#3A2028" stroke-width="2"/>
+        <rect x="200" y="220" width="800" height="120" fill="url(#bigtop-fade)"/>
+        <path class="bigtop-door" d="M560 340 L560 270 Q600 236 640 270 L640 340Z" fill="#05040A"/>
+        <g class="bigtop-lights">
+          <circle cx="260" cy="214" r="3"/><circle cx="350" cy="214" r="3"/><circle cx="440" cy="214" r="3"/><circle cx="530" cy="214" r="3"/>
+          <circle cx="620" cy="214" r="3"/><circle cx="710" cy="214" r="3"/><circle cx="800" cy="214" r="3"/><circle cx="890" cy="214" r="3"/><circle cx="980" cy="214" r="3"/>
+        </g>
+      </svg>
+      <div class="fog fog-a" aria-hidden="true"></div>
+      <div class="fog fog-b" aria-hidden="true"></div>
+      <section class="wrap hero">
+      <div class="bulbs" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="eyebrow">THE BELPIRE CARNIVAL</p>
+      <h1 class="neon" data-text="Step right up.">Step right up.</h1>
+      <p class="lede">A community for multiplayer horror and party games. Grab a ticket, pick a tent, and play something that screams back.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" data-discord href="/join/">Get your ticket on Discord</a>
+        <a class="btn btn-ghost" href="/big-tent/">See game nights</a>
+      </div>
+      </section>
+    </div>
+
+    <section class="band" aria-labelledby="admit">
+      <div class="wrap">
+        <h2 id="admit" class="center">Admit one</h2>
+        <div class="tickets">
+          <div class="ticket">
+            <p class="ticket-no">TICKET 01</p>
+            <h3>Join the Discord</h3>
+            <p>One click and you're through the gates.</p>
+          </div>
+          <div class="ticket">
+            <p class="ticket-no">TICKET 02</p>
+            <h3>Read the rules</h3>
+            <p>Stop by the Welcome Zone. Accepting the rules unlocks the rest of the grounds.</p>
+          </div>
+          <div class="ticket">
+            <p class="ticket-no">TICKET 03</p>
+            <h3>Pick your tent</h3>
+            <p>Grab the roles for the games you play and get pinged when a lobby opens.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section-tents" aria-labelledby="tents-h">
+      <h2 id="tents-h">Pick a tent</h2>
+      <p class="muted" id="tent-blurb">Everything playing at the Belpire Carnival.</p>
+      <div class="tent-filter" role="group" aria-label="Filter games by category">
+        <button type="button" data-tent="all" aria-pressed="true">All games</button>
+        <button type="button" data-tent="horror" aria-pressed="false">Horror Tent</button>
+        <button type="button" data-tent="party" aria-pressed="false">Party Tent</button>
+        <button type="button" data-tent="other" aria-pressed="false">The Sideshow</button>
+      </div>
+      <form class="game-search" id="game-search-form" role="search" autocomplete="off">
+        <label for="game-search">Find a game</label>
+        <div class="search-row">
+          <div class="combo">
+            <input id="game-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="game-suggestions" placeholder="Search patch notes and upcoming games" spellcheck="false" enterkeyhint="search">
+            <ul id="game-suggestions" class="suggestions" role="listbox" aria-label="Matching games" hidden></ul>
+          </div>
+          <button type="submit" class="btn btn-gold search-go">Search</button>
+          <button type="button" class="btn btn-ghost search-clear" id="search-clear" hidden>Clear</button>
+        </div>
+        <p class="muted small search-status" id="search-status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="midway" class="wrap section" aria-labelledby="upcoming-h">
+      <div class="section-head">
+        <h2 id="upcoming-h">Coming to the Carnival</h2>
+        <p class="muted">Upcoming games on Steam</p>
+      </div>
+      <div class="card-grid" id="upcoming-list" aria-live="polite"></div>
+    </section>
+
+    <section class="wrap section section-tight" aria-labelledby="favs-h">
+      <div class="section-head">
+        <h2 id="favs-h">Carnival Favorites</h2>
+        <p class="muted">Latest patches &amp; news for the games we play</p>
+      </div>
+      <div class="news-list" id="favorites-list" aria-live="polite"></div>
+      <p class="muted small" id="feed-updated"></p>
+    </section>
+
+    <!-- Sideshow attractions: dedicated pages for games with their own crowd -->
+    <section id="attractions" class="wrap section section-tight" aria-labelledby="attractions-h">
+      <div class="section-head">
+        <h2 id="attractions-h">Sideshow Attractions</h2>
+        <p class="muted">Dedicated tents for the games with their own crowd</p>
+      </div>
+      <div class="card-grid">
+        <a class="attraction attraction-bureau" href="https://bureau.belpire.com/">
+          <span class="badge badge-other">TCC</span>
+          <h3>The Bureau of Finality</h3>
+          <p>The crew&rsquo;s multi-game org. Star Citizen server status, Comm-Link news and the pilots&rsquo; Toolbox now live in its Star Citizen division.</p>
+          <span class="attraction-cta">Report to HQ</span>
+        </a>
+        <a class="attraction" href="/jackbox/">
+          <span class="badge badge-party">PARTY</span>
+          <h3>Jackbox Night</h3>
+          <p>Sixty-two games across fourteen boxes. Spin for tonight's pick and catch the latest patches.</p>
+          <span class="attraction-cta">Step inside</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Game nights live on their own page: site/big-tent/ -->
+    <section id="nights" class="band" aria-labelledby="nights-h">
+      <div class="wrap section-inner bigtent-teaser">
+        <h2 id="nights-h">The Big Tent</h2>
+        <p class="muted">Game nights live under the big top. Members rank the lineup, the top four take the stage, and the date lands in Discord under Events.</p>
+        <a class="btn btn-gold" href="/big-tent/">Step into the Big Tent</a>
+      </div>
+    </section>
+
+    <!-- Drop images into site/assets/oddities/ and replace the placeholders -->
+    <section id="oddities" class="wrap section" aria-labelledby="odd-h" data-oddities="showcase">
+      <div class="section-head">
+        <h2 id="odd-h">Hall of Oddities</h2>
+        <p class="muted">Clips, screams and screenshots from the crowd</p>
+      </div>
+      <section class="odd-wing" aria-labelledby="odd-pics-h">
+        <div class="odd-wing-head">
+          <h3 id="odd-pics-h" class="odd-wing-title">The Gallery of Grotesques</h3>
+          <p class="muted small">Screenshots from the crowd, hung in gilded frames</p>
+        </div>
+        <div class="odd-grid" id="odd-pictures"><p class="muted odd-empty">Hanging the portraits…</p></div>
+      </section>
+      <section class="odd-wing" aria-labelledby="odd-clips-h">
+        <div class="odd-wing-head">
+          <h3 id="odd-clips-h" class="odd-wing-title">The Scream Reel</h3>
+          <p class="muted small">Clips from the crowd. Hover to preview, click for sound</p>
+        </div>
+        <div class="odd-grid odd-grid-clips" id="odd-clips"><p class="muted odd-empty">Threading the projector…</p></div>
+      </section>
+      <div class="show-more-row">
+        <a class="btn btn-gold" href="/oddities/">Enter the Hall of Oddities</a>
+      </div>
+    </section>
+
+    <section id="ringleaders" class="band" aria-labelledby="ring-h">
+      <div class="wrap section-inner">
+        <h2 id="ring-h" class="center">Your Ringleaders</h2>
+        <div class="ringleaders">
+          <article class="ringleader" data-slot="0">
+            <div class="avatar"><img src="/ringleaders/ringmaster.webp" width="112" height="112" alt="" loading="lazy" decoding="async"></div>
+            <p class="role">RINGMASTER</p>
+            <h3>𓄿 Synister 𓄿</h3>
+            <p>Cracks the whip, calls the game nights and keeps the tents standing. The sane one under the big top… right up until the main event, when the carnie's flask goes missing and so does his good judgment.</p>
+          </article>
+          <article class="ringleader" data-slot="1">
+            <div class="avatar"><img src="/ringleaders/ringmistress.webp" width="112" height="112" alt="" loading="lazy" decoding="async"></div>
+            <p class="role">RINGMISTRESS</p>
+            <h3>Nightartist</h3>
+            <p>Rules the crowd with a fanged grin and never lets a lobby leave unscathed. Between acts she haunts the Concession Tent, where the cheese curds don't stand a chance.</p>
+          </article>
+          <article class="ringleader" data-slot="2">
+            <div class="avatar"><img src="/ringleaders/carnival-guard.webp" width="112" height="112" alt="" loading="lazy" decoding="async"></div>
+            <p class="role">CARNIVAL GUARD</p>
+            <h3>Drepulic</h3>
+            <p>Guards the gates and counts every vote. The moment the polls close, he's the first to kill the lights, and if a closet door creaks open in the dark, he's already inside.</p>
+          </article>
+          <article class="ringleader" data-slot="3">
+            <div class="avatar"><img src="/ringleaders/fortune-teller.webp" width="112" height="112" alt="" loading="lazy" decoding="async"></div>
+            <p class="role">FORTUNE TELLER</p>
+            <h3>VodNCran</h3>
+            <p>When she isn't reading palms or turning tarot cards in her tent, she spreads good vibes and peace while horror and chaos unfold around us. Do you dare step into the Fortune Teller's tent?</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing">
+      <h2>The tents are open.</h2>
+      <p>Come in, find a lobby, and bring a friend you don't mind losing.</p>
+      <a class="btn btn-gold" data-discord href="/join/">Join the Belpire Carnival</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© <span id="year">2026</span> Belpire Carnival</span>
+      <span>Game data from Steam. Not affiliated with Valve.</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

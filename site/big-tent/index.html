@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Big Tent — Belpire Carnival</title>
+  <meta name="description" content="Belpire game nights: members rank the lineup, and upcoming nights in The Main Stage.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Belpire Carnival">
+  <meta property="og:title" content="The Big Tent — Belpire Carnival">
+  <meta property="og:description" content="Game night polls: rank the lineup, or spin the Wheel of Doom.">
+  <meta property="og:url" content="https://belpire.com/big-tent/">
+  <meta property="og:image" content="https://belpire.com/og/big-tent.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Big Tent: the Belpire Usher in his ticket booth">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#0E0B10">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/cinzel-decorative-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header.css">
+  <link rel="stylesheet" href="/fx.css">
+  <link rel="stylesheet" href="/big-tent/gn.css">
+  <script type="module" src="/big-tent/gn.js"></script>
+  <script src="/big-tent/passes.js" defer></script>
+  <script src="/live.js" defer></script>
+  <script src="/account.js" defer></script>
+  <script src="/fx.js" defer></script>
+</head>
+<body>
+  <div class="scene" data-scene="bigtop" aria-hidden="true"></div>
+  <div class="stripe" aria-hidden="true"></div>
+  <header class="site-header">
+    <nav class="wrap nav" aria-label="Main">
+      <a class="wordmark" href="/">BELPIRE</a>
+      <div class="nav-links">
+        <a href="/#midway">The Midway</a>
+        <a class="nav-bureau" href="https://bureau.belpire.com/">The Bureau <span class="nav-tag">[TCC]</span></a>
+        <a href="/jackbox/">Jackbox</a>
+        <a href="/big-tent/" aria-current="page">The Big Tent</a>
+        <a href="/oddities/">Oddities</a>
+        <a href="/#ringleaders">Ringleaders</a>
+        <a class="btn btn-gold btn-sm acct-signin" data-account href="/auth/login?return=/me/">Sign in</a>
+      </div>
+    </nav>
+  </header>
+
+  <section class="ticker" id="gn-ticker" aria-label="On the bill at The Big Tent" hidden>
+    <div class="ticker-bulbs" aria-hidden="true"></div>
+    <div class="ticker-window">
+      <span class="ticker-tag" id="gn-ticker-tag" aria-hidden="true">ON THE BILL</span>
+      <div class="ticker-track" id="gn-ticker-track" aria-hidden="true"></div>
+      <ul class="visually-hidden" id="gn-ticker-sr"></ul>
+    </div>
+    <div class="ticker-bulbs" aria-hidden="true"></div>
+  </section>
+  <div class="wrap ticker-tools" id="gn-ticker-tools" hidden></div>
+
+  <main class="wrap gn">
+    <header class="gn-head">
+      <p class="eyebrow">GAME NIGHTS UNDER THE BIG TOP</p>
+      <h1 class="neon" data-text="The Big Tent">The Big Tent</h1>
+      <p class="lede">Members rank their top four. The four games with the most points become the lineup, and the night goes up in Discord under Events.</p>
+    </header>
+
+    <section id="passes" class="gn-passes" aria-labelledby="passes-h" hidden></section>
+
+    <div id="gn-app" class="gn-app" aria-live="polite">
+      <p class="gn-note">Opening the ballot box…</p>
+    </div>
+
+    <details class="gn-how">
+      <summary>How the votes are counted</summary>
+      <p>Your first pick earns a game 4 points, your second 3, your third 2 and your fourth 1. You can rank just one game if that's all you want to play. Ties go to the game with more first-place votes. You can change your ballot until voting closes, and nobody sees the standings until then.</p>
+      <p>Feeling daring? The <strong>Wheel of Doom</strong> spins four times over the horror, party and Jackbox games on the ballot and fills in your vote for you. Its picks count exactly like a normal ballot, but they lock in. No take-backs.</p>
+    </details>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <span>© 2026 Belpire Carnival</span>
+      <span><a href="/privacy/">Privacy Policy</a> · <a href="/terms/">Terms of Use</a></span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"></div>
+</body>
+</html>

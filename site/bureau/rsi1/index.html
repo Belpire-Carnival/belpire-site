@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Star Citizen [DIV_RSI1] — Bureau of Finality</title>
+  <meta name="description" content="The Bureau of Finality's Star Citizen division (FINTAC): live server status, Comm-Link news, the pilots' Toolbox, and freight, bounty and black-site contracts. Casual, PvE-first, recruiting.">
+  <link rel="canonical" href="https://bureau.belpire.com/rsi1/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bureau of Finality">
+  <meta property="og:title" content="Star Citizen [DIV_RSI1] — Bureau of Finality">
+  <meta property="og:description" content="The Bureau of Finality's Star Citizen division (FINTAC): live server status, Comm-Link news, the pilots' Toolbox, and freight, bounty and black-site contracts. Casual, PvE-first, recruiting.">
+  <meta property="og:url" content="https://bureau.belpire.com/rsi1/">
+  <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Bureau of Finality crest over the division's battle scene">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#060C1E">
+  <link rel="icon" href="../crest.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/cinzel-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="../bureau.css">
+  <link rel="preload" href="../img/scene-rsi1.webp" as="image" imagesrcset="../img/scene-rsi1-600.webp 600w, ../img/scene-rsi1.webp 1200w" imagesizes="max(100vw, 1100px)">
+  <script src="../fx.js" defer></script>
+  <script src="sc.js" defer></script>
+</head>
+<body class="division" data-division="rsi1">
+  <a class="skip" href="#operations">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap top-row">
+      <a class="brand" href="../"><span class="brand-text">The Bureau of Finality</span> <span class="brand-sid">[ FINTAC ]</span></a>
+      <nav class="top-nav" aria-label="On this page">
+        <a href="#operations">Operations</a>
+        <a href="#comm-array">Comm Array</a>
+        <a href="#theatre">Theatre</a>
+        <a href="#quartermaster">Quartermaster</a>
+        <a href="companion/">Companion</a>
+      </nav>
+      <a class="btn btn-gold btn-sm" href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">Enlist<span class="visually-hidden"> (opens a new tab)</span></a>
+    </div>
+    <nav class="divs" aria-label="Divisions">
+      <div class="wrap divs-row">
+        <a class="div-tab" href="./" aria-current="page"><span class="div-game">Star Citizen</span> <span class="div-code">[DIV_RSI1]</span></a>
+        <a class="div-tab" href="../se1/"><span class="div-game">Helldivers</span> <span class="div-code">[DIV_SE1]</span></a>
+        <a class="div-tab" href="../bf1/"><span class="div-game">Battlefield</span> <span class="div-code">[DIV_BF1]</span></a>
+        <a class="div-tab" href="../tc1/"><span class="div-game">Tom Clancy</span> <span class="div-code">[DIV_TC1]</span></a>
+        <a class="div-tab" href="../ds1/"><span class="div-game">Destiny</span> <span class="div-code">[DIV_DS1]</span></a>
+        <a class="div-tab" href="../sq1/"><span class="div-game">Command Center</span> <span class="div-code">[DIV_SQ1]</span></a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-art" id="top" aria-labelledby="hero-h">
+      <div class="stage" data-scene="rsi1">
+        <img class="art" src="../img/scene-rsi1.webp" srcset="../img/scene-rsi1-600.webp 600w, ../img/scene-rsi1.webp 1200w" sizes="max(100vw, 1100px)" width="1200" height="804" alt="" fetchpriority="high">
+        <canvas id="fx" aria-hidden="true"></canvas>
+        <div class="art-crest">
+          <div class="emblem-halo" aria-hidden="true"></div>
+          <img class="emblem-img" src="../img/crest-720.webp" srcset="../img/crest-360.webp 360w, ../img/crest-720.webp 720w" sizes="(max-width: 600px) 45vw, 360px" width="720" height="803" alt="The Bureau of Finality crest">
+          <span class="emblem-shine" aria-hidden="true"></span>
+        </div>
+        <div class="art-copy">
+          <h1 id="hero-h">Star Citizen</h1>
+          <p class="art-sub">[ DIV_RSI1 <b>//</b> ERA III // THE ORBITAL EXPANSION ]</p>
+          <p class="art-motto" lang="la">Finem Ultimum Nos Afferimus</p>
+        </div>
+      </div>
+      <div class="art-cta">
+        <a class="btn btn-navy" href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Enlist on Spectrum<span class="visually-hidden"> (opens a new tab)</span></a>
+        <a class="btn btn-ghost" href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">Org page on RSI<span class="visually-hidden"> (opens a new tab)</span></a>
+      </div>
+    </section>
+
+    <section class="brief-band" aria-label="Division at a glance">
+      <div class="wrap">
+        <p class="stamps"><span class="stamp stamp-classified">[DIV_RSI1]</span><span class="stamp">SECTOR // STANTON</span><span class="stamp stamp-live"><span class="blip" aria-hidden="true"></span>Recruiting</span></p>
+        <p class="brief">Era III of the Historical Record: when humanity reached for the stars, the Bureau went with it, reorganized into heavy-escort fleets and long-haul logistics on the UEE&rsquo;s outer frontier. Freight, bounty contracts and black-site raids, seen through to the end.</p>
+        <dl class="specs">
+          <div><dt>Org SID</dt><dd>FINTAC</dd></div>
+          <div><dt>Type</dt><dd>Private military company</dd></div>
+          <div><dt>Focus</dt><dd>Bounty hunting &middot; Transport</dd></div>
+          <div><dt>Commitment</dt><dd>Casual</dd></div>
+          <div><dt>Language</dt><dd>English</dd></div>
+        </dl>
+      </div>
+    </section>
+    <section id="operations" class="section wrap" aria-labelledby="ops-h">
+      <header class="sec-head">
+        <p class="kicker"><span>01</span> Contracts</p>
+        <h2 id="ops-h">Operations</h2>
+      </header>
+      <div class="ops">
+        <article class="op hud"><p class="op-code">OP-01</p><h3>Freight &amp; logistics</h3><p>Cargo runs and convoy hauling across the &rsquo;verse. The payload gets there.</p></article>
+        <article class="op hud"><p class="op-code">OP-02</p><h3>Bounty contracts</h3><p>Mercenary work against the people who earned the price on their heads.</p></article>
+        <article class="op hud"><p class="op-code">OP-03</p><h3>Black-site raids</h3><p>Clearing underground facilities, Onyx sites included. In, objective, out.</p></article>
+        <article class="op hud"><p class="op-code">OP-04</p><h3>Tactical PvE</h3><p>Facility security and combined operations for clients who need something held.</p></article>
+      </div>
+    </section>
+
+    <section id="comm-array" class="band" aria-labelledby="comm-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>02</span> Uplink to the &rsquo;verse</p>
+          <h2 id="comm-h">The Comm Array</h2>
+          <p class="sec-lede">Live from Roberts Space Industries: whether the &rsquo;verse is up, and what Command just transmitted.</p>
+        </header>
+        <div class="tabs" role="tablist" aria-label="Comm Array channels" hidden>
+          <button class="tab" type="button" role="tab" id="tab-status" aria-controls="panel-status" aria-selected="true"><span class="tab-ch">CH-1</span> Network Status</button>
+          <button class="tab" type="button" role="tab" id="tab-feed" aria-controls="panel-feed" aria-selected="false" tabindex="-1"><span class="tab-ch">CH-2</span> Comm-Link Feed</button>
+        </div>
+        <div class="tab-panel" id="panel-status" role="tabpanel" aria-labelledby="tab-status">
+          <div class="panel-bar">
+            <h3 class="sub-h">Network Status</h3>
+            <a class="sec-link" href="https://status.robertsspaceindustries.com/" target="_blank" rel="noopener">Official status page<span class="visually-hidden"> (opens a new tab)</span></a>
+          </div>
+          <div class="summary hud" id="summary" role="status" aria-live="polite">
+            <span class="dot" aria-hidden="true"></span><span id="summary-text">Checking the &rsquo;verse&hellip;</span>
+          </div>
+          <div class="systems" id="systems"></div>
+          <h4 class="sub-h sub-h-sm">Incidents</h4>
+          <div class="incidents" id="incidents"></div>
+        </div>
+        <div class="tab-panel" id="panel-feed" role="tabpanel" aria-labelledby="tab-feed">
+          <div class="panel-bar">
+            <h3 class="sub-h">Comm-Link Feed</h3>
+            <a class="sec-link" href="https://robertsspaceindustries.com/comm-link" target="_blank" rel="noopener">All Comm-Links on RSI<span class="visually-hidden"> (opens a new tab)</span></a>
+          </div>
+          <div class="news-grid" id="news-list" aria-live="polite"></div>
+        </div>
+        <p class="muted small" id="updated"></p>
+      </div>
+    </section>
+
+    <section id="theatre" aria-labelledby="theatre-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>03</span> Field notes</p>
+          <h2 id="theatre-h">The theatre</h2>
+          <p class="sec-lede">How DIV_RSI1 runs a contract, and how to get on the next one. The creed and rules of engagement are at <a href="../#conduct">Bureau HQ</a>.</p>
+        </header>
+        <div class="two">
+          <div class="panel hud">
+            <h3>On a contract</h3>
+            <ul class="marks">
+              <li class="dot">Every op has a Squad Leader. Their call is final until the contract closes.</li>
+              <li class="dot">Pilots, haulers, medics and boots on the ground count the same.</li>
+              <li class="dot">Heavy freight rides with escorts; nobody hauls alone into a contested lane.</li>
+              <li class="dot">Interdicted or contested at the objective? Answer with overwhelming force, then back to the mission.</li>
+              <li class="dot">Payouts and salvage are split fairly across everyone who flew.</li>
+            </ul>
+          </div>
+          <div class="panel hud">
+            <h3>Reporting in</h3>
+            <ol class="report">
+              <li><b>Get an RSI account.</b> A free Roberts Space Industries account is all it takes.</li>
+              <li><b>Join FINTAC.</b> Through <a href="https://robertsspaceindustries.com/spectrum/community/FINTAC" target="_blank" rel="noopener">Spectrum<span class="visually-hidden"> (opens a new tab)</span></a> or the <a href="https://robertsspaceindustries.com/en/orgs/FINTAC" target="_blank" rel="noopener">org page<span class="visually-hidden"> (opens a new tab)</span></a>. Casual commitment, PvE first.</li>
+              <li><b>Find your squad.</b> Ops are called in the <a href="https://discord.gg/TFuBufcFB7" target="_blank" rel="noopener">Bureau Discord<span class="visually-hidden"> (opens a new tab)</span></a>.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools list lives in tools.json beside this page -->
+    <section id="quartermaster" class="band" aria-labelledby="qm-h">
+      <div class="wrap section">
+        <header class="sec-head">
+          <p class="kicker"><span>04</span> Supply &amp; refit</p>
+          <h2 id="qm-h">The Quartermaster</h2>
+          <p class="sec-lede">Kit issued to every pilot before launch: the community tools DIV_RSI1 flies with.</p>
+        </header>
+        <p><a class="btn btn-gold" href="companion/">Open the Citizen Arsenal companion</a> <span class="muted small">Live prices, salvage, mining, trade and cargo planners, contracts board, VerseTime.</span></p>
+        <div id="tool-categories"></div>
+        <p class="muted small tools-disclaimer">These are independent community projects, not run by the Bureau, Belpire or Cloud Imperium. Downloads change files on your PC, so only use the official links above, and use them at your own discretion.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-col">
+      <img src="../img/crest-96.webp" width="96" height="107" alt="" loading="lazy">
+      <p>The Bureau of Finality deploys with the <a href="https://belpire.com/">Belpire Carnival</a>. <a href="../">Back to Bureau HQ</a>.</p>
+      <p class="fine">This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users is property of its respective owners. Status and Comm-Link information comes from robertsspaceindustries.com.</p>
+      <p class="fine"><a href="https://belpire.com/privacy/">Privacy Policy</a> &middot; <a href="https://belpire.com/terms/">Terms of Use</a></p>
+    </div>
+  </footer>
+</body>
+</html>

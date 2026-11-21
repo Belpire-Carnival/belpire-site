@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FinTac OmniGlass // Companion OS</title>
+  <meta name="description" content="The Bureau of Finality's Star Citizen companion: live commodity prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime. Unofficial fan tool.">
+  <link rel="canonical" href="https://bureau.belpire.com/rsi1/companion/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bureau of Finality">
+  <meta property="og:title" content="FinTac OmniGlass // Companion OS">
+  <meta property="og:description" content="Live prices, salvage, mining, trade and cargo planners, a contracts board and VerseTime for Star Citizen pilots.">
+  <meta property="og:url" content="https://bureau.belpire.com/rsi1/companion/">
+  <meta property="og:image" content="https://belpire.com/og/bureau-rsi1.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Bureau of Finality crest over the division's battle scene">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#03070D">
+  <link rel="icon" href="omniglass.svg" type="image/svg+xml">
+  <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/chakra-petch-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="companion.css">
+  <script src="app.js" type="module"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="brand">
+    <div class="id">
+      <svg class="mark" aria-hidden="true" focusable="false" viewBox="0 0 64 64" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg"><g stroke="#e6edf3" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 8 27.8 12.8V25M32 8l4.2 4.8V25M27.8 12.8 32 16.8l4.2-4"/><path d="M32 16.8V25"/><path d="M27.5 41v10.6L32 56.8l4.5-5.2V41M27.5 51.6 32 47l4.5 4.6M32 47V42"/><path d="M15 17.8v-3.1h3.1M46 14.7h3.4v3.1M15 46.2v3.1h3.1M49.4 46.2v3.1H46"/><path d="M42.5 21.4 38 25.8M13.5 38 10 41.5M20 36.5 24 33" opacity="0"/></g><g stroke="#f59e0b" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round"><path d="M32 21.9 41.8 31.9 32 42 22.3 31.9Z"/><path d="M32 26.9 37.2 31.9 32 36.9 26.9 31.9Z"/><path d="M14.7 31.9 20.3 25.5H26M38 25.5h5.4l6 6.4M14.7 31.9l11.6 13.4M49.4 31.9 37.7 45.3M14.7 31.9h7.6M41.8 31.9h7.6M20.3 25.5l2 6.4M43.4 25.5l-1.6 6.4"/></g><g stroke="#e6edf3" stroke-width="1" stroke-linecap="round"><circle cx="43" cy="19.9" r="3.1" stroke-dasharray="3 2.4"/><path d="M43 15.3v2M43 22.5v2M38.4 19.9h2M45.6 19.9h2"/></g><circle cx="43" cy="19.9" r="1.1" fill="#f59e0b"/><circle cx="44.8" cy="44.8" r="1" fill="#f59e0b"/><path d="M18 21l2 2M22 18.5l1 1.2M26 17.5l.6 1" stroke="#f59e0b" stroke-width="1" stroke-linecap="round" fill="none"/><path d="M48.2 38.2v3.6M50.2 38.9v2.8M46.5 40.2v1.6" stroke="#e6edf3" stroke-width=".9" stroke-linecap="round" fill="none"/></svg>
+      <div><h1>FINTAC OMNIGLASS</h1><span class="sub">Bureau Tactical Systems · DIV_RSI1</span></div>
+    </div>
+    <div class="motto"><b>Finem Ultimum Nos Afferimus.</b><span class="sys-state" id="sysState">[ KERNEL: checking // LINK: connecting ]</span></div>
+    <button type="button" id="menuBtn" class="menubtn" aria-expanded="false" aria-controls="menuPanel"><span class="mb-now" id="menuNow">Menu</span><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
+  </div>
+  <div id="menuPanel" class="menupanel">
+  <nav id="nav" aria-label="Modules" hidden></nav>
+  <div class="vt" aria-label="VerseTime">
+    <div><div class="lbl">Body</div>
+      <select id="vtBody" aria-label="Celestial body" class="vt-sel"></select></div>
+    <div><div class="lbl">Local time <span id="vtCal" class="chip warn" title="Phase not calibrated">UNCAL</span></div><div class="val" id="vtClock">—</div></div>
+    <div><div class="lbl">Cycle</div><div class="val" id="vtPhase">—</div></div>
+    <div><div class="lbl">Next</div><div class="val" id="vtNext">—</div></div>
+    <div><div class="lbl">Day length</div><div class="val" id="vtLen">—</div></div>
+    <div class="vt-wide"><div class="lbl">Calibrate</div>
+      <div class="row mt2"><button id="vtMark" title="Press when you see sunrise in game at your location">Sunrise now</button><button id="vtReset" class="ghost">Reset</button></div></div>
+  </div>
+  <div class="rail-foot">
+    <a class="small" href="../">&larr; Back to the division</a>
+  </div>
+  </div>
+</header>
+
+<main id="main" class="app">
+<div id="subtabs" class="subtabs" role="navigation" aria-label="Sections" hidden></div>
+
+<!-- ================= OPS ================= -->
+<section class="view" id="v-ops" aria-labelledby="h-ops">
+  <div class="hero"><div><h2 id="h-ops">OmniOps</h2><span class="daemon">sys://ops.telemetry</span><p class="tag">Your day at a glance: earnings, a pre-launch checklist and the state of the verse.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs logged</div><div class="val" data-k="ops.runs">—</div></div><div class="kpi"><div class="lbl">Lifetime net</div><div class="val" data-k="ops.net">—</div></div><div class="kpi"><div class="lbl">Average per hour</div><div class="val" data-k="ops.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="ops"></div></div>
+  <div class="card accent mt12"><h3>OmniGlass Desktop</h3>
+    <p class="small muted">A Windows app that reads your own Game.log and sends what happens in the game straight here: blueprints you receive, contracts, missions and ship losses. It never touches game memory. It only changes game files if you switch on the optional Field Notes, and that can be rolled back. Link it with a one-time code, and unlink it any time.</p>
+    <div id="desktopLink"></div></div>
+  <div class="card accent mt12" id="localGame"></div>
+  <div class="card mt12" id="opsContracts"></div>
+  <div class="card mt12" id="opsRep"></div>
+  <div class="grid g3">
+    <div class="card accent"><h3>Today</h3><div class="stat-big" id="opsToday">0 aUEC</div><div class="muted small" id="opsTodaySub">No runs logged today</div></div>
+    <div class="card accent"><h3>Last 7 days</h3><div class="stat-big" id="opsWeek">0 aUEC</div><div class="muted small" id="opsWeekSub">—</div></div>
+    <div class="card accent"><h3>Best rate</h3><div class="stat-big" id="opsBest">—</div><div class="muted small" id="opsBestSub">Log runs with a duration to see aUEC/hour</div></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Where things live</h3><div class="hubmap" id="opsMap"></div></div>
+    <div class="card"><h3>Next objective</h3><div id="opsObjective"></div></div>
+    <div class="card accent"><h3>Your hangar</h3><div id="opsHangar"></div></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Last 14 days <span class="muted small">net aUEC per day</span></h3><div id="opsChart"></div></div>
+    <div class="card"><h3>By activity <span class="muted small">net aUEC, all time</span></h3><div id="opsMix"></div></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Before you launch</h3>
+      <ul class="check" id="preflight"></ul>
+    </div>
+    <div class="card"><h3>Live status &amp; data</h3>
+      <p class="small"><span id="rsiState" class="chip">RSI services: checking</span></p>
+      <p class="small muted" id="mkLine">Checking live prices…</p>
+      <h3 class="mt12">Latest Comm-Links</h3>
+      <ul class="tight small" id="newsList"></ul>
+      <div class="table-wrap"><table class="mt8"><tbody id="opsLinks"></tbody></table></div>
+    </div>
+  </div>
+  <details class="fold mt12"><summary>About these prices</summary><div class="note info">Prices marked <span class="chip ok">LIVE</span> come from UEX, which is community-submitted: a number can be hours old or wrong. Check it in game before you spend. Anything marked <span class="chip">SNAPSHOT</span> is a dated reference. Everything you enter here is saved in this browser, and to your own profile if you sign in with Discord.</div></details>
+  
+</section>
+
+<!-- ================= PLAN ================= -->
+<section class="view" id="v-wishlist" aria-labelledby="h-wishlist">
+  <div class="hero"><div><h2 id="h-wishlist">Wishlist</h2><span class="daemon">sys://plan.wishlist</span><p class="tag">Ships, components, weapons, armor and blueprints you are after, in priority order.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="wishlist"></div></div>
+  <div class="card"><h3>What you want</h3>
+    <p class="small muted">Everything here is typed by you. Blueprints you add on the Blueprints tab appear here too, and tick themselves off once an Item Fabricator scan shows you own them.</p>
+    <div id="wishlist"></div></div>
+</section>
+
+<section class="view" id="v-blueprints" aria-labelledby="h-blueprints">
+  <div class="hero"><div><h2 id="h-blueprints">Blueprints</h2><span class="daemon">sys://plan.blueprints</span><p class="tag">The crafting blueprints your character owns, imported from the Item Fabricator.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="blueprints"></div></div>
+  <div class="card"><h3>Import from the Item Fabricator</h3>
+    <p class="small muted">The fabricator only lists what your character can craft, so a scan is the source of truth for what you own. Blueprints stay with your account through death. They are not consumed when you craft.</p>
+    <div id="scan-fab"></div></div>
+  <div class="note info mt12">Using OmniGlass Desktop? Blueprints you receive in the game are added here by themselves. Link the app in OmniOps.</div>
+  <div class="card mt12"><h3>Your blueprints</h3><div id="blueprintList"></div></div>
+  <div class="card mt12"><h3>Every blueprint <span class="muted small">against what you own</span></h3>
+    <p class="small muted">The full list for the current build, with the recipe and craft time. Open one to see which missions unlock it.</p>
+    <div id="blueprintCatalog"></div></div>
+  <div class="note info mt12">Your own list is only as current as your last scan. Where a blueprint comes from changes between patches: check the in-game mission rewards before you chase one.</div>
+</section>
+
+<section class="view" id="v-objectives" aria-labelledby="h-objectives">
+  <div class="hero"><div><h2 id="h-objectives">Objectives</h2><span class="daemon">sys://plan.objectives</span><p class="tag">Blueprints you are chasing and the materials you still need to gather, with progress.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="objectives"></div></div>
+  <div class="card"><h3>What you are working towards</h3>
+    <p class="small muted">Track a blueprint to unlock, or send a craft's shopping list here from the Fabricator and tick off materials as you collect them. Saved in this browser, and on your profile when you are signed in.</p>
+    <div id="objectives"></div></div>
+</section>
+
+<section class="view" id="v-fabricator" aria-labelledby="h-fabricator">
+  <div class="hero"><div><h2 id="h-fabricator">Fabricator</h2><span class="daemon">sys://plan.fabricator</span><p class="tag">Pick a blueprint, set the quality of each material and see what it does to the item you craft.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="fabricator"></div></div>
+  <div class="card"><h3>Craft planner</h3>
+    <p class="small muted">Open any blueprint from the Blueprints tab, or search for it here. Quality runs from 1 to 1000; the game files give each stat a low and a high multiplier across that range.</p>
+    <div id="fabricatorHost"></div></div>
+</section>
+
+<!-- ================= CONTRACTS ================= -->
+<section class="view" id="v-contracts" aria-labelledby="h-contracts">
+  <div class="hero"><div><h2 id="h-contracts">TacBoard</h2><span class="daemon">sys://contracts.scan</span><p class="tag">Scan a contract from your FinTac OmniGlass, check it, and keep every open job in one place.</p><div class="kpis"><div class="kpi"><div class="lbl">Open contracts</div><div class="val" data-k="contracts.open">—</div></div><div class="kpi"><div class="lbl">Open payout</div><div class="val" data-k="contracts.payout">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="contracts"></div></div>
+  <div class="card">
+    <p class="small muted mt0">Screenshot any contract in your FinTac OmniGlass (hauling, salvage, mining, bounty, mercenary, delivery, investigation, anything) and scan it. An AI model reads the payout, cargo, routes, deadline and requirements; you check them, then add the contract to your board. A list screen with several contracts works too.</p>
+    <div id="scan-contracts"></div>
+    <div class="out" id="ctTotals"></div>
+    <div class="row mt10">
+      <label class="f inline">Show <select id="ctFilter"><option value="open">Open</option><option value="all">All</option><option value="done">Done</option></select></label>
+      <button class="primary" id="ctManual">Add contract</button>
+    </div>
+    <div class="grid g2 mt12" id="ctList"></div>
+  </div>
+</section>
+
+<!-- ================= SALVAGE ================= -->
+<section class="view" id="v-salvage" aria-labelledby="h-salvage">
+  <div class="hero"><div><h2 id="h-salvage">Slag &amp; Scrape</h2><span class="daemon">sys://salvage.refinery</span><p class="tag">Hull scraping, structural salvage and refining, with live sell points.</p><div class="kpis"><div class="kpi"><div class="lbl">Salvage runs</div><div class="val" data-k="salvage.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="salvage.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="salvage.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="salvage"></div></div>
+  <div class="card accent mb12"><details class="fold"><summary>Field guide: how the salvage loop works</summary>
+    <p><b>The loop:</b> hull-scrape wrecks into <b>Recycled Material Composite (RMC)</b>, then optionally fracture and disintegrate the hull into raw construction material. Since Alpha 4.3.2 that raw material must be <b>refined</b> into <b>Construction Materials</b> before it sells. The grade you get depends on ship class: <b>Rubble</b> (light salvage: fastest refining, lowest yield), <b>Pieces</b>, then <b>Salvage</b>.</p>
+    <p class="small muted m0">Sources: RSI Salvage &amp; Repair guide (Comm-Link 19070), starcitizen.tools Salvage, timesaver.gg 4.10 guide.</p>
+  </details></div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3>1 · Platform</h3>
+      <div class="pick" id="svShips"></div>
+      <div id="svShipNote" class="note" hidden></div>
+      <h3 class="mt14">Scraper head</h3>
+      <div class="pick" id="svHeads"></div>
+      <p class="small muted mt8">Hold capacities and beam stats are not listed here because they change per patch. Check them on <a href="https://www.spviewer.eu/" target="_blank" rel="noopener">SPViewer</a> or <a href="https://www.erkul.games/" target="_blank" rel="noopener">Erkul</a>.</p>
+    </div>
+
+    <div class="card">
+      <h3>2 · Run checklist</h3>
+      <ul class="check" id="svChecklist"></ul>
+      <div class="row mt8"><button class="ghost" id="svCheckReset">Reset checklist</button></div>
+    </div>
+  </div>
+
+  <div class="card mt12">
+    <h3>3 · Run calculator</h3>
+    <p class="small muted">Enter what you hauled and the prices your terminal shows. Get the refinery yield from the refinery terminal's job estimate.</p>
+    <div id="scan-salvage"></div>
+    <div class="fields" id="svFields"></div>
+    <div class="out" id="svOut"></div>
+    <div class="row mt12">
+      <input id="svNotes" placeholder="Notes (wreck, location, shard…)" class="grow">
+      <button class="primary" id="svLog">Log run</button>
+      <button id="svBrief">Adjutant briefing</button>
+    </div>
+    <textarea class="copybox" id="svBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+
+  <div class="grid g2 mt12">
+    <div class="card">
+      <h3>4 · Live sell prices <span class="chip ok">UEX</span></h3>
+      <p class="small muted">Top places that pay for each material right now. "Use" fills the price in the run calculator, or type any place under the list and use its price instead.</p>
+      <h3 class="mt8">Recycled Material Composite</h3><div id="svLiveRmc"></div>
+      <h3 class="mt12">Construction Materials</h3><div id="svLiveCm"></div>
+    </div>
+    <div class="card">
+      <h3>Older reference <span class="chip">SNAPSHOT 4.10.0</span></h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>RMC sell point</th><th>System</th><th class="num">aUEC / SCU</th><th>Stamped</th></tr></thead>
+        <tbody id="svPrices"></tbody>
+      </table></div>
+      <div class="note warn"><b>Don't misread Admin offices:</b> many only <i>sell</i> RMC to you (seen at 7,587). That's a buy price, not a payout.</div>
+      <ul class="tight small">
+        <li><b>RMC:</b> Trade &amp; Development Division (TDD) offices and scrapyards; some commodity terminals.</li>
+        <li><b>Construction Materials:</b> in demand at admin offices (refine first).</li>
+        <li>Prices drift by shard and stock. Check <a href="https://uexcorp.space/commodities" target="_blank" rel="noopener">UEX commodities</a> before the trip.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <details class="fold"><summary>Field guide &amp; mitigations: contracts</summary>
+      <ul class="tight small">
+        <li><b>Salvager Needed</b> orders (Adagio Holdings) ask for RMC, unrefined construction material (Rubble, Pieces or Salvage) and components, delivered to a freight elevator (e.g. Levski). Any class or size of salvage ship qualifies. <span class="muted">Seen on 4.10.2.</span></li>
+        <li>Contract bonuses can pay out if a wreck is "sufficiently salvaged" or towed far enough from its spawn. A timer eventually brings security forces.</li>
+        <li><b>Scan before you scrape.</b> Owner "Gamerules" means abandoned. Scraping a ship that still shows a player name can flag you for a crime.</li>
+        <li><b>Shields or power still on?</b> They block scraping. Knock the ship down with distortion damage first.</li>
+        <li><b>Eject RMC before structural salvage.</b> Construction material uses the same filler buffer.</li>
+        <li><b>Sell before you log off.</b> Loose cargo and refinery jobs can be lost to a crash or version change. LTP protects aUEC and in-game-earned ships, not loose RMC in your grid.</li>
+        <li><b>Error 30000:</b> fully close the client before reconnecting.</li>
+      </ul></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MINING ================= -->
+<section class="view" id="v-mining" aria-labelledby="h-mining">
+  <div class="hero"><div><h2 id="h-mining">Extraction OS</h2><span class="daemon">sys://mining.yield</span><p class="tag">Plan the refinery job, price the ore and log the haul.</p><div class="kpis"><div class="kpi"><div class="lbl">Mining runs</div><div class="val" data-k="mining.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="mining.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="mining.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="mining"></div></div>
+  <div class="card">
+    <h3>Rock breaker</h3>
+    <div id="rockCalc"></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card">
+      <h3>Refinery job calculator</h3>
+      <p class="small muted">One line per ore. Yield % and fee come from the refinery terminal's estimate for the method you pick. Type an ore name from the list. "Fill sell prices" uses the best live sell price, or the place you type under Sell at. Edit any number.</p>
+      <div id="scan-mining"></div>
+      <div class="table-wrap"><table><thead><tr><th>Ore / material</th><th class="num">Raw SCU</th><th class="num">Yield %</th><th>Sell at</th><th class="num">Sell / SCU</th><th></th></tr></thead><tbody id="mnLines"></tbody></table></div>
+      <div class="row mt8"><button id="mnAdd">Add ore</button><button id="mnLive" class="ghost">Fill sell prices (live)</button><datalist id="oreList"></datalist></div>
+      <div class="fields mt12" id="mnFields"></div>
+      <div class="out" id="mnOut"></div>
+      <div class="row mt12">
+        <input id="mnNotes" placeholder="Notes (ship, rock, refinery station…)" class="grow">
+        <button class="primary" id="mnLog">Log run</button><button id="mnBrief">Adjutant briefing</button>
+      </div>
+      <textarea class="copybox" id="mnBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+    </div>
+    <div class="card">
+      <h3>Picking the platform</h3>
+      <ul class="tight small">
+        <li><b>Prospector:</b> solo ship mining. Choose laser head and modules for the rock's resistance and instability.</li>
+        <li><b>MOLE:</b> crewed ship mining with three heads that can work one rock together.</li>
+        <li><b>ROC / Golem / hand mining:</b> small surface gems, often in caves.</li>
+        <li>Modules stack. Active modules trade charge-window stability for power, so plan the stack per rock rather than one fit for all.</li>
+      </ul>
+      <div class="note">Best ore and refinery yield bonuses rotate. Before a session, check <a href="https://regolith.rocks/" target="_blank" rel="noopener">Regolith</a> for rock and refinery data and <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX</a> for refined prices.</div>
+      <details class="fold mt12"><summary>Mitigations: refinery and fracturing</summary>
+      <ul class="tight small">
+        <li>Refinery jobs can be lost to version changes. Collect and sell finished jobs before a patch lands.</li>
+        <li>Fracture on a stable charge window; if the bar runs away, cut power rather than riding the overcharge.</li>
+      </ul></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRADE ================= -->
+<section class="view" id="v-trade" aria-labelledby="h-trade">
+  <div class="hero"><div><h2 id="h-trade">OmniRoute</h2><span class="daemon">sys://logistics.hauler</span><p class="tag">Live buy and sell pairs, a route planner and a contract check.</p><div class="kpis"><div class="kpi"><div class="lbl">Trade runs</div><div class="val" data-k="trade.runs">—</div></div><div class="kpi"><div class="lbl">Net earned</div><div class="val" data-k="trade.net">—</div></div><div class="kpi"><div class="lbl">Best per hour</div><div class="val" data-k="trade.rate">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="trade"></div></div>
+  <div class="card accent mb12">
+    <h3>Live market <span id="mkChip" class="chip warn">MANUAL</span></h3>
+    <p class="small muted">Best buy-to-sell pairs across all terminals, from recent UEX reports (older than two weeks is ignored). "Buy" is what you pay, "Sell" is what you get. Margins this good deserve a second look: check in game before you commit a hold.</p>
+    <div class="row"><label class="f grow">Search a commodity<input id="mkSearch" type="search" list="commList" placeholder="e.g. Agricium"></label>
+      <label class="chk"><input id="mkSafe" type="checkbox"> Hide high PvP risk places</label></div>
+    <div id="mkSys" class="tabs mt8" role="tablist" aria-label="Star system"></div>
+    <p class="small muted mt8" id="mkRiskNote">PvP risk comes from how each place is set up: the wiki says whether it is an Armistice Zone (Safe, or Medium or worse if not), plus a rule of thumb for contested zones and lawless systems. It is not live: nothing tells us who is camping where. Each run shows the buy end, the sell end, and a run score out of 10 (Safe 0, Low 1, Unknown 2, Medium 3, High 5 per end).</p>
+    <div id="mkAreas" class="mt8"></div>
+    <h3 class="mt12" id="mkRunsHead">Best runs</h3>
+    <div id="mkRoutes" class="mt8"></div>
+    <h3 class="mt12" id="mkSafeHead">Best PvP-free runs</h3>
+    <div id="mkSafeRoutes" class="mt8"></div>
+    <datalist id="commList"></datalist>
+  </div>
+  <div class="card">
+    <h3>Route planner (A → B → C …)</h3>
+    <p class="small muted">Enter each leg's buy and sell prices from UEX or the terminal. Each leg buys as much as the hold, your capital and the terminal's stock allow; the profit carries into the next leg.</p>
+    <div id="scan-trade"></div>
+    <div class="fields" id="trFields"></div>
+    <div class="scrollx mt12"><table>
+      <thead><tr><th>Commodity</th><th>Buy at</th><th class="num">Buy / SCU</th><th>Sell at</th><th class="num">Sell / SCU</th><th class="num">Stock SCU</th><th class="num">Leg min</th><th class="num">SCU</th><th class="num">Profit</th><th></th></tr></thead>
+      <tbody id="trLegs"></tbody>
+    </table></div>
+    <div class="row mt8"><button id="trAdd">Add leg</button></div>
+    <div class="out" id="trOut"></div>
+    <div class="row mt12">
+      <input id="trNotes" placeholder="Notes" class="grow">
+      <button class="primary" id="trLog">Log route</button><button id="trBrief">Adjutant briefing</button>
+    </div>
+    <textarea class="copybox" id="trBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Hauling contract check</h3>
+      <p class="small muted m0">Full contract details live on the <a href="#contracts">Contracts</a> tab.</p>
+      <div class="fields mt8" id="hlFields"></div>
+      <div class="out" id="hlOut"></div>
+    </div>
+    <div class="card"><details class="fold"><summary>Mitigations: hauling and freight elevators</summary>
+      <ul class="tight small">
+        <li>Use the <b>Cargo Grid</b> tab to plan boxes before you hit the freight elevator.</li>
+        <li>Freight elevator stuck or empty: re-open the terminal, switch tabs, and wait for the elevator to cycle before re-requesting. Don't spam the request.</li>
+        <li>Store cargo you mean to keep. Don't log off with a full hold you haven't sold or stored.</li>
+        <li>Check <a href="https://sc-trade.tools/" target="_blank" rel="noopener">SC Trade Tools</a> for current route ideas, then price-check them here.</li>
+      </ul></details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CARGO ================= -->
+<section class="view" id="v-cargo" aria-labelledby="h-cargo">
+  <div class="hero"><div><h2 id="h-cargo">GridMaster</h2><span class="daemon">sys://grid.stowage</span><p class="tag">Lay out 1 to 32 SCU boxes in your hold and get a loading order.</p><div class="chips"><span class="chip">1–32 SCU boxes</span><span class="chip">Auto-pack</span><span class="chip">Loading sequence</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="cargo"></div></div>
+  <div class="card">
+    <p class="small muted">Set the grid size in 1-SCU cells for your ship's hold (width × length × height). Check the real grid in game or on SPViewer; the starting size is only an example. Box footprints are the standard 1–32 SCU containers.</p>
+    <div class="fields" id="cgFields"></div>
+    <h3 class="mt12">Boxes to load</h3>
+    <div id="scan-cargo"></div>
+    <div class="fields" id="cgCounts"></div>
+    <div class="row mt10">
+      <button class="primary" id="cgPack">Auto-pack</button>
+      <button id="cgClear" class="ghost">Clear grid</button>
+      <span class="small muted">Manual: pick a box, click a cell on a layer to place it, click a placed box to remove it.</span>
+    </div>
+    <div class="row mt10"><div class="palette" id="cgPalette"></div><button id="cgRot" aria-pressed="false">Rotate 90°</button></div>
+    <div class="out" id="cgOut"></div>
+    <div class="legend mt10" id="cgLegend"></div>
+    <div class="layers" id="cgLayers"></div>
+    <h3 class="mt14">Loading sequence</h3>
+    <p class="small muted">Far end first, bottom up. The door is at the bottom row of each layer.</p>
+    <ol class="small mono cols2" id="cgSeq"></ol>
+    <div class="row"><button id="cgBrief">Adjutant manifest</button></div>
+    <textarea class="copybox" id="cgBriefBox" readonly aria-label="Manifest text" hidden></textarea>
+  </div>
+</section>
+
+<!-- ================= COMBAT ================= -->
+<section class="view" id="v-combat" aria-labelledby="h-combat">
+  <div class="hero"><div><h2 id="h-combat">Ballistics Matrix</h2><span class="daemon">sys://tac.armory</span><p class="tag">Time-to-kill by armor class, medpen tracking and loadout notes.</p><div class="chips"><span class="chip">TTK matrix</span><span class="chip">Blood Drug Level</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="combat"></div></div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>TTK matrix</h3>
+      <p class="small muted">Enter weapon and armor numbers from <a href="https://finder.cstone.space/" target="_blank" rel="noopener">CStone</a> or <a href="https://www.erkul.games/" target="_blank" rel="noopener">Erkul</a>. Armor values are damage-taken multipliers (1.00 = no reduction, 0.70 = 30% reduction).</p>
+      <div id="scan-weapon"></div>
+      <div class="fields" id="tkFields"></div>
+      <h3 class="mt12">Armor multipliers</h3>
+      <div class="table-wrap"><table><thead><tr><th>Class</th><th class="num">Physical</th><th class="num">Energy</th></tr></thead><tbody id="tkArmor"></tbody></table></div>
+      <div class="row mt6"><button type="button" id="tkArmorFill">Fill armor from item database</button><span class="small muted">Typical torso multipliers per class. 1.00 = no reduction, 0.60 = 40% less damage.</span></div>
+      <div class="scrollx mt12"><table>
+        <thead><tr><th>Armor</th><th class="num">Dmg / shot</th><th class="num">Shots</th><th class="num">Reloads</th><th class="num">TTK (s)</th></tr></thead>
+        <tbody id="tkOut"></tbody>
+      </table></div>
+      <p class="small muted" id="tkFoot"></p>
+    </div>
+    <div class="card">
+      <h3>Blood Drug Level tracker</h3>
+      <p class="small muted">Enter BDL per dose and decay rate for your medpen (from the item's stats). Log each injection; the gauge decays live.</p>
+      <div class="fields" id="bdFields"></div>
+      <div class="row mt10"><button class="primary" id="bdDose">Inject</button><button class="ghost" id="bdReset">Reset</button></div>
+      <div class="out" id="bdOut"></div>
+      <h3 class="mt14">Loadout notes</h3>
+      <textarea id="loNotes" rows="4" placeholder="Free notes. Saved in this browser."></textarea>
+      <div class="row mt6"><button id="loSave">Save notes</button><button id="loBrief">Adjutant briefing</button></div>
+      <textarea class="copybox" id="loBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+    </div>
+  </div>
+  <div id="rankingsFps" class="mt12"></div>
+</section>
+
+<!-- ================= WARDROBE ================= -->
+<section class="view" id="v-wardrobe" aria-labelledby="h-wardrobe">
+  <div class="hero"><div><h2 id="h-wardrobe">Wardrobe</h2><span class="daemon">sys://dress.wardrobe</span><p class="tag">Dress the mannequin, browse the gear for each slot and save the look.</p><div class="chips"><span class="chip">Browse gear</span><span class="chip">Save &amp; share</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="wardrobe"></div></div>
+  <div id="wardrobe" class="mt12"></div>
+  <div class="card accent mt12" id="wardrobeApp"><h3>Wardrobe designer</h3><p class="small muted">The Wardrobe designer works in the website only. It opens in your normal browser, with your saved looks and sign-in.</p><p><a class="btn" href="/rsi1/companion/?browser=1#wardrobe" rel="noopener">Open the Wardrobe in my browser</a></p></div>
+</section>
+
+<!-- ================= GROUND LOADOUTS ================= -->
+<section class="view" id="v-loadouts" aria-labelledby="h-loadouts">
+  <div class="hero"><div><h2 id="h-loadouts">Ground Loadouts</h2><span class="daemon">sys://dress.loadouts</span><p class="tag">A saved kit for each kind of ground mission: armor, weapons, gadgets and supplies.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="loadouts"></div></div>
+  <div id="groundLoadouts" class="mt12"></div>
+</section>
+
+<!-- ================= CALCULATOR ================= -->
+<section class="view" id="v-calc" aria-labelledby="h-calc">
+  <div class="hero"><div><h2 id="h-calc">Avionics Lab</h2><span class="daemon">sys://avionics.flight</span><p class="tag">Build a ship loadout and see its damage, defense, power and flight stats. Compare against stock, save builds and price the upgrade.</p>
+    <div class="chips"><span class="chip">Swap any hardpoint</span><span class="chip">Stock vs build</span><span class="chip">Upgrade cost</span><span class="chip">Share link</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="calc"></div></div>
+  <div id="builder" class="calc"></div>
+  <div id="rankingsShip" class="mt14"></div>
+</section>
+
+<!-- ================= FLEET ================= -->
+<section class="view" id="v-fleet" aria-labelledby="h-fleet">
+  <div class="hero"><div><h2 id="h-fleet">Hangar Command</h2><span class="daemon">sys://avionics.hangar</span><p class="tag">Your hangar and a flight envelope comparison between two ships.</p><div class="kpis"><div class="kpi"><div class="lbl">Ships in hangar</div><div class="val" data-k="fleet.count">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="fleet"></div></div>
+    <div class="grid g2">
+    <div class="card">
+      <h3>Your hangar</h3>
+      <p class="small muted">Search for a ship and save it to your hangar. Its speed, handling, damage, shields and hull come from the ship data and feed the comparison graph.</p>
+      <div class="fields" id="flFields"></div>
+      <div class="row mt8"><button class="primary" id="flAdd">Save ship</button></div>
+      <div class="scrollx mt12"><table>
+        <thead><tr><th>Ship</th><th class="num">SCM</th><th class="num">NAV</th><th class="num">P/Y/R</th><th class="num">DPS</th><th class="num">Shield</th><th class="num">Hull</th><th class="num">SCU</th><th>Role</th><th></th><th></th></tr></thead>
+        <tbody id="flList"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3>Flight envelope comparison</h3>
+      <div class="row"><select id="flA" aria-label="Ship A"></select><span class="muted">vs</span><select id="flB" aria-label="Ship B"></select></div>
+      <div class="svgwrap"><svg id="flRadar" class="radar svgmax" viewBox="0 0 360 330" width="100%" role="img" aria-label="Radar chart comparing two ships"></svg></div>
+      <p class="small muted">Each axis is scaled to the better of the two ships. Builds saved from the Calculator bring damage, shields, hull, cargo, quantum range and more; ships typed in by hand only have the basic figures.</p>
+      <div id="flStats"></div>
+    </div>
+  </div>
+</section>
+
+
+<section class="view" id="v-waypoint" aria-labelledby="h-waypoint">
+  <div class="hero"><div><h2 id="h-waypoint">Waypoint</h2><span class="daemon">sys://ops.waypoint</span><p class="tag">Search places by what they offer (refinery, repair, shops, trade terminals), planet and type, and order them by how close they are to you.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="waypoint"></div></div>
+  <div class="note info">Closeness here is a step in the map (same place, same moon or planet, same system, another system), not a distance in kilometres. Exact distances and quantum travel times need coordinate data this site does not have yet.</div>
+  <div id="waypointHost" class="mt12"></div>
+</section>
+
+<section class="view" id="v-inventory" aria-labelledby="h-inventory">
+  <div class="hero"><div><h2 id="h-inventory">Inventory</h2><span class="daemon">sys://avionics.inventory</span><p class="tag">What you have stored and where, across every system. Scan a storage screen or add items by hand.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="inventory"></div></div>
+  <div class="card"><h3>Scan a storage screen</h3>
+    <p class="small muted">Open a hangar, station or ship item list and scan it. Each place remembers when you last updated it, because the game has no live inventory feed. Items stay in your browser and in your Discord profile if you are signed in.</p>
+    <div id="scan-inv"></div></div>
+  <div id="inventoryHost" class="mt12"></div>
+</section>
+
+<section class="view" id="v-items" aria-labelledby="h-items">
+  <div class="hero"><div><h2 id="h-items">Item Search</h2><span class="daemon">sys://armory.items</span><p class="tag">Look up a weapon, armor piece, gadget or ship part: its numbers, whether shops sell it, and where.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="inventory"></div></div>
+  <div id="itemSearch"></div>
+</section>
+
+<section class="view" id="v-fleetmgr" aria-labelledby="h-fleetmgr">
+  <div class="hero"><div><h2 id="h-fleetmgr">Fleet Manager</h2><span class="daemon">sys://avionics.fleet</span><p class="tag">Roles, crews and saved builds for every ship you own, and your whole group's fleet in one place.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="fleetmgr"></div></div>
+  <div id="fleetMgr"></div>
+</section>
+
+<!-- ================= MANUAL ================= -->
+<section class="view" id="v-howto" aria-labelledby="h-howto">
+  <div class="hero"><div><h2 id="h-howto">How it works</h2><span class="daemon">sys://ref.howto</span><p class="tag">The maths behind every number on this site, and the best way to use each tab.</p><span class="patch" data-patch></span></div><div class="heroart" data-art="howto"></div></div>
+  <div class="note info">Every figure here is a planning aid built from community data and the numbers you type in. Star Citizen changes every patch, so check a stat or a price in game before you spend on it.</div>
+
+  <details class="fold card mt12" open><summary>Time to kill (TTK) for ground weapons</summary>
+    <p class="small">The Ballistics Matrix and the FPS weapon rankings use the same steps:</p>
+    <ol class="small">
+      <li><b>Damage per shot</b> = (physical damage × the armor's physical multiplier + energy damage × the armor's energy multiplier) × pellets × the body-zone multiplier. A pistol has one pellet; a shotgun fires several at once. A multiplier of 0.70 means the armor takes 30% off.</li>
+      <li><b>Shots to kill</b> = the target's health ÷ damage per shot, rounded up.</li>
+      <li><b>Time</b> = (shots − 1) × the gap between shots. The gap is 60 ÷ rounds per minute. The first shot is instant, so only the gaps between shots count.</li>
+      <li><b>Burst weapons</b> add their cooldown after each full burst, on top of the normal gap.</li>
+      <li><b>Reloads</b> add one reload time for every full magazine you use up before the kill.</li>
+    </ol>
+    <p class="small muted">It assumes every shot lands in the zone you pick and that nothing heals the target. <b>Burst TTK</b> is straight cyclic fire with no burst cooldown and no reload; <b>TTK</b> includes both. Damage figures come from the wiki's weapon records; where the wiki has no per-shot figure for a beam weapon, the ammunition's damage is used instead and the row is marked.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Weapon rankings: FPS and ship</summary>
+    <p class="small"><b>FPS rankings</b> score every weapon the wiki has full figures for against the armor class you choose (Light, Medium or Heavy). The armor multipliers are the middle value across that class's torso pieces, so a single odd armor does not skew them. They order fastest TTK first, and show how many weapons were left out for missing figures.</p>
+    <p class="small"><b>Ship rankings</b> use <b>time to destroy</b> = the reference ship's health ÷ the gun's sustained damage per second. Reference health is the ship's hull plus the shields it carries. You can filter by gun size and by engagement range, and guns with no listed range are counted but flagged. Burst damage is shown beside sustained so you can see the opening hit.</p>
+    <p class="small muted">Rankings compare guns on paper under the same assumptions. They ignore aim, bullet speed, heat and power draw, so treat them as a starting shortlist.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Salvage, mining, trade and hauling profit</summary>
+    <ul class="small">
+      <li><b>Salvage:</b> value = RMC SCU × RMC price + (raw construction material SCU × refinery yield %) × its price, plus components and contract pay. Net = value − refinery fee − expenses. Per hour = net ÷ (minutes ÷ 60). Per crew member = net ÷ crew.</li>
+      <li><b>Mining:</b> each ore line is raw SCU × yield % = refined SCU, then × price. The net takes off the refinery fee and expenses.</li>
+      <li><b>Trade chain:</b> for each leg, quantity = the smallest of your hold, what your capital can buy, and the stock available. Profit = quantity × (sell − buy). Capital carries forward, so a good first leg funds a bigger second one. Each leg is labelled with what limited it: hold, stock or capital.</li>
+      <li><b>Hauling:</b> payout − expenses, per hour from the minutes you enter.</li>
+      <li><b>Prices</b> are typed or come from UEX Corp community data. They are not a live feed; each tab shows how old the figures are.</li>
+    </ul>
+  </details>
+
+  <details class="fold card mt12"><summary>Fabricator: how quality changes a crafted item</summary>
+    <p class="small">Each material slot has a quality from 1 to 1000. For every stat a slot affects, the game files give a <b>low and a high multiplier</b>. At the quality you set, the multiplier is the low value plus (high − low) × (your quality ÷ range), and it applies to the item's base stat. The "Quality for a target" box runs that backwards: type the multiplier you want and it shows the quality needed, or says the target is out of range.</p>
+    <p class="small muted">Only straight-line (linear) curves are modelled. A stat with a stepped curve is shown as "curve not modelled" rather than guessed. Confirm one craft in game before you spend rare material.</p>
+  </details>
+
+  <details class="fold card mt12"><summary>Fleet Manager: roles, crews and group fleet</summary>
+    <ul class="small">
+      <li>Ships come from Hangar Command. The manager adds a <b>role</b> (combat, cargo, mining...), a <b>status</b> (active, standby, stored), a crew list and up to six saved builds per ship. A build is the link or code the Avionics Lab gives you; <b>Make active</b> marks the one you fly.</li>
+      <li>The <b>overview</b> adds up the figures of every ship that has a stat sheet: cargo SCU, DPS, hull plus shield and crew seats. A ship saved by hand has no stat sheet, so it counts as a ship but adds nothing to the totals.</li>
+      <li><b>Group fleet:</b> each player copies their fleet code and sends it to the group; paste the codes in to see everyone's ships, roles and combined totals. Codes hold ship names, roles and figures only. There is no live shared fleet yet, so re-paste a code to refresh someone's list.</li>
+    </ul>
+  </details>
+
+  <details class="fold card mt12"><summary>Waypoint and Inventory</summary>
+    <ul class="small">
+      <li><b>Waypoint</b> lists every place that has a commodity terminal in the live UEX data. Pick where you are (or paste a line with a place name in it) and it orders results as: here, same moon or planet, same system, other systems. Within a group it puts the best price first. It cannot give distances or quantum travel times yet, Hangars, landing pads, garages and vehicle services come from the game files and are matched to places by name; storage kiosks, factions and the other switched-off filters are not known yet.</li>
+      <li><b>Inventory</b> is a list of items by place. A scan reads a storage screen and shows you the rows to check before anything is saved; <b>Replace this place</b> makes the place match the scan, <b>Add to this place</b> only adds or raises counts. Search an item to see every place that holds it.</li>
+    </ul>
+  </details>
+
+  <details class="fold card mt12"><summary>Getting the most from the site</summary>
+    <ol class="small">
+      <li><b>Sign in with Discord</b> so your logs, fleet, blueprints, wardrobe, loadouts and objectives follow you between devices. Without it they stay in this browser only.</li>
+      <li><b>Import your blueprints</b> from the Item Fabricator (Plan, Blueprints) after each patch, then browse the catalog to see what you are missing and how to unlock it.</li>
+      <li><b>Turn a craft into objectives:</b> plan it in the Fabricator, press Make this an objective, and tick off materials as you gather them. OmniOps shows the next one.</li>
+      <li><b>Build ships in the Avionics Lab</b>, save the build to your hangar, and compare it against stock. Rank the guns before you buy them.</li>
+      <li><b>Log every run</b> in Slag &amp; Scrape, Extraction OS, OmniRoute and GridMaster; OmniLog totals them so you can see which job earns the most per hour.</li>
+      <li><b>Save your kits</b> in the Dressing Room: ground loadouts for each kind of mission, and outfits you can share as a code.</li>
+    </ol>
+  </details>
+
+  <details class="fold card mt12"><summary>Where the data comes from, and how fresh it is</summary>
+    <ul class="small">
+      <li><b>Ships, parts, weapons, armor, blueprints:</b> the Star Citizen Wiki API (community data from the game files). It updates after each patch and is cached for a day or less.</li>
+      <li><b>Commodity prices and terminals:</b> UEX Corp, a community price database.</li>
+      <li><b>Status and news:</b> robertsspaceindustries.com.</li>
+      <li><b>Scans</b> (screenshots read by an AI model) are always shown to you for review before anything is saved. The model can misread; correct it before you import.</li>
+      <li>The patch line at the top of each tab says which game version the site was last checked against.</li>
+    </ul>
+  </details>
+  <p class="small muted mt12">This site is an unofficial fan tool and is not affiliated with Cloud Imperium Games.</p>
+</section>
+
+<section class="view" id="v-desktop" aria-labelledby="h-desktop">
+  <div class="hero"><div><h2 id="h-desktop">OmniGlass Desktop</h2><span class="daemon">sys://desktop.readme</span><p class="tag">A Windows tray app that reads your own game logs and feeds this site. Read me, how-to and download.</p><div class="chips"><span class="chip">Read me</span><span class="chip">How to</span><span class="chip">Download</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="desktop"></div></div>
+  <div class="card accent mb12" id="desktopDownload"><h3>Download</h3>
+    <p class="small"><b>OmniGlass Desktop 0.2.2</b> for Windows 10 and 11 (64-bit). Star Citizen needs to be installed on the same PC.</p>
+    <p class="btnrow"><a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest/download/OmniGlass-Desktop-0.2.6-x64-setup.exe" rel="noopener">Download the installer</a> <a class="btnlink" href="https://github.com/Belpire-Carnival/omniglass-releases/releases/latest" rel="noopener">All releases</a></p>
+    <p class="small muted">SHA-256: <span class="mono" id="desktopSha">d6284e28009c9912a2270c61039e3bdf34d3ae57c88b92d918040f072dd6e5f7</span><br>To check your download, open a terminal in the folder and run <span class="mono">certutil -hashfile OmniGlass-Desktop-0.2.6-x64-setup.exe SHA256</span>. The result must match the line above.</p>
+    <p class="small muted">This installer is <b>not code-signed</b>, so Windows SmartScreen will say it is from an unknown publisher. Choose <i>More info</i>, then <i>Run anyway</i>. Only install it from this page or the releases page above: do not install copies from other places.</p></div>
+  <div class="grid g2">
+    <div class="card"><h3>Read me</h3>
+      <p class="small">OmniGlass Desktop sits in your system tray. While Star Citizen runs it reads the Game.log file the game already writes, and it reads the RSI Launcher log once to find out which install you launched. From that it shows your blueprint, contract, mission and ship-loss events, your blueprints from the game files, minerals, reputation ladders, and an optional in-game overlay.</p>
+      <p class="small"><b>It never</b> reads game memory, injects code, or sends keystrokes or mouse input. To open its windows inside the game it listens for its own keys only (F3, F5 to F8) while Star Citizen has the keyboard, and always passes them on to the game. It reads your Game.log, your archived logs and the game's own data file (Data.p4k) read-only, and draws its own windows.</p>
+      <p class="small"><b>The one optional feature that writes</b> is <i>Field Notes</i>. It is off until you switch it on in Settings. When you press Apply it writes the game's English text file (global.ini, built from your own install) and makes sure user.cfg selects English, after saving your originals. <i>Roll back</i> restores them exactly. It refuses to write while the game is running. CIG allows community text files but does not endorse them, so it is your choice.</p>
+      <p class="small"><b>What it sends here</b> (only while the PC is linked and sending is on): blueprints you receive, contracts, missions and your own ship losses. Never other players' names or ids.</p>
+      <p class="small muted">Game data (blueprints, ores, reputation) comes from the site, one file set per channel (LIVE and PTU), extracted from the game files by us. Check for updates after each patch.</p></div>
+    <div class="card"><h3>What is in the window</h3>
+      <ul class="tight small">
+        <li><b>Events</b>: what the log shows, with a filter and a copy-as-text button that leaves your handle out.</li>
+        <li><b>Blueprints</b>: all blueprints for the build, which contracts give them (CAN TAKE, LOCKED or SET RANK), and which you own. Export and import as JSON or CSV.</li>
+        <li><b>Minerals</b>: search an ore, see its compositions and where it spawns.</li>
+        <li><b>Reputation</b>: pick your rank on each ladder so contracts show whether you can take them.</li>
+        <li><b>Settings</b>: checks that the app can read your game files, imports game data, reads your older logs for blueprints you already own, and holds <i>Field Notes</i>: blueprint marks and counts on contract titles, and rank, reputation, full blueprint lists and weapon numbers in descriptions.</li>
+        <li><b>Overlay</b>: a click-through window over the game made of cards you can move and resize: <i>Recent</i> events, your <i>Watching</i> list, a <i>This session</i> count, <i>Timers</i> and pop-up <i>Alerts</i>. See the hotkey guide below.</li>
+        <li><b>Website connection</b>: with one switch and a short code, this site can show your live game data (see the how-to below).</li>
+        <li><b>Watch log of</b>: pick LIVE, PTU or any other install the launcher knows.</li>
+      </ul></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>How to: first run</h3>
+      <ol class="tight small">
+        <li>Start the app. Its window opens and an icon appears in the tray (left-click it to bring the window back).</li>
+        <li>Check the <i>Game.log</i> line shows your install, for example the LIVE folder. If not, press <i>Use this file</i> after typing the path.</li>
+        <li>Under <i>Game data</i> pick LIVE or PTU and press <i>Check for updates</i> once.</li>
+        <li>To send your events here: open <a href="#ops">OmniOps</a>, find the OmniGlass Desktop card, choose <i>Link a device</i>, and type the code it shows into the app, then press <i>Link</i>. Untick <i>Send to my profile</i> to pause sending; <i>Unlink this PC</i> removes the link.</li>
+        <li>Play. Blueprints you receive appear in the app and on your Blueprints page within a few minutes.</li>
+      </ol></div>
+    <div class="card"><h3>How to: live sync from scmdb <span class="muted small">optional</span></h3>
+      <ol class="tight small">
+        <li>In the app scroll to the bottom, open <i>scmdb live sync</i>, tick <i>Listen for scmdb</i> and press <i>Copy address</i>.</li>
+        <li>On scmdb.net open <i>Profile</i>, then <i>Sync Sinks</i>, add a sink, paste the address, tick <i>Blueprints</i> and save.</li>
+        <li>Press <i>Resync</i> on that sink. The app's counter shows how many messages arrived and how many new blueprints were added.</li>
+      </ol>
+      <p class="small">From then on, each blueprint you mark as owned in scmdb is added to the app while it is running; anything marked while it was closed arrives on the next Resync. Blueprints are only ever added, never removed.</p>
+      <p class="small muted">The address works only on your own PC (127.0.0.1) and contains a secret: treat it like a password. <i>Make a new secret</i> replaces it, then paste the new address into scmdb.</p></div>
+    <div class="card"><h3>Hotkey guide</h3>
+      <ul class="tight small">
+        <li><span class="mono">F3</span> or <span class="mono">F5</span>: open the OmniGlass window over the game. Press again to hide it; the keyboard goes back to the game.</li>
+        <li><span class="mono">F6</span>: show or hide the overlay cards (Recent, Watching, This session, Timers).</li>
+        <li><span class="mono">F7</span>: move and resize the overlay cards. <b>Esc</b>, <i>Done</i> or <span class="mono">F7</span> again saves and finishes.</li>
+        <li><span class="mono">F8</span>: search a blueprint or mineral. Type, press <b>Enter</b> to pin the top result to Watching, <b>Esc</b> (or <span class="mono">F8</span> again) to close. The keyboard goes back to the game.</li>
+        <li>These work in menus and in the world, while the app is running. Settings shows the last key the app received and how it arrived. The overlay only shows over the game in <b>borderless windowed</b> mode.</li>
+        <li>If Star Citizen or the RSI Launcher runs as administrator, run OmniGlass as administrator too, or Windows keeps the keys from reaching it.</li>
+      </ul></div>
+    <div class="card"><h3>How to: set up the in-game overlay</h3>
+      <ol class="tight small">
+        <li>Run Star Citizen in borderless windowed mode, then press <span class="mono">F6</span>.</li>
+        <li>Press <span class="mono">F7</span>. The screen dims and a bar appears. Drag a card to move it; drag its bottom-right corner to resize it. Tick or untick <i>Recent</i>, <i>Watching</i>, <i>Alerts</i>, <i>Session</i> and <i>Timers</i> to show or hide each card.</li>
+        <li>There are two saved layouts, <i>Flying</i> and <i>On foot</i>. Choose one in the bar before you arrange; you switch between them by hand. <i>Reset layout</i> puts the current one back to the default.</li>
+        <li>Press <i>Done</i> (or Esc). Positions are kept on this PC as a share of your screen, so they survive a change of resolution.</li>
+      </ol>
+      <p class="small muted">Dragging only moves the app's own window. Nothing is sent to the game.</p></div>
+    <div class="card"><h3>How to: timers and the session card</h3>
+      <ol class="tight small">
+        <li>In the app open <i>Settings</i>, then <i>In-game timers</i>. Type a label such as <i>Refinery Pyro</i> and the time the game shows: <span class="mono">2h 10m</span>, <span class="mono">45m</span> or <span class="mono">1:30:00</span> (up to 7 days, eight timers at once). Press <i>Start</i>.</li>
+        <li>The Timers card counts down on the overlay and posts a <i>Timer done</i> alert when it ends. Timers survive restarting the app.</li>
+      </ol>
+      <p class="small">The game does not write refinery jobs to its log, so these timers run on the time you type; they do not read the game.</p>
+      <p class="small">The <i>This session</i> card counts what the log shows since the game started: contracts accepted, missions completed, blueprints received, ships destroyed and lost, and times you went down. The clock stops when the game closes.</p></div>
+    <div class="card"><h3>How to: show your live game data here</h3>
+      <ol class="tight small">
+        <li>In the app open <i>Settings</i> and tick <i>Let the website connect</i>. The app shows an 8-character code and copies it for you.</li>
+        <li>On this site open <a href="#ops">OmniOps</a>, find the <i>From your game</i> card under the OmniGlass Desktop card, type the code and press <i>Connect</i>.</li>
+        <li>Your recent events and game data build then show live. Use <i>Disconnect</i> at the bottom of that card to stop.</li>
+      </ol>
+      <p class="small muted">The connection stays on your own PC (127.0.0.1) and only accepts this site. <i>New code</i> in the app cuts off anything already connected. Untick the switch to turn it off.</p></div>
+    <div class="card"><h3>How to: more</h3>
+      <ul class="tight small">
+        <li><b>Back up or restore my settings</b> (bottom of the window) saves your owned blueprints, watch list, ranks and window settings as one file. Your profile link and scmdb secret are never in it.</li>
+        <li><b>Read again</b> re-reads the whole Game.log from the top.</li>
+        <li>Moving to a new PC: install, restore the backup, link again with a new code.</li>
+        <li><b>Field Notes names</b> (Settings, Field Notes): rename the label on added lines and the two blueprint tags. Press Preview or Apply to put a new name into the game.</li>
+      </ul></div>
+    <div class="card"><h3>If something looks wrong</h3>
+      <ul class="tight small">
+        <li><b>Stuck on "Starting..."</b> or empty fields: quit the app from the tray and start it again. Report it with the first red line from the console if it repeats.</li>
+        <li><b>A key says "taken by another program"</b> in Settings: another program, or an older copy of the app, holds it. Quit the old copy; the rest of the app still works.</li>
+        <li><b>No overlay over the game</b>: switch the game to borderless windowed mode. Check <i>Game.log</i> shows your install.</li>
+        <li><b>A card is off screen or in the wrong place</b> after changing monitors: press <span class="mono">F7</span>, then <i>Reset layout</i>.</li>
+        <li><b>Data for another build</b>: the data bar warns when the game data is for a different patch than your install. Press <i>Check for updates</i>.</li>
+        <li><b>Nothing arrives from scmdb</b>: make sure the app is running with the box ticked, then press Resync in scmdb.</li>
+      </ul></div>
+  </div>
+</section>
+
+<section class="view" id="v-dash" aria-labelledby="h-dash">
+  <div class="hero"><div><h2 id="h-dash">OmniDash</h2><span class="daemon">sys://dash.board</span><p class="tag">Your own dashboards: add panels from any page, size them, drag them into order and save as many layouts as you like. Saved with your profile when you sign in.</p><span class="patch" data-patch></span></div></div>
+  <div id="dashApp" class="mt12"></div>
+</section>
+
+<section class="view" id="v-guide" aria-labelledby="h-guide">
+  <div class="hero"><div><h2 id="h-guide">Guide</h2><span class="daemon">sys://ref.guide</span><p class="tag">What each tab is for, what the numbers mean, and how current the data is.</p><div class="chips"><span class="chip">Tab by tab</span><span class="chip">Data sources</span><span class="chip">Glossary</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="guide"></div></div>
+  <div class="note info">Star Citizen changes every patch. Everything here is a planning aid: check a price, a location or a stat in game before you spend or fly on it. Each tab says where its numbers come from.</div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>OmniOps <span class="muted small">home</span></h3>
+      <p class="small">Today and last-7-day earnings, your best aUEC per hour, a pre-launch checklist and the state of RSI services. It also maps every other tab. <b>Overview</b> totals what you logged. <b>TacBoard</b> keeps the contracts you scanned or typed in, with a check against your hold and your routes.</p>
+      <p class="small muted">Data: your own logs (this browser, or your profile if you sign in with Discord), UEX prices, RSI status and Comm-Links.</p></div>
+    <div class="card"><h3>Hangar</h3>
+      <p class="small"><b>Hangar Command</b> is the ships you own or follow, with a radar that compares two of them. Ships saved from the Avionics Lab bring their damage, shields, hull and range with them; ships you type in by hand only carry the flight figures you enter.</p>
+      <p class="small muted">Data: Star Citizen Wiki ship records plus what you enter. Stored in this browser, or your profile when signed in.</p></div>
+    <div class="card"><h3>Plan</h3>
+      <p class="small"><b>Fabricator</b> plans a craft: set the quality of each material and see what it does to the finished item, plus the shopping list. <b>Objectives</b> tracks what you are working towards: blueprints to unlock (ticked off by a Fabricator scan) and the materials for a craft, with progress; OmniOps shows the next one. <b>Wishlist</b> is what you want (ships, components, weapons, armor, blueprints) with a priority. <b>Blueprints</b> lists the crafting blueprints you own. Scan the Item Fabricator's blueprint list, one category at a time or as a short scroll clip, then check the names and import. A new scan replaces the categories it shows, so blueprints you no longer see there drop off.</p>
+      <p class="small muted">Data: only what you scan or type. There is no game API for blueprints, so re-scan before you play; OmniOps' checklist shows how old your last import is.</p></div>
+    <div class="card"><h3>Armory</h3>
+      <p class="small"><b>Avionics Lab</b> builds a loadout: pick a ship, click any part to see every figure the wiki has for it, swap it from a sortable table (green is better than what is fitted, red is worse), and see damage, defence, power and flight totals against stock. Under the builder, <b>Ship weapon rankings</b> orders ship guns by time to destroy a reference ship. <b>Ballistics Matrix</b> holds the FPS time-to-kill calculator and <b>FPS weapon rankings</b>, plus medpen tracking. The <b>Dressing Room</b> holds your <b>Wardrobe</b> (browse gear for each slot, dye it, save outfits to a file or share them as a code) and your <b>Ground Loadouts</b>.</p>
+      <p class="small muted">Data: Star Citizen Wiki item database through our own snapshot. It is only as current as the wiki and the last snapshot rebuild.</p></div>
+    <div class="card"><h3>Earn</h3>
+      <p class="small"><b>Slag &amp; Scrape</b> is hull scraping, structural salvage and refining. <b>Extraction OS</b> plans a refinery job, prices the ore and logs the haul. <b>OmniRoute</b> lists live buy and sell pairs and plans a route. <b>GridMaster</b> packs 1 to 32 SCU boxes into your hold and gives a loading order.</p>
+      <p class="small muted">Data: UEX commodity prices. A chip marked LIVE is community-submitted and can be hours old or wrong; SNAPSHOT is a dated reference.</p></div>
+    <div class="card"><h3>Log</h3>
+      <p class="small"><b>OmniLog</b> is every run you logged, totalled and sorted by activity. Logging a run from any Earn tab feeds the OmniOps totals and best rate.</p>
+      <p class="small muted">Data: only what you logged. Nothing here comes from the game.</p></div>
+    <div class="card"><h3>OmniGlass Desktop <span class="muted small">Windows app</span></h3>
+      <p class="small">A small tray app that reads your Game.log and sends only your blueprints, contracts, missions and ship losses to your profile. The <a href="#desktop">OmniGlass Desktop</a> tab has the read me, the how-to (including the optional scmdb live sync) and the download with its checksum.</p></div>
+    <div class="card"><h3>Help</h3>
+      <p class="small"><b>Guide</b> is this page. <b>Field Manual</b> has bug workarounds for the usual alpha problems (stuck ships, elevator failures, disconnects) and the reference sites worth bookmarking.</p></div>
+  </div>
+  <div class="grid g2 mt12">
+    <div class="card"><h3>Reading the weapon rankings</h3>
+      <ul class="tight small">
+        <li><b>TTK</b> is the time from first shot to kill, assuming every shot lands in the chosen zone and the first shot fires at time zero. Bullet drop, damage falloff and range are not modelled for FPS weapons.</li>
+        <li><b>Burst TTK</b> is straight cyclic fire with no burst cooldown and no reload. <b>TTK</b> adds burst cooldowns and the reload time you set. The game data has no reload time, so one value applies to every weapon (0 ignores reloads).</li>
+        <li><b>Shotguns</b> look unbeatable because every pellet is assumed to hit. Treat them as close-range figures.</li>
+        <li><b>Ship guns</b> are scored against a reference ship: its hull plus the shields it carries from the factory, divided by the gun's damage per second. Armor, shield absorption, hit location and gun convergence are not modelled.</li>
+        <li><b>Damage type</b> is Physical, Energy or Mixed from the per-hit figures; ship guns can also be Distortion. Guns with no range in the data drop out when you set a minimum range, and the table says how many.</li>
+      </ul></div>
+    <div class="card"><h3>Where the data comes from</h3>
+      <div class="table-wrap"><table><tbody>
+        <tr><td><b>Star Citizen Wiki</b></td><td class="small">Ships, parts, weapons and armor classes. Community-maintained; can lag behind a patch.</td></tr>
+        <tr><td><b>UEX</b></td><td class="small">Commodity buy and sell prices and refinery data. Community-submitted.</td></tr>
+        <tr><td><b>RSI</b></td><td class="small">Service status and Comm-Links.</td></tr>
+        <tr><td><b>Your logs</b></td><td class="small">Runs, contracts and hangar. Saved in this browser; also in your profile if you sign in with Discord, so they follow you between devices.</td></tr>
+        <tr><td><b>Scans</b></td><td class="small">Screenshots you paste are read by AI and shown for review before anything is applied. Check the values.</td></tr>
+      </tbody></table></div>
+      <p class="small muted mt8">Nothing here reads the game itself. There is no game API, so inventory and progress are only as current as what you enter.</p></div>
+  </div>
+  <div class="card mt12"><h3>Glossary</h3>
+    <dl class="gloss small">
+      <dt>aUEC</dt><dd>The in-game currency, alpha United Earth Credits.</dd>
+      <dt>SCU</dt><dd>Standard cargo unit; boxes come in 1, 2, 4, 8, 16 and 32 SCU.</dd>
+      <dt>TTK</dt><dd>Time to kill.</dd>
+      <dt>DPS</dt><dd>Damage per second. <i>Sustained</i> counts cooldowns or heat over a longer window; <i>burst</i> is the peak.</dd>
+      <dt>Hardpoint</dt><dd>A slot on a ship that holds a weapon, turret, missile rack or other component.</dd>
+      <dt>Ordnance</dt><dd>Missiles and torpedoes, held in racks that are locked to a size.</dd>
+      <dt>Hull / shield</dt><dd>Hull is the ship's structure; shield is the regenerating layer in front of it.</dd>
+      <dt>RMC</dt><dd>Recycled material composite, what hull scraping produces.</dd>
+      <dt>LIVE / SNAPSHOT</dt><dd>LIVE figures were fetched just now; SNAPSHOT figures are a dated reference.</dd>
+    </dl></div>
+</section>
+
+<section class="view" id="v-manual" aria-labelledby="h-manual">
+  <div class="hero"><div><h2 id="h-manual">Field Manual</h2><span class="daemon">sys://ref.manual</span><p class="tag">Bug workarounds and the reference sites worth bookmarking.</p><div class="chips"><span class="chip">Bug mitigations</span><span class="chip">Reference tools</span></div><span class="patch" data-patch></span></div><div class="heroart" data-art="manual"></div></div>
+  <div class="grid g2">
+    <div class="card"><h3>Bug mitigations</h3><div class="table-wrap"><table><tbody id="bugTable"></tbody></table></div>
+      <p class="small muted mt8">For bug reports, add a screenshot with <span class="mono">r_displaySessionInfo 1</span> and file it on the <a href="https://issue-council.robertsspaceindustries.com/" target="_blank" rel="noopener">Issue Council</a>.</p></div>
+    <div class="card"><h3>Reference tools</h3><div class="table-wrap"><table><tbody id="refTable"></tbody></table></div></div>
+  </div>
+</section>
+
+
+<!-- ================= LOG ================= -->
+<section class="view" id="v-log" aria-labelledby="h-log">
+  <div class="hero"><div><h2 id="h-log">OmniLog</h2><span class="daemon">sys://ops.ledger</span><p class="tag">Everything you have logged, totalled and sorted.</p><div class="kpis"><div class="kpi"><div class="lbl">Runs</div><div class="val" data-k="log.runs">—</div></div><div class="kpi"><div class="lbl">Net</div><div class="val" data-k="log.net">—</div></div><div class="kpi"><div class="lbl">Time</div><div class="val" data-k="log.time">—</div></div></div><span class="patch" data-patch></span></div><div class="heroart" data-art="log"></div></div>
+  <div class="card">
+    <div class="row between"><div class="row"><label class="f inline">Activity <select id="lgFilter"><option value="">All</option><option>salvage</option><option>mining</option><option>trade</option><option>contract</option></select></label></div><span class="small muted" id="lgStore"></span></div>
+    <div class="out" id="lgTotals"></div>
+    <div class="grid g2 mt12"><div><h3>Net by activity</h3><div id="lgMix"></div></div><div><h3>aUEC per hour by activity</h3><div id="lgRate"></div></div></div>
+    <div class="scrollx mt12"><table>
+      <thead><tr><th>When</th><th>Activity</th><th class="num">Net aUEC</th><th class="num">Minutes</th><th class="num">aUEC / h</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="lgRows"></tbody>
+    </table></div>
+    <textarea class="copybox" id="lgBriefBox" readonly aria-label="Briefing text" hidden></textarea>
+  </div>
+</section>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<footer class="foot">
+  <p class="small muted" id="dataStamp"></p>
+  <p class="fine">This is an unofficial Star Citizen fan tool, not affiliated with the Cloud Imperium group of companies. Commodity prices come from <a href="https://uexcorp.space/" target="_blank" rel="noopener">UEX Corp</a> (community data; UEX is a fictional in-game entity). Ship data credits <a href="https://api.star-citizen.wiki/" target="_blank" rel="noopener">api.star-citizen.wiki</a>. Ship and item pictures come from the <a href="https://starcitizen.tools/" target="_blank" rel="noopener">Star Citizen Wiki</a> and are the property of Cloud Imperium Games (Star Citizen®, Roberts Space Industries® and Cloud Imperium® are registered trademarks of Cloud Imperium Rights LLC); they are shown here as fan content and are not licensed to or endorsed by CIG. Status and Comm-Link information comes from robertsspaceindustries.com. What you enter on this page is saved in your browser only. <a href="https://belpire.com/privacy/">Privacy Policy</a> · <a href="https://belpire.com/terms/">Terms of Use</a></p>
+  <div class="omniglass-status" id="ogStatus" aria-label="System status"><span id="ogSys">SYS: FINTAC OMNIGLASS</span><span id="ogLink">LINK: —</span><span id="ogSync">SYNC: —</span><span id="ogCache">LOCAL CACHE: —</span></div>
+</footer>
+<nav id="dock" class="dock" aria-label="Modules"></nav>
+<div id="acct" class="acct"></div>
+</body>
+</html>

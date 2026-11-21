@@ -1,0 +1,476 @@
+{
+ "data": {
+  "uuid": "cb-uuid",
+  "name": "Cutlass Black",
+  "slug": "drak-cutlass-black",
+  "size_class": 3,
+  "role": "Light Freight / Medium Fighter",
+  "career": "Transporter",
+  "msrp": 110,
+  "is_spaceship": true,
+  "cargo_capacity": 46,
+  "manufacturer": {
+   "name": "Drake Interplanetary"
+  },
+  "crew": {
+   "min": 3,
+   "max": 3
+  },
+  "speed": {
+   "scm": 217,
+   "max": 1115
+  },
+  "uex_prices": {
+   "purchase": [],
+   "rental": []
+  },
+  "shield": {
+   "hp": 7200,
+   "regeneration": 1368
+  },
+  "weaponry": {
+   "pilot_dps": 2797.8,
+   "pilot_alpha": 151.4,
+   "pilot_sustained_dps": 1816,
+   "fixed_weapons": {
+    "dps_total": 2797.8,
+    "sustained_dps_total": 1816,
+    "alpha_total": 151.4,
+    "weapons": [
+     {
+      "name": "Mantis GT-220 Gatling",
+      "dps": 853.3,
+      "sustained_dps": 629.1,
+      "alpha": 32
+     },
+     {
+      "name": "Mantis GT-220 Gatling",
+      "dps": 853.3,
+      "sustained_dps": 629.1,
+      "alpha": 32
+     },
+     {
+      "name": "CF-337 Panther Repeater",
+      "dps": 545.6,
+      "sustained_dps": 278.9,
+      "alpha": 43.7
+     },
+     {
+      "name": "CF-337 Panther Repeater",
+      "dps": 545.6,
+      "sustained_dps": 278.9,
+      "alpha": 43.7
+     }
+    ]
+   }
+  },
+  "turrets": {
+   "manned": [
+    {
+     "category": "manned",
+     "hardpoint_name": "hardpoint_turret",
+     "turret_type": "TurretBase.MannedTurret",
+     "size": 5,
+     "mount_count": 2,
+     "weapon_sizes": [
+      3,
+      3
+     ],
+     "mounts": [
+      {
+       "hardpoint_name": "hardpoint_weapon_right",
+       "mount_type": "Turret.GunTurret",
+       "size": 3,
+       "weapon_sizes": [
+        3
+       ],
+       "payload_sizes": [
+        3
+       ],
+       "payload_types": [
+        "WeaponGun.Gun"
+       ]
+      },
+      {
+       "hardpoint_name": "hardpoint_weapon_left",
+       "mount_type": "Turret.GunTurret",
+       "size": 3,
+       "weapon_sizes": [
+        3
+       ],
+       "payload_sizes": [
+        3
+       ],
+       "payload_types": [
+        "WeaponGun.Gun"
+       ]
+      }
+     ],
+     "weapons": [
+      {
+       "uuid": "bd13235d-1261-4b71-b32f-aed1a8beb526",
+       "class_name": "KLWE_LaserRepeater_S3",
+       "name": "CF-337 Panther Repeater",
+       "dps": 545.6,
+       "sustained_dps": 278.9,
+       "alpha": 43.7
+      },
+      {
+       "uuid": "bd13235d-1261-4b71-b32f-aed1a8beb526",
+       "class_name": "KLWE_LaserRepeater_S3",
+       "name": "CF-337 Panther Repeater",
+       "dps": 545.6,
+       "sustained_dps": 278.9,
+       "alpha": 43.7
+      }
+     ]
+    }
+   ],
+   "remote": [],
+   "pdc": []
+  },
+  "ports": [
+   {
+    "name": "hardpoint_turret",
+    "type": "TurretBase",
+    "editable": false,
+    "sizes": {
+     "min": 1,
+     "max": 6
+    },
+    "equipped_item_uuid": "tb1",
+    "equipped_item": {
+     "uuid": "tb1",
+     "name": "Manned Turret",
+     "type": "TurretBase"
+    },
+    "ports": [],
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Left_Body_Weapon",
+    "type": "Turret",
+    "editable": true,
+    "sizes": {
+     "min": 3,
+     "max": 3
+    },
+    "equipped_item_uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+    "equipped_item": {
+     "uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+     "name": "VariPuck S3 Gimbal Mount",
+     "type": "Turret",
+     "size": 3
+    },
+    "ports": null,
+    "compatible_types": [
+     {
+      "type": "Turret",
+      "sub_types": [
+       "Gun",
+       "GunTurret"
+      ]
+     },
+     {
+      "type": "WeaponGun",
+      "sub_types": [
+       "Gun"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "hardpoint_Right_Body_Weapon",
+    "type": "Turret",
+    "editable": true,
+    "sizes": {
+     "min": 3,
+     "max": 3
+    },
+    "equipped_item_uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+    "equipped_item": {
+     "uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+     "name": "VariPuck S3 Gimbal Mount",
+     "type": "Turret",
+     "size": 3
+    },
+    "ports": null,
+    "compatible_types": [
+     {
+      "type": "Turret",
+      "sub_types": [
+       "Gun",
+       "GunTurret"
+      ]
+     },
+     {
+      "type": "WeaponGun",
+      "sub_types": [
+       "Gun"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "hardpoint_Left_Wing_Weapon",
+    "type": "Turret",
+    "editable": true,
+    "sizes": {
+     "min": 3,
+     "max": 3
+    },
+    "equipped_item_uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+    "equipped_item": {
+     "uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+     "name": "VariPuck S3 Gimbal Mount",
+     "type": "Turret",
+     "size": 3
+    },
+    "ports": null,
+    "compatible_types": [
+     {
+      "type": "Turret",
+      "sub_types": [
+       "Gun",
+       "GunTurret"
+      ]
+     },
+     {
+      "type": "WeaponGun",
+      "sub_types": [
+       "Gun"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "hardpoint_Right_Wing_Weapon",
+    "type": "Turret",
+    "editable": true,
+    "sizes": {
+     "min": 3,
+     "max": 3
+    },
+    "equipped_item_uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+    "equipped_item": {
+     "uuid": "8197c45b-eaf4-4836-a8f0-837d1875cd9c",
+     "name": "VariPuck S3 Gimbal Mount",
+     "type": "Turret",
+     "size": 3
+    },
+    "ports": null,
+    "compatible_types": [
+     {
+      "type": "Turret",
+      "sub_types": [
+       "Gun",
+       "GunTurret"
+      ]
+     },
+     {
+      "type": "WeaponGun",
+      "sub_types": [
+       "Gun"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "hardpoint_quantum_drive",
+    "type": "QuantumDrive",
+    "editable": true,
+    "sizes": {
+     "min": 2,
+     "max": 2
+    },
+    "equipped_item_uuid": "qd-odyssey",
+    "equipped_item": {
+     "uuid": "qd-odyssey",
+     "name": "Odyssey",
+     "type": "QuantumDrive",
+     "size": 2
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_radar",
+    "type": "Radar",
+    "editable": true,
+    "sizes": {
+     "min": 2,
+     "max": 2
+    },
+    "equipped_item_uuid": "radar-chernykh",
+    "equipped_item": {
+     "uuid": "radar-chernykh",
+     "name": "Chernykh",
+     "type": "Radar",
+     "size": 2
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_shield_generator_right",
+    "type": "Shield",
+    "editable": true,
+    "sizes": {
+     "min": 2,
+     "max": 2
+    },
+    "equipped_item_uuid": "sh-stop",
+    "equipped_item": {
+     "uuid": "sh-stop",
+     "name": "STOP",
+     "type": "Shield",
+     "size": 2
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_cm_launcher_left",
+    "type": "WeaponDefensive",
+    "editable": false,
+    "sizes": {
+     "min": 1,
+     "max": 1
+    },
+    "equipped_item_uuid": "cm1",
+    "equipped_item": {
+     "uuid": "cm1",
+     "name": "Decoy Launcher",
+     "type": "WeaponDefensive"
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Right_Pylon_03",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Right-3",
+    "equipped_item": {
+     "uuid": "rack-Right-3",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Right_Pylon_02",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Right-2",
+    "equipped_item": {
+     "uuid": "rack-Right-2",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Right_Pylon_01",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Right-1",
+    "equipped_item": {
+     "uuid": "rack-Right-1",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Left_Pylon_03",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Left-3",
+    "equipped_item": {
+     "uuid": "rack-Left-3",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Left_Pylon_02",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Left-2",
+    "equipped_item": {
+     "uuid": "rack-Left-2",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_Left_Pylon_01",
+    "type": "MissileLauncher",
+    "editable": true,
+    "sizes": {
+     "min": 4,
+     "max": 4
+    },
+    "equipped_item_uuid": "rack-Left-1",
+    "equipped_item": {
+     "uuid": "rack-Left-1",
+     "name": "MSD-423 Missile Rack",
+     "type": "MissileLauncher",
+     "size": 4
+    },
+    "ports": null,
+    "compatible_types": null
+   },
+   {
+    "name": "hardpoint_tractor_turret",
+    "type": "Turret",
+    "editable": false,
+    "sizes": {
+     "min": 1,
+     "max": 4
+    },
+    "equipped_item_uuid": "rt",
+    "equipped_item": {
+     "uuid": "rt",
+     "name": "Remote Turret",
+     "type": "Turret"
+    },
+    "ports": null,
+    "compatible_types": null
+   }
+  ]
+ }
+}

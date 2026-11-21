@@ -1,0 +1,79 @@
+{
+  "_readme": "Community tools shown on belpire.com/star-citizen/. Edit freely: url must be https; kind is one of web, app, overlay, extension, game-file. 'releases' shows the latest GitHub release; the repo must also be listed in TRACKED_REPOS in worker/star-citizen.js.",
+  "categories": [
+    {
+      "name": "Install on your PC",
+      "blurb": "Quality-of-life downloads. Get them only from these official links.",
+      "tools": [
+        {
+          "name": "StarStrings",
+          "url": "https://github.com/MrKraken/StarStrings",
+          "kind": "game-file",
+          "description": "Community global.ini that adds [BP] tags to blueprint contracts, lists contract rewards, prefixes components with type, size and grade, and shortens mining names.",
+          "note": "Check for an update after every patch, or contracts can show blank text.",
+          "releases": { "repo": "MrKraken/StarStrings", "channels": { "LIVE": "latest", "PTU": "latest-ptu" }, "warnIfOlderThanLivePatch": true }
+        },
+        {
+          "name": "Smart Citizen",
+          "url": "https://github.com/Osiris-DevWorks/smart-citizen/releases/latest",
+          "kind": "app",
+          "description": "Windows app that manages the game's localization files: switch languages and apply readability enhancements, with install detection built in.",
+          "note": "The installer isn't code-signed. After updating, run Generate Enhancements, then Apply Enhancements.",
+          "releases": { "repo": "Osiris-DevWorks/smart-citizen" }
+        },
+        {
+          "name": "Arkanis Overlay",
+          "url": "https://arkanis.cc/overlay",
+          "kind": "overlay",
+          "description": "Open-source in-game overlay: a command palette that looks things up in community tools without alt-tabbing."
+        }
+      ],
+      "footnote": "StarStrings and Smart Citizen both change the game's localization file, so pick one."
+    },
+    {
+      "name": "Ships & loadouts",
+      "tools": [
+        { "name": "Erkul DPS Calculator", "url": "https://www.erkul.games", "kind": "web", "description": "Build, compare and share ship loadouts with DPS, shields and power numbers." },
+        { "name": "SPViewer", "url": "https://www.spviewer.eu", "kind": "web", "description": "Ship performance compared side by side: speed, acceleration, quantum travel and more." },
+        { "name": "Universal Item Finder", "url": "https://finder.cstone.space", "kind": "web", "description": "Find where to buy any weapon, component or armor, with full stats." }
+      ]
+    },
+    {
+      "name": "Trading, hauling & mining",
+      "tools": [
+        { "name": "UEX", "url": "https://uexcorp.space", "kind": "web", "description": "Crowd-sourced commodity prices, trade and mining routes, and refinery planning." },
+        { "name": "SC Trade Tools", "url": "https://sc-trade.tools", "kind": "web", "description": "Trade route finder, commodity prices and a mining refinery calculator." },
+        { "name": "SC Hauling Tools", "url": "https://sc-hauling.tools", "kind": "web", "description": "Orders your hauling contract stops to cut backtracking; can import contracts by screenshot." }
+      ]
+    },
+    {
+      "name": "Missions & crafting",
+      "tools": [
+        { "name": "SCMDB", "url": "https://scmdb.net", "kind": "web", "description": "Mission, blueprint, crafting and resource database for the current patch." }
+      ]
+    },
+    {
+      "name": "Getting around",
+      "tools": [
+        { "name": "VerseGuide", "url": "https://verseguide.com", "kind": "web", "description": "Find any location in the 'verse, from outposts to caves." },
+        { "name": "VerseTime", "url": "https://dydrmr.github.io/VerseTime/", "kind": "web", "description": "Local time of day at landing zones and outposts, so you know if you're landing in the dark." },
+        { "name": "Star Binder", "url": "https://starbinder.space", "kind": "web", "description": "Search and edit your keybinds in the browser." }
+      ]
+    },
+    {
+      "name": "Fleet & pledges",
+      "tools": [
+        { "name": "FleetYards", "url": "https://fleetyards.net", "kind": "web", "description": "Ship database and fleet tracker for you and your org." },
+        { "name": "CCU Game", "url": "https://ccugame.app", "kind": "extension", "description": "Plan ship upgrade (CCU) chains and manage your hangar; works with a browser extension." }
+      ]
+    },
+    {
+      "name": "Reference",
+      "tools": [
+        { "name": "Star Citizen Wiki", "url": "https://starcitizen.tools", "kind": "web", "description": "The community wiki: ships, items, locations and mechanics." },
+        { "name": "Patch notes", "url": "https://robertsspaceindustries.com/patch-notes", "kind": "web", "description": "Official patch notes from RSI." },
+        { "name": "Roadmap", "url": "https://robertsspaceindustries.com/roadmap/", "kind": "web", "description": "Official development roadmap." }
+      ]
+    }
+  ]
+}

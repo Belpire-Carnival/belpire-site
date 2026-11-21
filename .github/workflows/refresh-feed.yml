@@ -1,0 +1,36 @@
+name: Refresh Steam feed
+
+# Rebuilds the site every 6 hours so the Steam feed stays fresh. No checkout, no repo access.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *' # UTC
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: refresh-feed
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Trigger Cloudflare build
+        env:
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CF_DEPLOY_HOOK" ]; then
+            echo "::error::Deploy hook is not configured"
+            exit 1
+          fi
+          case "$CF_DEPLOY_HOOK" in
+            https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/*) ;;
+            https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/*) ;;
+            *) echo "::error::Deploy hook is not valid"; exit 1 ;;
+          esac
+          curl -fsS --max-time 30 -X POST "$CF_DEPLOY_HOOK" -o /dev/null
+          echo "Build triggered."

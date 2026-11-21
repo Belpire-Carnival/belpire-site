@@ -1,0 +1,245 @@
+// DIV_RSI1 (Star Citizen division) live panels: server status, Comm-Link and the Toolbox.
+// Reads /api/star-citizen (served by the Worker on this host) and tools.json beside this page.
+const REFRESH_MS = 2 * 60 * 1000;
+
+const LABELS = { operational: 'Operational', degraded: 'Degraded', down: 'Down', maintenance: 'Maintenance', notice: 'Notice', unknown: 'Unknown' };
+const SUMMARY = {
+  operational: 'All systems operational.',
+  degraded: 'Some systems are having problems.',
+  down: 'Major outage in progress.',
+  maintenance: 'Maintenance in progress.',
+  notice: 'There’s a notice on the status page.',
+  unknown: 'Status unavailable right now.'
+};
+
+// Text is always set with textContent; only https links are used.
+function el(tag, attrs = {}, children = []) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null) continue;
+    if (k === 'class') node.className = v;
+    else if (k === 'text') node.textContent = v;
+    else node.setAttribute(k, v);
+  }
+  for (const c of children) if (c) node.append(c);
+  return node;
+}
+function safeUrl(u) {
+  try { const url = new URL(u); return url.protocol === 'https:' ? url.href : null; } catch { return null; }
+}
+const pill = (state) => el('span', { class: `pill pill-${LABELS[state] ? state : 'unknown'}`, text: LABELS[state] || LABELS.unknown });
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+function ago(iso) {
+  const mins = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (!Number.isFinite(mins)) return '';
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const h = Math.round(mins / 60);
+  return `${h} hour${h === 1 ? '' : 's'} ago`;
+}
+
+function renderStatus(status) {
+  const summary = document.getElementById('summary');
+  const state = status?.summary || 'unknown';
+  summary.dataset.state = state;
+  document.getElementById('summary-text').textContent = SUMMARY[state] || SUMMARY.unknown;
+
+  const systems = document.getElementById('systems');
+  systems.replaceChildren();
+  for (const s of status?.systems || []) {
+    const issues = (s.unresolved || []).map((i) => {
+      const link = safeUrl(i.url);
+      return el('li', {}, [link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: i.title }) : document.createTextNode(i.title)]);
+    });
+    systems.append(el('div', { class: 'system' }, [el('h3', { text: s.name }), pill(s.status), issues.length ? el('ul', {}, issues) : null]));
+  }
+}
+
+function renderIncidents(incidents) {
+  const list = document.getElementById('incidents');
+  list.replaceChildren();
+  const items = (incidents || []).slice(0, 5);
+  if (!items.length) {
+    list.append(el('p', { class: 'empty', text: 'No recent incidents.' }));
+    return;
+  }
+  for (const i of items) {
+    const link = safeUrl(i.url);
+    const when = i.resolved ? `Resolved ${fmtDate(i.resolvedAt) || ''}` : `Started ${fmtDate(i.createdAt)}`;
+    list.append(
+      el('article', { class: 'incident' }, [
+        i.resolved ? el('span', { class: 'pill pill-operational', text: 'Resolved' }) : pill(i.severity),
+        el('span', { class: 'title', text: i.title }),
+        el('span', { class: 'meta', text: [i.affected?.join(', '), when].filter(Boolean).join(' · ') }),
+        link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: 'Details' }) : null
+      ])
+    );
+  }
+}
+
+function renderNews(news) {
+  const list = document.getElementById('news-list');
+  list.replaceChildren();
+  if (!news?.length) {
+    list.append(el('p', { class: 'empty', text: 'No transmissions to show right now.' }));
+    return;
+  }
+  for (const n of news) {
+    const link = safeUrl(n.url);
+    list.append(
+      el('article', { class: 'news' }, [
+        el('div', { class: 'meta' }, [el('span', { class: 'pill pill-type', text: n.type || 'post' }), n.posted ? el('span', { text: n.posted }) : null]),
+        el('h3', { text: n.title }),
+        n.summary ? el('p', { text: n.summary }) : null,
+        link ? el('a', { class: 'read', href: link, target: '_blank', rel: 'noopener', text: 'Read on RSI' }) : null
+      ])
+    );
+  }
+}
+
+// ---------------------------------------------------------------- Toolbox
+
+const KINDS = { web: 'Website', app: 'Windows app', overlay: 'Overlay', extension: 'Browser extension', 'game-file': 'Game file' };
+let toolsData = null;
+let lastSnap = null;
+
+function fmtDay(iso) {
+  const d = new Date(iso || '');
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Most recent game patch, from RSI status incidents (e.g. "Live Deployment", "Live Service Content Update").
+function latestLivePatch(incidents) {
+  const dates = (incidents || [])
+    .filter((i) => /live (deployment|service content update)/i.test(i.title || ''))
+    .map((i) => Date.parse(i.createdAt))
+    .filter(Number.isFinite);
+  return dates.length ? Math.max(...dates) : null;
+}
+
+function releaseInfo(tool, snap) {
+  const cfg = tool.releases;
+  const list = cfg && snap?.releases?.[cfg.repo];
+  if (!list?.length) return null;
+  const box = el('div', { class: 'tool-release' });
+  if (cfg.channels) {
+    for (const [label, tag] of Object.entries(cfg.channels)) {
+      const r = list.find((x) => x.tag === tag);
+      if (!r) continue;
+      const link = safeUrl(r.url);
+      box.append(el('span', { class: 'rel' }, [
+        el('span', { class: 'pill pill-type', text: label }),
+        link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: `updated ${fmtDay(r.updated)}` }) : document.createTextNode(`updated ${fmtDay(r.updated)}`)
+      ]));
+    }
+    const live = list.find((x) => x.tag === cfg.channels.LIVE);
+    const patch = latestLivePatch(snap?.incidents);
+    if (cfg.warnIfOlderThanLivePatch && live && patch && Date.parse(live.updated) < patch) {
+      box.append(el('p', { class: 'tool-warn', text: `The game was patched ${fmtDay(new Date(patch).toISOString())}, after this file's last LIVE update. Check for a newer release before installing.` }));
+    }
+  } else {
+    const r = list[0];
+    const link = safeUrl(r.url);
+    box.append(el('span', { class: 'rel' }, [
+      el('span', { class: 'pill pill-type', text: 'Latest' }),
+      link ? el('a', { href: link, target: '_blank', rel: 'noopener', text: `${r.tag} · ${fmtDay(r.updated)}` }) : document.createTextNode(r.tag)
+    ]));
+  }
+  return box.childNodes.length ? box : null;
+}
+
+function renderTools() {
+  const root = document.getElementById('tool-categories');
+  if (!root || !toolsData) return;
+  root.replaceChildren();
+  for (const cat of toolsData.categories || []) {
+    const grid = el('div', { class: 'tool-grid' });
+    for (const tool of cat.tools || []) {
+      const link = safeUrl(tool.url);
+      if (!link) continue;
+      grid.append(el('article', { class: 'tool' }, [
+        el('div', { class: 'tool-head' }, [el('h4', { text: tool.name }), el('span', { class: 'pill pill-type', text: KINDS[tool.kind] || 'Website' })]),
+        el('p', { text: tool.description || '' }),
+        releaseInfo(tool, lastSnap),
+        tool.note ? el('p', { class: 'tool-note', text: tool.note }) : null,
+        el('a', { class: 'read', href: link, target: '_blank', rel: 'noopener', text: tool.kind === 'web' || tool.kind === 'extension' ? 'Open' : 'Get it' })
+      ]));
+    }
+    root.append(el('div', { class: 'tool-cat' }, [
+      el('h3', { class: 'sub-h', text: cat.name }),
+      cat.blurb ? el('p', { class: 'muted small', text: cat.blurb }) : null,
+      grid,
+      cat.footnote ? el('p', { class: 'tool-note', text: cat.footnote }) : null
+    ]));
+  }
+}
+
+async function loadTools() {
+  try {
+    const res = await fetch('tools.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    toolsData = await res.json();
+    renderTools();
+  } catch (err) {
+    console.warn('Could not load tools', err);
+  }
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/star-citizen', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const snap = await res.json();
+    lastSnap = snap;
+    renderStatus(snap.status);
+    renderIncidents(snap.incidents);
+    renderNews(snap.news);
+    renderTools();
+    document.getElementById('updated').textContent = snap.updatedAt ? `Checked ${ago(snap.updatedAt)} · refreshes every few minutes` : '';
+  } catch (err) {
+    console.warn('Could not load snapshot', err);
+    document.getElementById('summary').dataset.state = 'unknown';
+    document.getElementById('summary-text').textContent = 'Couldn’t reach the status service. Try again shortly.';
+  }
+}
+
+// The Comm Array: two channels (Network Status, Comm-Link Feed) as tabs. Without this script both
+// panels simply show one after the other.
+function initTabs() {
+  const list = document.querySelector('.tabs[role="tablist"]');
+  if (!list) return;
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const show = (tab, focus) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    }
+    if (focus) tab.focus();
+  };
+  list.hidden = false;
+  list.closest('section')?.classList.add('has-tabs');
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => show(tab));
+    tab.addEventListener('keydown', (e) => {
+      const k = { ArrowRight: 1, ArrowLeft: -1, Home: -i, End: tabs.length - 1 - i }[e.key];
+      if (k === undefined) return;
+      e.preventDefault();
+      show(tabs[(i + k + tabs.length) % tabs.length], true);
+    });
+  });
+  show(tabs.find((t) => t.getAttribute('aria-selected') === 'true') || tabs[0]);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTabs();
+  loadTools();
+  load();
+  setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
+});

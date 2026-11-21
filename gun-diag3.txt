@@ -1,0 +1,704 @@
+
+=== F8C Lightning
+  slug: anvl-lightning-f8c  uuid: 663b6047-5b06-489c-a906-bc91fb7d6e63
+  detail: HTTP 200, 285138 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_left_wing_outer [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 2 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_left_wing_inner [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 3 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_wing_outer [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 2 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_wing_inner [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 3 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_nose [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_left_nose [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_turret [Turret] kids=2 item="Anvil Lightning F8C Turret"
+      hardpoint_weapon_01 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_02 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_missilerack_right [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_weapon_missilerack_left [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+  detail+include=ports: HTTP 200, 285138 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_left_wing_outer [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 2 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_left_wing_inner [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 3 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_wing_outer [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 2 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_wing_inner [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Tarantula GT-870 Mark 3 Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right_nose [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_left_nose [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_turret [Turret] kids=2 item="Anvil Lightning F8C Turret"
+      hardpoint_weapon_01 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_02 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_missilerack_right [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_weapon_missilerack_left [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+  starcitizen.tools wikitext: HTTP 200, 10435 bytes
+    {"parse":{"title":"F8C Lightning","pageid":21811,"wikitext":"{{Vehicle\n| uuid                            = 663b6047-5b06-489c-a906-bc91fb7d6e63\n| name                            = F8C Lightning\n| image                           = F8C flying over river through forest - Cropped.png\n| manufacturer                    = ANVL\n| series                          = F8 Lightning\n| career                          = Combat\n| role                            = \n| size                            = small\n| productionstate                 = Flight ready\n| addedinversion             = Alpha 3.20.0b\n| mincrew                         = 1\n| maxcrew                         = 1\n| length                          = 26\n| width                           = 25\n| height                          = 8\n| retractedlength                 = \n| retractedwidth                  = \n| retractedheight                 = \n| mass                            = 153775\n| cargocapacity                   = 0\n| stowage                         = 650K µSCU\n| pledgecost                      = 300\n| originalpledgecost              = 300\n| warbondcost                     = 260\n| originalwarbondcost             = 260\n| pledgeavailability              = Time-limited sales\n| pledgeurl                     = https://robertsspaceindustries.com/pledge/ships/lightning/F8C-Lightning\n| presentationurl = https://robertsspaceindustries.com/comm-link/transmission/19208-The-Hunt-Is-On\n| trailerurl                      = \n| brochureurl                     = \n| qaurl = https://robertsspaceindustries.com/comm-link/engineering/19512-Q-A-Anvil-Aerospace-F8C-Lightning\n| galactapediaurl                 = https://robertsspaceindustries.com/galactapedia/article/0Gz5LW2ekd-f8c-lightning\n| releasedate                     = 2933\n| conceptdate                     = 2023-10-09\n| saledate                        = 2023-10-09\n| queryimage                      = <!--Alternative image for variant thumbnails-->\n| smwqueryname                    = \n}}\n\nThe [[Anvil Aerospace]] '''F8C Lightning''' is the civilian variant of the [[F8A Lightning]] space superiority fighter that is used by the [[United Empire of Earth Navy]]. It closely mimics the military specs of the original F8A, and has been used in lines of defense against [[Vanduul]] invaders. It was made available in extremely limited numbers to the civilian market by Anvil to celebrate the debut of the F8A in the UEE Navy.<ref name=\"F8CStore\">{{Cite RSI|
+
+=== F7A Hornet Mk II
+  slug: anvl-hornet-f7a-mk2  uuid: 6759360c-8b2f-4a89-b7c6-82e94b873c1b
+  detail: HTTP 200, 236022 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_right_wing [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Revenant Gatling"
+    hardpoint_weapon_center [Turret] kids=2 item="C5-173f S5 Hornet Mk II Ball Turret"
+      hardpoint_weapon_S3_left [WeaponGun] kids=4 item="Omnisky IX Cannon"
+      hardpoint_weapon_S3_right [WeaponGun] kids=4 item="Omnisky IX Cannon"
+    hardpoint_countermeasure_flare_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_countermeasure_chaff_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_chaff_left [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_flare_right [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_weapon_nose [Turret] kids=2 item="Anvil Hornet Mk II S3 Nose Turret"
+      hardpoint_weapon_S1_left [WeaponGun] kids=4 item="Omnisky IX Cannon"
+      hardpoint_weapon_S1_right [WeaponGun] kids=4 item="Omnisky IX Cannon"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_missile_rack_right [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_missile_rack_left [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_weapon_left_wing [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Revenant Gatling"
+  detail+include=ports: HTTP 200, 236022 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_right_wing [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Revenant Gatling"
+    hardpoint_weapon_center [Turret] kids=2 item="C5-173f S5 Hornet Mk II Ball Turret"
+      hardpoint_weapon_S3_left [WeaponGun] kids=4 item="Omnisky IX Cannon"
+      hardpoint_weapon_S3_right [WeaponGun] kids=4 item="Omnisky IX Cannon"
+    hardpoint_countermeasure_flare_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_countermeasure_chaff_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_chaff_left [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_flare_right [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_weapon_nose [Turret] kids=2 item="Anvil Hornet Mk II S3 Nose Turret"
+      hardpoint_weapon_S1_left [WeaponGun] kids=4 item="Omnisky IX Cannon"
+      hardpoint_weapon_S1_right [WeaponGun] kids=4 item="Omnisky IX Cannon"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_missile_rack_right [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_missile_rack_left [MissileLauncher] kids=4 item="MSD-442 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_03_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_04_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_weapon_left_wing [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Revenant Gatling"
+
+=== Aurora Mk I LX
+  slug: rsi-aurora-gs-lx  uuid: 6fa21dc8-c838-4134-a74a-0cd8313bcad8
+  detail: HTTP 200, 229611 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    Hardpoint_Weapon_Nose_Right [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-117 Bulldog Repeater"
+    Hardpoint_Weapon_Nose_Left [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-117 Bulldog Repeater"
+    Hardpoint_Missiles_Top [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="StrikeForce II Missile"
+      missile_02_attach [Missile] kids=0 item="StrikeForce II Missile"
+    Hardpoint_Controller_Weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_rack [Usable] kids=3 item="<= PLACEHOLDER =>"
+    Hardpoint_Weapon_Wing_Top_Right [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+    Hardpoint_Countermeasure_Right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    Hardpoint_Countermeasure_Left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    Hardpoint_Weapon_Wing_Top_Left [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+  detail+include=ports: HTTP 200, 229611 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    Hardpoint_Weapon_Nose_Right [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-117 Bulldog Repeater"
+    Hardpoint_Weapon_Nose_Left [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-117 Bulldog Repeater"
+    Hardpoint_Missiles_Top [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="StrikeForce II Missile"
+      missile_02_attach [Missile] kids=0 item="StrikeForce II Missile"
+    Hardpoint_Controller_Weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_rack [Usable] kids=3 item="<= PLACEHOLDER =>"
+    Hardpoint_Weapon_Wing_Top_Right [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+    Hardpoint_Countermeasure_Right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    Hardpoint_Countermeasure_Left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    Hardpoint_Weapon_Wing_Top_Left [Turret] kids=1 item="VariPuck S1 Gimbal Mount"
+
+=== Prowler
+  slug: espr-prowler  uuid: 087b2253-2fc7-4fae-9f9d-97f64b7c43db
+  detail: HTTP 200, 397481 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_rack_01 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_02 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_03 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_04 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_06 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_05 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_08 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_07 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_10 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_12 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_09 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_14 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_13 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_15 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_16 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_weapon_rack_11 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_spine [Turret] kids=2 item="Esperia Prowler Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="Lightstrike III Cannon"
+          BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="Lightstrike III Cannon"
+          BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_left [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Deadbolt V Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Deadbolt V Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_controller_weapon_copilot [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_controller_missile [] kids=0
+  detail+include=ports: HTTP 200, 397481 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_rack_01 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_02 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_03 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_04 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_06 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_05 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_08 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_07 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_10 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_12 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_09 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_14 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_13 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_15 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_rack_16 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_weapon_rack_11 [Usable] kids=1 item="<= PLACEHOLDER =>"
+      $proxy_weapon_01 [] kids=0
+    hardpoint_weapon_spine [Turret] kids=2 item="Esperia Prowler Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="Lightstrike III Cannon"
+          BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="Lightstrike III Cannon"
+          BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+          VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_left [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Deadbolt V Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_weapon_right [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="Deadbolt V Cannon"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_controller_weapon_copilot [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_controller_missile [] kids=0
+
+=== Corsair
+  slug: drak-corsair  uuid: e1afb014-fe71-4da9-89ae-c30fcf9c0782
+  detail: HTTP 200, 470684 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, suit_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_manned_turret_left [TurretBase] kids=6 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_manned_turret_right [TurretBase] kids=6 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_seataccess_turret_left [SeatAccess] kids=0 item="Seat"
+    hardpoint_seataccess_turret_right [SeatAccess] kids=0 item="Seat"
+    hardpoint_weapon_rack_01 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_02 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_03 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_special [Usable] kids=2 item="Weapon Rack"
+    hardpoint_manned_turret_airlock_right [] kids=0
+    hardpoint_manned_turret_door_right [] kids=0
+    hardpoint_manned_turret_door_left [] kids=0
+    hardpoint_manned_turret_airlock_left [] kids=0
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_weapon_co_pilot [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_cheek_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_cheek_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_chin_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_chin_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_cm_launcher_left [WeaponDefensive] kids=0 item="Joker Defcon - Decoy Launcher"
+    hardpoint_cm_launcher_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_tail_turret [Turret] kids=2 item="Remote Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_wing_top [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M7A Cannon"
+    hardpoint_weapon_wing_bottom [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M7A Cannon"
+    hardpoint_wing_right_missile_mount_a [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_b [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_c [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_d [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+  detail+include=ports: HTTP 200, 470684 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, suit_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_manned_turret_left [TurretBase] kids=6 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_manned_turret_right [TurretBase] kids=6 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_seataccess_turret_left [SeatAccess] kids=0 item="Seat"
+    hardpoint_seataccess_turret_right [SeatAccess] kids=0 item="Seat"
+    hardpoint_weapon_rack_01 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_02 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_03 [Usable] kids=5 item="Weapon Rack"
+    hardpoint_weapon_rack_special [Usable] kids=2 item="Weapon Rack"
+    hardpoint_manned_turret_airlock_right [] kids=0
+    hardpoint_manned_turret_door_right [] kids=0
+    hardpoint_manned_turret_door_left [] kids=0
+    hardpoint_manned_turret_airlock_left [] kids=0
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_controller_weapon_co_pilot [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_cheek_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_cheek_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_chin_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_chin_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M6A Cannon"
+    hardpoint_cm_launcher_left [WeaponDefensive] kids=0 item="Joker Defcon - Decoy Launcher"
+    hardpoint_cm_launcher_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_tail_turret [Turret] kids=2 item="Remote Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_wing_top [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M7A Cannon"
+    hardpoint_weapon_wing_bottom [Turret] kids=1 item="VariPuck S5 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="M7A Cannon"
+    hardpoint_wing_right_missile_mount_a [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_b [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_c [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_wing_right_missile_mount_d [MissileLauncher] kids=2 item="MSD-423 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+
+=== Arrow
+  slug: anvl-arrow  uuid: eaeb562d-d4ac-43bd-a843-e8a6d69fad82
+  detail: HTTP 200, 221846 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_missile_wing_left_outer [MissileLauncher] kids=1 item="MSD-212 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_missile_wing_left_inner [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Dominator II Missile"
+      missile_02_attach [Missile] kids=0 item="Dominator II Missile"
+    hardpoint_gimbal_mount [Turret] kids=2 item="Anvil Arrow Turret"
+      hardpoint_weapon_01 [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      hardpoint_weapon_02 [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_weapon_wing_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_wing_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_missile_wing_right_outer [MissileLauncher] kids=1 item="MSD-212 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Dominator II Missile"
+    hardpoint_missile_wing_right_inner [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+  detail+include=ports: HTTP 200, 221846 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_missile_wing_left_outer [MissileLauncher] kids=1 item="MSD-212 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_missile_wing_left_inner [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Dominator II Missile"
+      missile_02_attach [Missile] kids=0 item="Dominator II Missile"
+    hardpoint_gimbal_mount [Turret] kids=2 item="Anvil Arrow Turret"
+      hardpoint_weapon_01 [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      hardpoint_weapon_02 [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+    hardpoint_countermeasure_launcher_right [WeaponDefensive] kids=0 item="Anvil Noise Launcher"
+    hardpoint_countermeasure_launcher_left [WeaponDefensive] kids=0 item="Anvil Decoy Launcher"
+    hardpoint_weapon_wing_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_wing_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_missile_wing_right_outer [MissileLauncher] kids=1 item="MSD-212 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Dominator II Missile"
+    hardpoint_missile_wing_right_inner [MissileLauncher] kids=2 item="MSD-322 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Ignite II Missile"
+      missile_02_attach [Missile] kids=0 item="Ignite II Missile"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+
+=== Mustang Delta
+  slug: cnou-mustang-delta  uuid: f8c8fe5c-1aa3-41d7-86b0-6bb54b249541
+  detail: HTTP 200, 221631 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_nose [Turret] kids=2 item="Consolidated Outland Mustang Nose Turret"
+      hardpoint_class_1_left [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_class_1_right [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_wing_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_rocket_wing_left [WeaponGun] kids=0 item="Jericho XL"
+    hardpoint_countermeasure_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_countermeasure_left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_weapon_wing_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_rocket_wing_right [WeaponGun] kids=0 item="Jericho XL"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+  detail+include=ports: HTTP 200, 221631 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, vehicle_inventory, inventory_containers, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_weapon_nose [Turret] kids=2 item="Consolidated Outland Mustang Nose Turret"
+      hardpoint_class_1_left [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+      hardpoint_class_1_right [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_weapon_wing_left [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_rocket_wing_left [WeaponGun] kids=0 item="Jericho XL"
+    hardpoint_countermeasure_right [WeaponDefensive] kids=0 item="Joker Defcon - Noise Launcher"
+    hardpoint_countermeasure_left [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_weapon_wing_right [Turret] kids=1 item="VariPuck S2 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-227 Badger Repeater"
+    hardpoint_rocket_wing_right [WeaponGun] kids=0 item="Jericho XL"
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+
+=== Asgard
+  slug: anvl-asgard  uuid: 8ffde65b-ee9b-4a50-b386-3111175736b2
+  detail: HTTP 200, 418954 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_turret_bottom [TurretBase] kids=5 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-447 Rhino Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-447 Rhino Repeater"
+    hardpoint_turret_bottom_seataccess [SeatAccess] kids=0 item="Seat"
+    hardpoint_turret_console_left [] kids=0
+    hardpoint_turret_console_left_access [] kids=0
+    hardpoint_turret_console_right [] kids=0
+    hardpoint_turret_console_right_access [] kids=0
+    hardpoint_turret_pilot [Turret] kids=2 item="PC2 Dual S3 Mount"
+      hardpoint_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+      hardpoint_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_turret_top [MissileLauncher] kids=16 item="MSD-683 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_03_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_04_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_05_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_06_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_07_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_08_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_09_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_10_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_11_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_12_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_13_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_14_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_15_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_16_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_top_left_1 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_left_2 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_right_1 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_right_2 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_CML_7 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_8 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_CML1 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML2 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_turret_door_left [WeaponMount] kids=3 item="Turret"
+      weapon [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      weapon_controller [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_turret_door_right [WeaponMount] kids=3 item="Turret"
+      weapon [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      weapon_controller [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_CML_3 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_4 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_CML_5 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_6 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+  detail+include=ports: HTTP 200, 418954 bytes
+    top-level keys: uuid, name, game_name, slug, class_name, port_tags, sizes, dimension, emission, mass, mass_hull, mass_loadout, mass_total, cargo_capacity, ore_capacity, cargo_grids, cargo_limits, vehicle_inventory, inventory_containers, weapon_storage, crew, max_medical_tier, seating, health, shield_hp, shield_face_type, shield, weapon_snapshot, speed, afterburner, fuel, propulsion, quantum, no_fuel_params, agility, armor, weaponry, manufacturer, size_class, cross_section, cross_section_max, is_vehicle, is_gravlev, is_spaceship, is_power_suit, signature, cooling, power, power_pools, penetration_multiplier, relay_network, insurance, damage_limits, ports, parts, turrets, career, role, game_description, components, web_url, link, loaner, skus, msrp, warbond_price, pledge_url, curated_data, uex_prices, images, updated_at, version, id, chassis_id, shipmatrix_name, foci, production_status, production_note, type, description, size
+    hardpoint_controller_missile [MissileController] kids=0 item="MISSILES"
+    hardpoint_controller_weapon [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_turret_bottom [TurretBase] kids=5 item="Manned Turret"
+      hardpoint_weapon_left [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-447 Rhino Repeater"
+      hardpoint_weapon_right [Turret] kids=1 item="VariPuck S4 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-447 Rhino Repeater"
+    hardpoint_turret_bottom_seataccess [SeatAccess] kids=0 item="Seat"
+    hardpoint_turret_console_left [] kids=0
+    hardpoint_turret_console_left_access [] kids=0
+    hardpoint_turret_console_right [] kids=0
+    hardpoint_turret_console_right_access [] kids=0
+    hardpoint_turret_pilot [Turret] kids=2 item="PC2 Dual S3 Mount"
+      hardpoint_left [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+      hardpoint_right [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+        hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_turret_top [MissileLauncher] kids=16 item="MSD-683 Missile Rack"
+      missile_01_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_02_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_03_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_04_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_05_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_06_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_07_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_08_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_09_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_10_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_11_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_12_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_13_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_14_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_15_attach [Missile] kids=0 item="Arrester III Missile"
+      missile_16_attach [Missile] kids=0 item="Arrester III Missile"
+    hardpoint_weapon_regen_pool [] kids=0
+    hardpoint_weapon_regen_pool_turrets [] kids=0
+    hardpoint_weapon_top_left_1 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_left_2 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_right_1 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_weapon_top_right_2 [Turret] kids=1 item="VariPuck S3 Gimbal Mount"
+      hardpoint_class_2 [WeaponGun] kids=4 item="CF-337 Panther Repeater"
+    hardpoint_CML_7 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_8 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_CML1 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML2 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_turret_door_left [WeaponMount] kids=3 item="Turret"
+      weapon [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      weapon_controller [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_turret_door_right [WeaponMount] kids=3 item="Turret"
+      weapon [WeaponGun] kids=4 item="YellowJacket GT-210 Gatling"
+        BAR1 [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        MEC [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        POW [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+        VEN [WeaponAttachment] kids=0 item="<= PLACEHOLDER =>"
+      weapon_controller [WeaponController] kids=0 item="WEAPONS"
+    hardpoint_CML_3 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_4 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"
+    hardpoint_CML_5 [WeaponDefensive] kids=0 item="Aegis Gladius - Decoy Launcher"
+    hardpoint_CML_6 [WeaponDefensive] kids=0 item="Aegis Gladius - Noise Launcher"

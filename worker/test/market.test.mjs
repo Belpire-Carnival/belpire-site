@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { riskOf, worst } from '../../site/bureau/rsi1/companion/risk.js';
+import { freshRows, systemsIn, bestRuns, areaBoard } from '../../site/bureau/rsi1/companion/market.js';
+
+const row = (commodity, terminal, system, place, buy, sell, at = null) => ({ commodity, terminal, system, place, buy, sell, at });
+const rows = [
+  row('Agricium', 'Admin - Lorville', 'Stanton', 'Lorville', 20, null), row('Agricium', 'Trade - Area 18', 'Stanton', 'Area 18', null, 30),
+  row('Hides', 'Shop - Levski', 'Nyx', 'Levski', 10, 12), row('Hides', 'Rat\'s Nest', 'Pyro', 'Rat\'s Nest', null, 40),
+  row('Beans', 'Outpost X', 'Pyro', 'Outpost X', 5, null), row('Beans', 'Checkmate Bar', 'Pyro', 'Checkmate Station', null, 15),
+  row('Old', 'Admin - Lorville', 'Stanton', 'Lorville', 1, 99, 1000)
+];
+
+test('risk rules: armistice cities low, Pyro lawless high, Levski and Nyx medium, unknown systems unknown', () => {
+  assert.equal(riskOf('Stanton', 'Admin - Lorville').level, 'safe');
+  assert.equal(riskOf('Stanton', 'Shepherd Outpost').level, 'med');
+  assert.equal(riskOf('Pyro', 'Rustville').level, 'high');
+  assert.equal(riskOf('Pyro', 'Checkmate Station').level, 'high');
+  assert.equal(riskOf('Nyx', 'Levski').level, 'med');
+  assert.equal(riskOf('Stanton', 'ARC-L1 Wide Forest Station').level, 'safe');
+  assert.equal(riskOf('Stanton', 'Port Olisar').level, 'safe');
+  assert.equal(riskOf('Stanton', 'Everus Harbor').level, 'low');
+  assert.equal(riskOf('Terra', 'Somewhere').level, 'unknown');
+  assert.equal(worst(riskOf('Stanton', 'Lorville'), riskOf('Pyro', 'x')).level, 'high');
+});
+
+test('old rows are dropped and systems come in Stanton, Pyro, Nyx order', () => {
+  const f = freshRows(rows, Date.now());
+  assert.ok(!f.some((r) => r.commodity === 'Old'));
+  assert.deepEqual(systemsIn(f), ['Stanton', 'Pyro', 'Nyx']);
+});
+
+test('bestRuns stays inside a system when asked, flags cross-system runs and can skip high-risk places', () => {
+  const f = freshRows(rows);
+  const all = bestRuns(f);
+  assert.equal(all.find((r) => r.commodity === 'Hides').cross, true);
+  assert.equal(all.find((r) => r.commodity === 'Hides').margin, 30);
+  assert.deepEqual(bestRuns(f, { system: 'Stanton' }).map((r) => r.commodity), ['Agricium']);
+  assert.deepEqual(bestRuns(f, { system: 'Pyro' }).map((r) => r.commodity), ['Beans']);
+  assert.equal(bestRuns(f, { system: 'Pyro', avoidHigh: true }).length, 0);
+  assert.equal(bestRuns(f, { q: 'agri' }).length, 1);
+});
+
+test('areaBoard ranks the areas of one system by the best run from or to them', () => {
+  const f = freshRows(rows);
+  const s = areaBoard(f, 'Stanton');
+  assert.deepEqual(s.map((a) => a.name), ['Area 18', 'Lorville']);
+  assert.equal(s[1].out[0].commodity, 'Agricium'); assert.equal(s[1].out[0].margin, 10);
+  assert.equal(s[0].in[0].margin, 10);
+  assert.equal(s[0].risk.level, 'safe');
+  const p = areaBoard(f, 'Pyro');
+  assert.equal(p[0].risk.level, 'high');
+  assert.deepEqual(areaBoard(f, 'Nyx').map((a) => a.name), ['Levski']);
+});
+
+test('areaBoard keeps the best run that leaves the system apart from the ranking', () => {
+  const lev = areaBoard(freshRows(rows), 'Nyx')[0];
+  assert.equal(lev.score, 0);
+  assert.equal(lev.jump.otherSystem, 'Pyro'); assert.equal(lev.jump.margin, 30);
+});
+
+import { runRisk } from '../../site/bureau/rsi1/companion/risk.js';
+test('run risk: worst end sets the level, both ends add up to a score out of 10', () => {
+  const r = runRisk(riskOf('Stanton', 'Admin - Lorville'), riskOf('Pyro', 'Rustville'));
+  assert.equal(r.level, 'high'); assert.equal(r.score, 5); assert.equal(r.max, 10);
+  assert.equal(runRisk(riskOf('Terra', 'a'), riskOf('Terra', 'b')).score, 4);
+});
+
+import { safeRuns } from '../../site/bureau/rsi1/companion/market.js';
+test('safeRuns only pairs places that are Safe at both ends, and finds nothing in Pyro', () => {
+  const now = Date.now() / 1000;
+  const r = (commodity, terminal, system, place, buy, sell) => ({ commodity, terminal, system, place, buy, sell, scuBuy: 10, scuSell: 10, at: now });
+  const rows = [
+    r('Gold', 'Admin - Lorville', 'Stanton', 'Lorville', 100, null), r('Gold', 'TDD - Area 18', 'Stanton', 'Area18', null, 150),
+    r('Gold', 'Shepherd Outpost', 'Stanton', 'Shepherd Outpost', 50, null), // cheaper, but not safe
+    r('Gold', 'Rustville', 'Pyro', 'Rustville', 10, null), r('Gold', 'Checkmate', 'Pyro', 'Checkmate', null, 500)
+  ];
+  const stanton = safeRuns(rows, { system: 'Stanton' });
+  assert.equal(stanton.length, 1);
+  assert.equal(stanton[0].from.terminal, 'Admin - Lorville'); assert.equal(stanton[0].to.terminal, 'TDD - Area 18');
+  assert.equal(stanton[0].buyRisk.level, 'safe'); assert.equal(stanton[0].sellRisk.level, 'safe'); assert.equal(stanton[0].risk.score, 0);
+  assert.deepEqual(safeRuns(rows, { system: 'Pyro' }), []);
+});

@@ -1,0 +1,100 @@
+// Typical PvP risk for the places in the Verse, as a rule of thumb. This is NOT live data: nothing in the game or
+// the price feeds says who is camping where. It reflects how the places are set up (armistice zones, contested zones,
+// lawless systems) and where players commonly ambush haulers. Check the room before you commit a hold.
+// On top of the rules, the wiki page for each place is read (/api/sc-zones): a page that says the site is an Armistice Zone
+// makes it SAFE, and one that says it is NOT an Armistice Zone raises it to at least Medium.
+// pts feeds the run score: each end of a run counts, so a run scores 0 (both ends safe) to 10 (both ends high).
+// A place we know nothing about counts as 2 so an unknown is never mistaken for safe.
+export const LEVELS = { unknown: { label: 'Unknown', rank: 0, pts: 2 }, safe: { label: 'Safe', rank: 1, pts: 0 }, low: { label: 'Low', rank: 2, pts: 1 }, med: { label: 'Medium', rank: 3, pts: 3 }, high: { label: 'High', rank: 4, pts: 5 } };
+
+// First match wins. The text tested is the terminal, place and system names joined and lower-cased.
+const RULES = [
+  [/ruin station|checkmate|orbituary|ghost arena/, 'high', 'Contested zone: free-fire PvPvE inside the station, and pirates watch the approach.'],
+  [/grim ?hex|\byela\b/, 'high', 'Armistice inside the station, but the approach through Yela is a known pirate and ambush spot.'],
+  [/levski|delamar/, 'med', 'Armistice inside Levski. Nyx is outside UEE law, and the approach and the jump gate can be camped.'],
+  [/lorville|teasa|area ?18|\btdd\b|new babbage|orison/, 'safe', 'City landing zone: an armistice zone, so combat is blocked inside it. The approach and quantum travel are not covered.'],
+  [/rest ?stop|port olisar|\b(?:arc|cru|hur|mic)-l\d/, 'safe', 'Rest stop: treated as safe inside. The wiki says the armistice zone around the exterior was removed, so landing pads and the approach are open to attack.'],
+  [/everus|seraphim|baijini|tressler/, 'low', 'Station: armistice at the station itself in most cases, but the exterior and the approach are open.'],
+  [/gateway|jump point/, 'med', 'Jump gateway: ships arrive and leave in a line here, so it can be camped.']
+];
+const SYSTEM = {
+  stanton: ['med', 'No armistice zone at this kind of place. UEE law applies, but another player can still shoot you.'],
+  pyro: ['high', 'Pyro has little UEE law outside a few stations. Pirates and gangs roam the outposts and the lanes between them.'],
+  nyx: ['med', 'Nyx is outside UEE law. Outposts and approaches are unpoliced.']
+};
+
+const norm = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const ZONES = new Map(); // norm name -> { z: 'armistice' | 'open' | 'unknown', ev }
+const asked = new Set();
+export const setZones = (obj) => { for (const [k, v] of Object.entries(obj || {})) if (v && typeof v.z === 'string') ZONES.set(k, v); };
+
+// "Admin - Lorville" gives "Admin - Lorville", "Lorville", "Admin": the most specific page that the wiki knows decides.
+export function nameCandidates(...names) {
+  const out = [];
+  for (const n of names) {
+    const t = String(n || '').trim();
+    if (!t) continue;
+    out.push(t, ...t.split(/\s+[-–]\s+/).reverse());
+  }
+  return [...new Set(out.map((x) => x.trim()).filter((x) => x.length > 2))];
+}
+
+function wikiZone(names) {
+  for (const c of nameCandidates(...names)) { const z = ZONES.get(norm(c)); if (z && z.z !== 'unknown') return { ...z, name: c }; }
+  return null;
+}
+
+// Fetch the wiki's armistice status for the places in these market rows (terminal and place). True when something new arrived.
+// Open the page with ?zones=fresh to make the Worker re-read the wiki instead of using what it stored.
+export async function learnZones(rows, { fetcher = fetch, cap = 90, fresh = typeof location !== 'undefined' && /[?&]zones=fresh\b/.test(location.search) } = {}) {
+  const want = [];
+  for (const r of rows || []) for (const c of nameCandidates(r.terminal, r.place)) if (!asked.has(norm(c)) && !want.includes(c)) want.push(c);
+  const todo = want.slice(0, cap);
+  let got = false;
+  for (let i = 0; i < todo.length; i += 15) {
+    const chunk = todo.slice(i, i + 15);
+    for (const c of chunk) asked.add(norm(c));
+    try {
+      const r = await fetcher(`/api/sc-zones?${chunk.map((c) => `n=${encodeURIComponent(c)}`).join('&')}${fresh ? '&fresh=1' : ''}`, { cache: 'no-cache', headers: { Accept: 'application/json' } });
+      if (!r.ok) continue;
+      const j = await r.json();
+      setZones(j.zones); got = got || Object.keys(j.zones || {}).length > 0;
+    } catch { /* offline or blocked: the rule-of-thumb level stays */ }
+  }
+  return got;
+}
+
+function base(system, names) {
+  const text = [...names, system].filter(Boolean).join(' ').toLowerCase();
+  for (const [re, level, note] of RULES) if (re.test(text)) return { level, label: LEVELS[level].label, note };
+  const s = SYSTEM[String(system || '').toLowerCase()];
+  return s ? { level: s[0], label: LEVELS[s[0]].label, note: s[1] } : { level: 'unknown', label: 'Unknown', note: 'No risk rule for this place.' };
+}
+
+// The wiki page's Jurisdiction line, shown even when the page does not say whether the place is an Armistice Zone.
+function jurisdiction(names) {
+  for (const c of nameCandidates(...names)) { const z = ZONES.get(norm(c)); if (z?.j) return z.j; }
+  return '';
+}
+
+function judged(system, names) {
+  const r = base(system, names), z = wikiZone(names), jn = jurisdiction(names), jur = (z?.j || jn) ? ` Jurisdiction: ${z?.j || jn}.` : '';
+  if (!z) return jn ? { ...r, note: `${r.note}${jur}` } : r;
+  if (z.z === 'armistice') return { level: 'safe', label: 'Safe', note: `Wiki: ${z.name} is an Armistice Zone, so combat is blocked inside it.${jur} The approach and quantum travel are not covered.`, wiki: 'armistice' };
+  const level = LEVELS[r.level].rank >= LEVELS.med.rank ? r.level : 'med';
+  return { level, label: LEVELS[level].label, note: `Wiki: ${z.name} is not an Armistice Zone, so anyone can shoot you here.${jur} ${level === r.level ? r.note : ''}`.trim(), wiki: 'open' };
+}
+
+// Every place in Pyro counts as PvP risk, whatever the wiki says: Safe never applies there.
+export function riskOf(system, ...names) {
+  const r = judged(system, names);
+  if (String(system || '').toLowerCase() === 'pyro' && r.level !== 'high') return { level: 'high', label: 'High', note: `Pyro: every place counts as PvP risk. ${r.note}`, wiki: r.wiki };
+  return r;
+}
+export const worst = (...rs) => rs.reduce((a, b) => (LEVELS[b.level].rank > LEVELS[a.level].rank ? b : a), rs[0] || riskOf(''));
+
+// Risk of a whole run: the worse end sets the level, both ends add up to the score out of 10.
+export function runRisk(buy, sell) {
+  const w = worst(buy, sell), score = LEVELS[buy.level].pts + LEVELS[sell.level].pts;
+  return { ...w, score, max: 10, note: `Buy end: ${buy.label}. Sell end: ${sell.label}. Score ${score}/10 (Safe 0, Low 1, Unknown 2, Medium 3, High 5 per end).` };
+}

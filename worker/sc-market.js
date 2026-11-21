@@ -1,0 +1,266 @@
+// Live commodity prices and the current game version for the Star Citizen companion
+// (bureau.belpire.com/rsi1/companion/), from the community-run UEX API.
+//
+//  • Every 10 minutes the cron calls refreshMarket(); it only talks to UEX when the stored snapshot is older
+//    than MARKET_EVERY_MS, so the site makes a couple of requests an hour, far under UEX's rate limit.
+//  • GET /api/sc-market serves the stored snapshot. The UEX token never leaves the Worker.
+//
+// Bindings: SC_DATA (KV). Runtime secret: UEX_API_TOKEN (bearer token from a UEX app).
+// Optional runtime variable: UEX_API_BASE (defaults to UEX_BASE below).
+//
+// The row parsers are tolerant on purpose: they accept the field names UEX documents or their obvious
+// variants, and when a response has none of them the snapshot records the keys it did see in `errors`
+// instead of publishing guesses. The page then falls back to hand-entered prices.
+
+export const UEX_BASE = 'https://uexcorp.space/api/2.0';
+const UA = 'BelpireCarnival/1.0 (+https://bureau.belpire.com/rsi1/companion/)';
+const MARKET_KEY = 'sc:market';
+export const MARKET_EVERY_MS = 55 * 60 * 1000;
+const STALE_MS = 3 * 60 * 60 * 1000;
+const MAX_ROWS = 6000;
+// Bump when the stored rows gain fields, so the next request rebuilds the snapshot instead of waiting out the hour.
+const MARKET_SCHEMA = 5;
+
+const num = (v) => {
+  const n = typeof v === 'string' ? Number(v.trim()) : v;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+const str = (v, max = 80) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim().slice(0, max));
+const first = (row, keys) => {
+  for (const k of keys) if (row[k] != null && row[k] !== '') return row[k];
+  return undefined;
+};
+
+// UEX wraps results as { status: "ok", data: ... }.
+export function unwrap(json) {
+  if (!json || typeof json !== 'object') throw new Error('response was not JSON object');
+  if (json.status && json.status !== 'ok') throw new Error(`UEX status ${json.status}`);
+  return json.data;
+}
+
+// What kind of place a terminal is in, from which of UEX's location fields it fills (the first one that is filled wins).
+export const kindOf = (r) => (first(r, ['city_name']) ? 'City' : first(r, ['space_station_name']) ? 'Space station' : first(r, ['outpost_name']) ? 'Outpost' : first(r, ['poi_name']) ? 'Point of interest' : first(r, ['moon_name', 'planet_name', 'orbit_name']) ? 'Moon or planet' : '');
+
+// One price row → { commodity, terminal, system, buy, sell, scuBuy, scuSell, at } or null.
+export function parsePriceRow(row) {
+  if (!row || typeof row !== 'object') return null;
+  const commodity = str(first(row, ['commodity_name', 'commodity']));
+  const terminal = str(first(row, ['terminal_name', 'terminal', 'terminal_code']));
+  if (!commodity || !terminal) return null;
+  const buy = num(first(row, ['price_buy', 'price_buy_avg']));
+  const sell = num(first(row, ['price_sell', 'price_sell_avg']));
+  if (!(buy > 0) && !(sell > 0)) return null;
+  const at = num(first(row, ['date_modified', 'date_added']));
+  return {
+    commodity,
+    terminal,
+    system: str(first(row, ['star_system_name', 'system_name', 'star_system']), 40),
+    place: str(first(row, ['city_name', 'space_station_name', 'outpost_name', 'planet_name', 'moon_name', 'orbit_name']), 60),
+    body: str(first(row, ['moon_name', 'planet_name', 'orbit_name']), 60),
+    kind: kindOf(row),
+    buy: buy > 0 ? buy : null,
+    sell: sell > 0 ? sell : null,
+    scuBuy: num(first(row, ['scu_buy', 'scu_buy_avg'])),
+    scuSell: num(first(row, ['scu_sell_stock', 'scu_sell', 'scu_sell_avg'])),
+    at: at && at > 0 ? at : null
+  };
+}
+
+// UEX's price rows carry the terminal but not where it is. The terminals list does: star system, city / station / outpost.
+// Keyed by terminal id and by lower-cased name, nickname and code, so a row joins on whichever it has.
+const lc = (v) => String(v || '').toLowerCase().replace(/\s+/g, ' ').trim();
+export function parseTerminals(data) {
+  const map = new Map();
+  if (!Array.isArray(data)) return map;
+  for (const t of data) {
+    if (!t || typeof t !== 'object') continue;
+    const loc = {
+      system: str(first(t, ['star_system_name', 'system_name']), 40),
+      // displayname is the name players use ("Grim HEX", "Area18", "CRU-L4 Shallow Fields Station"); UEX's own station field can differ.
+      place: str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60),
+      // The moon or planet it sits on or orbits, so the page can tell what is close by.
+      body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60),
+      kind: kindOf(t)
+    };
+    if (!loc.system && !loc.place) continue;
+    if (t.id != null) map.set(`id:${t.id}`, loc);
+    for (const k of ['name', 'nickname', 'code', 'displayname']) if (t[k]) map.set(`n:${lc(t[k])}`, loc);
+  }
+  return map;
+}
+
+// What each terminal offers besides prices: refineries, fuel, repair, ship shops, cargo centres, freight elevators and so on.
+// UEX describes a terminal with a `type` and yes/no flags; both are read, tolerantly, because the exact names are not pinned down here.
+// Hangars and ASOP terminals are not in UEX's terminal list, so they cannot appear.
+export const SERVICE_KEYS = ['refinery', 'refuel', 'repair', 'shipbuy', 'shiprent', 'cargo', 'freight', 'dock', 'medical', 'food', 'fpsshop'];
+export function servicesOf(t) {
+  const flag = (k) => t[k] === 1 || t[k] === true || t[k] === '1';
+  const type = lc(t.type).replace(/[\s-]+/g, '_');
+  const out = [];
+  if (flag('is_refinery') || type.includes('refinery')) out.push('refinery');
+  if (flag('is_refuel') || type === 'fuel' || type.includes('refuel')) out.push('refuel');
+  if (flag('is_repair') || type.includes('repair')) out.push('repair');
+  if (flag('is_shop_vehicle_buy') || type === 'vehicle_buy') out.push('shipbuy');
+  if (flag('is_shop_vehicle_rent') || type === 'vehicle_rent') out.push('shiprent');
+  if (flag('is_cargo_center') || type.includes('cargo_center')) out.push('cargo');
+  if (flag('has_freight_elevator')) out.push('freight');
+  if (flag('has_loading_dock')) out.push('dock');
+  if (flag('is_medical') || type === 'medical') out.push('medical');
+  if (flag('is_food') || type === 'food') out.push('food');
+  if (flag('is_shop_fps') || type === 'item') out.push('fpsshop');
+  return out;
+}
+export function parseServices(data) {
+  if (!Array.isArray(data)) return [];
+  const out = [];
+  for (const t of data) {
+    if (!t || typeof t !== 'object') continue;
+    const svc = servicesOf(t); if (!svc.length) continue;
+    const system = str(first(t, ['star_system_name', 'system_name']), 40);
+    const place = str(first(t, ['displayname', 'city_name', 'space_station_name', 'outpost_name', 'poi_name', 'moon_name', 'planet_name', 'orbit_name']), 60);
+    if (!system && !place) continue;
+    out.push({ name: str(first(t, ['displayname', 'name', 'nickname']), 60), place, system, body: str(first(t, ['moon_name', 'planet_name', 'orbit_name']), 60), kind: kindOf(t), svc });
+  }
+  return out.slice(0, 2500);
+}
+
+export function parsePrices(data, terminals) {
+  if (!Array.isArray(data)) throw new Error('prices: expected a list');
+  const rows = [];
+  for (const raw of data.slice(0, MAX_ROWS)) {
+    const r = parsePriceRow(raw);
+    if (!r) continue;
+    if (terminals?.size && (!r.system || !r.place)) {
+      const loc = terminals.get(`id:${raw.id_terminal}`) || terminals.get(`n:${lc(r.terminal)}`);
+      if (loc) { r.system = r.system || loc.system; r.place = r.place || loc.place; r.body = r.body || loc.body; r.kind = r.kind || loc.kind; }
+    }
+    rows.push(r);
+  }
+  if (data.length && !rows.length) {
+    const keys = Object.keys(data[0] || {}).slice(0, 40).join(',');
+    throw new Error(`prices: no usable rows (first row keys: ${keys})`);
+  }
+  return rows;
+}
+
+// The version endpoint's shape is not pinned down here: look for a version-like string under common names.
+export function parseLiveVersion(data) {
+  const looks = (v) => typeof v === 'string' && /^\d+\.\d+(\.\d+)?/.test(v.trim());
+  if (!data || typeof data !== 'object') return null;
+  for (const k of ['live', 'LIVE', 'current', 'version']) if (looks(data[k])) return data[k].trim().slice(0, 40);
+  const rows = Array.isArray(data) ? data : [];
+  for (const r of rows) {
+    const v = first(r || {}, ['live', 'version', 'name']);
+    if (looks(v)) return String(v).trim().slice(0, 40);
+  }
+  return null;
+}
+
+async function uex(env, resource) {
+  const base = String(env.UEX_API_BASE || UEX_BASE).replace(/\/+$/, '');
+  const res = await fetch(`${base}/${resource}/`, {
+    headers: { Authorization: `Bearer ${env.UEX_API_TOKEN}`, 'User-Agent': UA, Accept: 'application/json' },
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from UEX ${resource}`);
+  return unwrap(await res.json());
+}
+
+async function readJson(kv, key) {
+  try {
+    return (await kv.get(key, 'json')) || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function buildMarket(env, previous) {
+  const errors = [];
+  const rawTerms = uex(env, 'terminals');
+  const [prices, version, terms, svcs] = await Promise.allSettled([
+    uex(env, 'commodities_prices_all'),
+    uex(env, 'game_versions').then(parseLiveVersion),
+    rawTerms.then(parseTerminals),
+    rawTerms.then(parseServices)
+  ]);
+  const terminals = terms.status === 'fulfilled' ? terms.value : null;
+  if (!terminals?.size) errors.push(terms.status === 'fulfilled' ? 'terminals: nothing recognised' : `terminals: ${terms.reason?.message}`);
+  let rows = null;
+  if (prices.status === 'fulfilled') { try { rows = parsePrices(prices.value, terminals); } catch (e) { prices.status = 'rejected'; prices.reason = e; } }
+  if (!rows) errors.push(prices.reason?.message || 'prices failed');
+  else if (terminals?.size && rows.every((r) => !r.system)) errors.push('terminals: no price row matched a terminal');
+  const services = svcs.status === 'fulfilled' && svcs.value.length ? svcs.value : previous?.services ?? [];
+  if (svcs.status === 'fulfilled' && !svcs.value.length) errors.push('terminals: no services recognised');
+  let live = previous?.version ?? null;
+  if (version.status === 'fulfilled' && version.value) live = version.value;
+  else errors.push(version.status === 'fulfilled' ? 'version: nothing recognised' : `version: ${version.reason?.message}`);
+  return {
+    updatedAt: rows ? new Date().toISOString() : previous?.updatedAt ?? null,
+    checkedAt: new Date().toISOString(),
+    source: 'UEX Corp',
+    version: live,
+    prices: rows ?? previous?.prices ?? [],
+    services,
+    schema: MARKET_SCHEMA,
+    errors
+  };
+}
+
+export async function refreshMarket(env, { force = false } = {}) {
+  if (!env.UEX_API_TOKEN) return null;
+  const previous = await readJson(env.SC_DATA, MARKET_KEY);
+  if (!force && previous?.schema === MARKET_SCHEMA && previous?.checkedAt && Date.now() - Date.parse(previous.checkedAt) < MARKET_EVERY_MS) return previous;
+  const market = await buildMarket(env, previous);
+  await env.SC_DATA.put(MARKET_KEY, JSON.stringify(market));
+  if (market.errors.length) console.warn('Market refresh warnings:', market.errors.join(' | '));
+  return market;
+}
+
+// A rebuild must never take the endpoint down: one at a time per isolate, and any failure falls back to the stored snapshot.
+let inFlight = null;
+async function safeRefresh(env, opts) {
+  if (!inFlight) inFlight = refreshMarket(env, opts).catch((e) => { console.warn('Market rebuild failed:', e?.message || e); return null; }).finally(() => { inFlight = null; });
+  return inFlight;
+}
+
+// GET /api/sc-market
+export async function handleMarket(env, ctx) {
+  if (!env.UEX_API_TOKEN) return { enabled: false, prices: [], version: null, updatedAt: null };
+  let market = await readJson(env.SC_DATA, MARKET_KEY);
+  if (!market) market = await safeRefresh(env);
+  // An old or stale snapshot is served as it is while a new one is built in the background.
+  else if (market.schema !== MARKET_SCHEMA || Date.now() - Date.parse(market.checkedAt || 0) > STALE_MS) ctx.waitUntil(safeRefresh(env, { force: true }));
+  if (!market) return { enabled: true, prices: [], version: null, updatedAt: null };
+  // `errors` can name upstream fields; the page only needs to know whether data is fresh.
+  const { errors, ...pub } = market;
+  return { enabled: true, ...pub, partial: (errors || []).length > 0 };
+}
+
+// ------------------------------------------------------------------ ship lookup (Star Citizen Wiki API)
+// GET /api/sc-ship?name=Vulture → the first matching vehicle record, cached for a day.
+const WIKI_API = 'https://api.star-citizen.wiki/api';
+const SHIP_TTL_S = 24 * 60 * 60;
+
+export function cleanShipName(raw) {
+  const s = String(raw || '').replace(/\s+/g, ' ').trim();
+  return /^[\p{L}\p{N} .'\-/]{2,50}$/u.test(s) ? s : null;
+}
+
+export async function handleShip(url, ctx) {
+  const name = cleanShipName(url.searchParams.get('name'));
+  if (!name) return { status: 400, body: { error: 'bad name' } };
+  const cache = globalThis.caches?.default;
+  const key = new Request(`https://cache.invalid/ship/${encodeURIComponent(name.toLowerCase())}`);
+  const hit = cache ? await cache.match(key) : null;
+  if (hit) return { status: 200, body: await hit.json() };
+  const res = await fetch(`${WIKI_API}/vehicles?filter[name]=${encodeURIComponent(name)}&page[size]=1`, {
+    headers: { 'User-Agent': UA, Accept: 'application/json' },
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!res.ok) return { status: 502, body: { error: 'ship database unavailable' } };
+  const json = await res.json();
+  const ship = Array.isArray(json?.data) ? json.data[0] : null;
+  const body = { ship: ship ?? null, source: 'api.star-citizen.wiki' };
+  if (cache && ship) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(body), { headers: { 'Cache-Control': `public, max-age=${SHIP_TTL_S}` } })));
+  return { status: 200, body };
+}
