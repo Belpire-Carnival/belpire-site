@@ -177,9 +177,15 @@ export function ticketStore(db) {
       await ensure(db);
       return db.prepare('SELECT * FROM prize_orders WHERE id = ?').bind(id).first();
     },
-    async pendingOrders(limit = 100) {
+    // Orders waiting for a Ringleader. `exclude` leaves out prizes that run themselves (the drawing and Double Nights).
+    async pendingOrders(limit = 100, exclude = []) {
       await ensure(db);
-      return (await db.prepare("SELECT * FROM prize_orders WHERE status = 'pending' ORDER BY created_at ASC LIMIT ?").bind(limit).all()).results;
+      const skip = exclude.length ? ` AND prize NOT IN (${exclude.map(() => '?').join(',')})` : '';
+      return (await db.prepare(`SELECT * FROM prize_orders WHERE status = 'pending'${skip} ORDER BY created_at ASC LIMIT ?`).bind(...exclude, limit).all()).results;
+    },
+    async dropOrder(id) {
+      await ensure(db);
+      await db.prepare("DELETE FROM prize_orders WHERE id = ? AND status = 'pending'").bind(id).run();
     },
     async myOrders(uid, limit = 10) {
       await ensure(db);
@@ -189,6 +195,33 @@ export function ticketStore(db) {
       await ensure(db);
       const r = await db.prepare("SELECT COUNT(*) AS n FROM prize_orders WHERE user_id = ? AND prize = ? AND status = 'pending'").bind(uid, prize).first();
       return Number(r?.n || 0);
+    },
+    // Orders (not refunded) since `sinceIso`, for the quarterly caps: how many of each prize in all, and how many are this member's.
+    async orderCounts(sinceIso, uid) {
+      await ensure(db);
+      const all = (await db.prepare("SELECT prize, COUNT(*) AS n FROM prize_orders WHERE created_at >= ? AND status != 'refunded' GROUP BY prize").bind(sinceIso).all()).results;
+      const mine = (await db.prepare("SELECT prize, COUNT(*) AS n FROM prize_orders WHERE created_at >= ? AND status != 'refunded' AND user_id = ? GROUP BY prize").bind(sinceIso, uid).all()).results;
+      const toMap = (rows) => Object.fromEntries(rows.map((r) => [r.prize, Number(r.n)]));
+      return { all: toMap(all), mine: toMap(mine) };
+    },
+    // Places an order only while fewer than `cap` of that prize exist since `sinceIso` (so two people can't take the last one together).
+    // Returns true when the order was placed.
+    async orderWithinCap(o, cap, sinceIso) {
+      await ensure(db);
+      const r = await db.prepare(`INSERT INTO prize_orders (id, user_id, name, prize, cost, detail, game_key, game_name, status, created_at)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?
+        WHERE (SELECT COUNT(*) FROM prize_orders WHERE prize = ? AND created_at >= ? AND status != 'refunded') < ?`)
+        .bind(o.id, o.user_id, o.name, o.prize, o.cost, o.detail, o.game_key, o.game_name, nowIso(), o.prize, sinceIso, cap).run();
+      return r.meta.changes > 0;
+    },
+    async pendingOf(prize, sinceIso = '') {
+      await ensure(db);
+      return (await db.prepare("SELECT * FROM prize_orders WHERE prize = ? AND status = 'pending' AND created_at >= ? ORDER BY created_at ASC").bind(prize, sinceIso).all()).results;
+    },
+    // The Double Night already running for a show, if any (its order was finished with reason `show:<key>`).
+    async doubledShow(showKey) {
+      await ensure(db);
+      return db.prepare("SELECT * FROM prize_orders WHERE prize = 'double-night' AND status = 'done' AND reason = ?").bind(`show:${showKey}`).first();
     },
     async decide(id, status, by, reason = null) {
       await ensure(db);

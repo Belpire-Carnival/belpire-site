@@ -28,6 +28,7 @@ import { memberInfo } from './polls.js';
 import { handlePasses, syncPendingPasses, passStatus } from './passes.js';
 import { handleStaffChat, purgeStaffMessages } from './staff-chat.js';
 import { handleTickets, payAttendance, weeklyHighScores } from './tickets.js';
+import { handleMidway, purgeOldPlays } from './midway.js';
 import { handleInteraction } from './interactions.js';
 import { handleMe } from './me.js';
 import { bureauRoute, isBureauHost } from './bureau.js';
@@ -86,6 +87,7 @@ export default {
     if (pathname === '/api/passes' || pathname.startsWith('/api/passes/')) return handlePasses(request, env);
     if (pathname === '/api/backstage/messages' || pathname.startsWith('/api/backstage/messages/')) return handleStaffChat(request, env);
     if (pathname === '/api/tickets' || pathname.startsWith('/api/tickets/')) return handleTickets(request, env);
+    if (pathname.startsWith('/api/midway/')) return handleMidway(request, env);
     if (pathname === '/api/discord/interactions') return handleInteraction(request, env, ctx);
     if (pathname === '/api/companion/profile' && isBureauHost(url.hostname)) return handleProfile(request, env);
     if ((pathname === '/api/companion/pair' || pathname === '/api/companion/pair/new' || pathname === '/api/companion/devices' || pathname === '/api/companion/inbox' || pathname === '/api/companion/inbox/ack' || pathname === '/api/companion/wishlist' || pathname === '/api/companion/state') && isBureauHost(url.hostname)) return handleDevices(request, env);
@@ -196,6 +198,7 @@ export default {
     ctx.waitUntil(weeklyHighScores(env).catch((err) => console.warn(`Weekly High Scores failed: ${err.message}`)));
     ctx.waitUntil(payAttendance(env).catch((err) => console.warn(`Attendance pay failed: ${err.message}`)));
     ctx.waitUntil(purgeStaffMessages(env).catch((err) => console.warn(`Staff message purge failed: ${err.message}`)));
+    ctx.waitUntil(purgeOldPlays(env).catch((err) => console.warn(`Midway play purge failed: ${err.message}`)));
     ctx.waitUntil(purgeStaleUploads(env).catch((err) => console.warn(`Oddity upload cleanup failed: ${err.message}`)));
     ctx.waitUntil(syncCoinRoles(env).catch((err) => console.warn(`Coin role sync failed: ${err.message}`)));
   }

@@ -3,17 +3,14 @@
 //
 // Earning                                     Spending
 //   daily punch card (streak bonus)             the Prize Booth (worker/prizes.js); orders wait Backstage
-//   Find the Pea, Ring Toss and the High        and a Ringleader marks them done or refunds them
-//     Striker, all decided here
+//   the Midway's booths (worker/midway.js)      and a Ringleader marks them done or refunds them
 //   game-night attendance (check in, then paid
 //     every 10 minutes while in The Main Stage)
 //   Ringleaders handing tickets out
 //
 //   GET  /api/tickets                       members: wallet, history, games, show, prizes, orders, high scores
 //   POST /api/tickets/punch                 members
-//   POST /api/tickets/games/shell           members  { pick: 0|1|2 }
-//   POST /api/tickets/games/rings           members  { row: 'front'|'middle'|'back' }
-//   POST /api/tickets/games/striker         members
+//   POST /api/tickets/games/shell|rings|striker  members (kept for old pages; the Midway is /api/midway, worker/midway.js)
 //   POST /api/tickets/checkin               members, while a show is on
 //   POST /api/tickets/redeem                members  { prize, detail?, game? }
 //   POST /api/tickets/privacy               members  { hidden }
@@ -21,6 +18,7 @@
 //   GET  /api/tickets/members?q=            Ringleaders: find someone to hand tickets to
 //   POST /api/tickets/award                 Ringleaders  { userId, amount, note }
 //   POST /api/tickets/post-scores           Ringleaders: post the High Scores to the announcements channel now
+//   POST /api/tickets/draw                  Ringleaders: draw the Golden Ticket winner from the entries waiting
 //   POST /api/tickets/orders/:id/done       Ringleaders
 //   POST /api/tickets/orders/:id/refund     Ringleaders  { reason? }
 
@@ -31,25 +29,14 @@ import { pollStore } from './poll-db.js';
 import { liveStatus } from './live.js';
 import { getVoiceState, getMember, searchMembers, listMembers, postMessage, sendDm, explain } from './discord-bot.js';
 import { ticketStore, newId } from './ticket-db.js';
-import { PRIZES, prizeById } from './prizes.js';
+import { PRIZES, prizeById, prizeName } from './prizes.js';
+import { play as midwayRun, midwayState, MidwayError } from './midway.js';
 
 export const RULES = {
   punchBase: 10,
   punchStreakStep: 2,
   punchStreakMax: 5, // bonus days counted, so a 6-day streak and beyond earns 10 + 2×5 = 20
-  shellPlays: 5,
-  shellWin: 12,
-  ringPlays: 5,
-  // chance in 1000 and prize for each row: nearer bottles are easier, farther ones pay more
-  ringRows: { front: { odds: 600, prize: 6 }, middle: { odds: 300, prize: 15 }, back: { odds: 100, prize: 50 } },
-  strikerPlays: 3,
-  // where the puck can land (1–10) with its chance in 1000 and prize; 10 rings the bell
-  strikerTiers: [
-    { upTo: 350, heights: [1, 2, 3], prize: 0, label: 'Wimp' },
-    { upTo: 700, heights: [4, 5, 6], prize: 5, label: 'Not bad' },
-    { upTo: 950, heights: [7, 8, 9], prize: 12, label: 'Strongman' },
-    { upTo: 1000, heights: [10], prize: 40, label: 'DING!' }
-  ],
+  // Booth games, odds and daily plays live in worker/midway.js (GAMES).
   attendPerCheck: 3,
   attendCap: 60,
   awardMax: 500,
@@ -85,6 +72,23 @@ export class TicketError extends Error {
 const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
 export const etDay = (ms = Date.now()) => dayFmt.format(new Date(ms));
 const prevDay = (day) => etDay(Date.parse(`${day}T12:00:00Z`) - 86400000);
+
+// Prize caps count by calendar quarter (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec), Eastern. → the instant it began, as ISO.
+export function quarterStart(now = Date.now()) {
+  const [y, m] = etDay(now).split('-').map(Number);
+  const first = `${y}-${String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, '0')}-01`;
+  for (const hours of [4, 5]) { // midnight Eastern is 04:00 UTC in summer time, 05:00 otherwise
+    const t = Date.parse(`${first}T00:00:00Z`) + hours * 3600e3;
+    if (etDay(t) === first && etDay(t - 1) !== first) return new Date(t).toISOString();
+  }
+  return `${first}T05:00:00.000Z`;
+}
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// "Jan 1": when the caps next start over.
+export function quarterResets(now = Date.now()) {
+  const m = Number(etDay(now).split('-')[1]);
+  return `${MONTHS[(Math.floor((m - 1) / 3) * 3 + 3) % 12]} 1`;
+}
 
 export const cleanText = (s, max) => String(s ?? '').replace(/[\u0000-\u001f\u007f‎‏‪-‮⁦-⁩]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 const plural = (n, word) => `${n} ${word}${Math.abs(n) === 1 ? '' : 's'}`;
@@ -131,50 +135,51 @@ export async function punch(env, uid, name, now = Date.now()) {
   return { amount, streak, balance };
 }
 
-export async function playShell(env, uid, name, pick, now = Date.now()) {
+// The three original booths now run on the Midway (worker/midway.js): same odds, same daily plays, but only in the
+// weeks the rotation opens them. These keep the shapes the Discord commands already use.
+async function midwayPlay(env, uid, name, gameId, choice, now) {
+  try {
+    return await midwayRun(env, uid, name, gameId, choice, now);
+  } catch (err) {
+    if (err instanceof MidwayError) throw new TicketError(err.status, err.code, err.message);
+    throw err;
+  }
+}
+
+export async function playShell(env, uid, name, pick, now) {
   if (![0, 1, 2].includes(pick)) throw new TicketError(400, 'pick', 'Pick shell 1, 2 or 3.');
+  const r = await midwayPlay(env, uid, name, 'find-the-pea', String(pick + 1), now);
+  return { pea: r.visualParams.pea, win: r.outcomeTier === 'found', amount: r.amount, balance: r.balance, playsLeft: r.playsLeft };
+}
+
+export async function playRings(env, uid, name, row, now) {
+  const r = await midwayPlay(env, uid, name, 'ring-toss', row, now);
+  return { row: r.visualParams.row, win: r.outcomeTier === 'ringer', bottle: r.visualParams.bottle, amount: r.amount, balance: r.balance, playsLeft: r.playsLeft };
+}
+
+const STRIKER_LABELS = { wimp: 'Wimp', 'not-bad': 'Not bad', strongman: 'Strongman', bell: 'DING!' };
+export async function swingStriker(env, uid, name, now) {
+  const r = await midwayPlay(env, uid, name, 'high-striker', null, now);
+  const height = r.visualParams.height;
+  return { height, bell: height === 10, label: STRIKER_LABELS[r.outcomeTier], amount: r.amount, balance: r.balance, playsLeft: r.playsLeft };
+}
+
+// 2 while a sponsored Double Night is running for this show, else 1. The first time a show is looked at, the oldest
+// waiting "Sponsor a Double Night" order is used up on it, so only one Double Night runs per game night; the rest
+// wait for the next one.
+export async function showBoost(env, show) {
   const store = ticketStore(env.DB);
-  const day = etDay(now);
-  const prefix = `shell:${uid}:${day}:`;
-  const played = await store.countRefs(prefix);
-  if (played >= RULES.shellPlays) throw new TicketError(429, 'no_plays', `That's all ${RULES.shellPlays} games of Find the Pea for today. The barker reopens at midnight Eastern.`);
-  const pea = randomInt(3);
-  const win = pea === pick;
-  const amount = win ? RULES.shellWin : 0;
-  const balance = await store.change(uid, name, amount, 'game', { note: win ? 'Find the Pea: found it' : 'Find the Pea', ref: `${prefix}${played + 1}` });
-  if (balance === null) throw new TicketError(409, 'busy', 'One game at a time. Try again.');
-  return { pea, win, amount, balance, playsLeft: RULES.shellPlays - played - 1 };
-}
-
-// Shared bookkeeping for a daily-limited game: counts today's plays, records the result (0 for a loss).
-async function playDaily(env, uid, name, game, limit, outOf, decide, now) {
-  const store = ticketStore(env.DB);
-  const prefix = `${game}:${uid}:${etDay(now)}:`;
-  const played = await store.countRefs(prefix);
-  if (played >= limit) throw new TicketError(429, 'no_plays', outOf);
-  const r = decide();
-  const balance = await store.change(uid, name, r.amount, 'game', { note: r.note, ref: `${prefix}${played + 1}` });
-  if (balance === null) throw new TicketError(409, 'busy', 'One game at a time. Try again.');
-  return { ...r, balance, playsLeft: limit - played - 1 };
-}
-
-export function playRings(env, uid, name, row, now = Date.now()) {
-  const rule = RULES.ringRows[row];
-  if (!rule || !Object.hasOwn(RULES.ringRows, row)) throw new TicketError(400, 'row', 'Pick the front, middle or back row.');
-  return playDaily(env, uid, name, 'rings', RULES.ringPlays, `That's all ${RULES.ringPlays} rings for today. The booth reopens at midnight Eastern.`, () => {
-    const win = randomInt(1000) < rule.odds;
-    // which bottle in the row (0–3), for the animation
-    return { row, win, bottle: randomInt(4), amount: win ? rule.prize : 0, note: win ? `Ring Toss: ringer on the ${row} row` : 'Ring Toss' };
-  }, now);
-}
-
-export function swingStriker(env, uid, name, now = Date.now()) {
-  return playDaily(env, uid, name, 'striker', RULES.strikerPlays, `Your arms need a rest: that's all ${RULES.strikerPlays} swings for today. Back at midnight Eastern.`, () => {
-    const roll = randomInt(1000);
-    const tier = RULES.strikerTiers.find((t) => roll < t.upTo);
-    const height = tier.heights[randomInt(tier.heights.length)];
-    return { height, bell: height === 10, label: tier.label, amount: tier.prize, note: tier.prize ? `High Striker: ${tier.label}` : 'High Striker' };
-  }, now);
+  if (await store.doubledShow(show.key)) return 2;
+  const next = (await store.pendingOf('double-night'))[0];
+  if (!next) return 1;
+  if (!(await store.decide(next.id, 'done', 'The Usher', `show:${show.key}`))) return (await store.doubledShow(show.key)) ? 2 : 1;
+  const channel = modChannel(env);
+  if (channel) {
+    await postMessage(env, channel, { content: `🎪 **Double Night!** ${safeName(next.name)} sponsored it, so check-in Slivers are doubled for **${safeName(show.title)}**.` })
+      .catch((err) => console.warn(`Double Night note failed: ${explain(err)}`));
+  }
+  await sendDm(env, next.user_id, `🎪 Your **Double Night** is on: everyone at **${show.title}** earns double check-in Slivers. Thank you for sponsoring it!`).catch(() => {});
+  return 2;
 }
 
 export async function checkIn(env, uid, name, now = Date.now()) {
@@ -183,18 +188,21 @@ export async function checkIn(env, uid, name, now = Date.now()) {
   const vs = await getVoiceState(env, uid).catch(() => null);
   if (!onStage(vs, env)) throw new TicketError(409, 'not_on_stage', 'Hop into The Main Stage first (and undeafen), then check in.');
   const store = ticketStore(env.DB);
+  const boost = await showBoost(env, show);
+  const per = RULES.attendPerCheck * boost;
+  const cap = RULES.attendCap * boost;
   const row = await store.checkin(uid, name, show.key);
   let paid = Number(row.paid || 0);
   let earned = 0;
-  if (paid < RULES.attendCap) {
-    const b = await store.change(uid, name, RULES.attendPerCheck, 'attend', { note: `At the show: ${show.title}`, ref: `attend:${uid}:${show.key}:${slot(now)}` });
+  if (paid < cap) {
+    const b = await store.change(uid, name, per, 'attend', { note: `At the show: ${show.title}${boost > 1 ? ' (Double Night)' : ''}`, ref: `attend:${uid}:${show.key}:${slot(now)}` });
     if (b !== null) {
-      earned = RULES.attendPerCheck;
+      earned = per;
       paid += earned;
       await store.addPaid(uid, show.key, earned);
     }
   }
-  return { show: show.title, earned, paid, cap: RULES.attendCap };
+  return { show: show.title, earned, paid, cap, doubled: boost > 1 };
 }
 
 // Cron, every 10 minutes: pays everyone checked in to the current show who is still in The Main Stage.
@@ -205,14 +213,17 @@ export async function payAttendance(env, now = Date.now()) {
   const show = await currentShow(env, now);
   if (!show) return 0;
   let paidOut = 0;
+  const boost = await showBoost(env, show);
+  const per = RULES.attendPerCheck * boost;
+  const cap = RULES.attendCap * boost;
   for (const c of await store.checkins(show.key, 40)) {
-    if (c.paid >= RULES.attendCap) continue;
+    if (c.paid >= cap) continue;
     const vs = await getVoiceState(env, c.user_id).catch(() => null);
     if (!onStage(vs, env)) continue;
-    const b = await store.change(c.user_id, c.name, RULES.attendPerCheck, 'attend', { note: `At the show: ${show.title}`, ref: `attend:${c.user_id}:${show.key}:${slot(now)}` });
+    const b = await store.change(c.user_id, c.name, per, 'attend', { note: `At the show: ${show.title}${boost > 1 ? ' (Double Night)' : ''}`, ref: `attend:${c.user_id}:${show.key}:${slot(now)}` });
     if (b !== null) {
-      await store.addPaid(c.user_id, show.key, RULES.attendPerCheck);
-      paidOut += RULES.attendPerCheck;
+      await store.addPaid(c.user_id, show.key, per);
+      paidOut += per;
     }
   }
   return paidOut;
@@ -274,11 +285,44 @@ export async function weeklyHighScores(env, now = Date.now()) {
 const modChannel = (env) => (SNOWFLAKE.test(String(env.MOD_CHANNEL_ID || '')) ? env.MOD_CHANNEL_ID : null);
 const safeName = (s) => String(s).replace(/[*_`~|>\\]/g, '');
 
-export async function redeem(env, uid, name, { prize: prizeId, detail, game } = {}, catalog = null) {
+// Why a prize can't be bought right now, or null. `counts` is store.orderCounts for this quarter.
+function lockedReason(prize, lifetime, counts) {
+  if (prize.pending) return 'pending';
+  if (prize.gate && lifetime < prize.gate) return 'gate';
+  if (prize.cap != null && (counts.all[prize.id] || 0) >= prize.cap) return 'soldout';
+  if (prize.group) {
+    const used = PRIZES.filter((p) => p.group === prize.group).reduce((n, p) => n + (counts.mine[p.id] || 0), 0);
+    if (used >= prize.perMember) return 'member';
+  } else if (prize.perMember && (counts.mine[prize.id] || 0) >= prize.perMember) return 'member';
+  return null;
+}
+
+// The booth as one member sees it: every prize with how many are left this quarter and whether it can be bought.
+export async function shelf(env, uid, lifetime, now = Date.now()) {
+  const counts = await ticketStore(env.DB).orderCounts(quarterStart(now), uid);
+  return PRIZES.map((p) => ({
+    ...p,
+    left: p.cap == null ? null : Math.max(0, p.cap - (counts.all[p.id] || 0)),
+    locked: lockedReason(p, Number(lifetime || 0), counts),
+    gateCoin: p.gate ? coinFor(p.gate).name : null
+  }));
+}
+
+const LOCKED_TEXT = {
+  pending: (p) => `${p.name} isn't open yet. It's waiting for approval.`,
+  gate: (p) => `${p.name} needs ${p.gate ? coinFor(p.gate).name : 'a higher'} coin. Keep playing!`,
+  soldout: (p) => `${p.name} is sold out for this quarter. The booth restocks on ${quarterResets()}.`,
+  member: (p) => (p.group ? `You've already claimed a real-money prize this quarter. The booth resets on ${quarterResets()}.` : `That's all ${p.perMember} of ${p.name} for this quarter.`)
+};
+
+export async function redeem(env, uid, name, { prize: prizeId, detail, game } = {}, catalog = null, now = Date.now()) {
   const prize = prizeById(prizeId);
   if (!prize) throw new TicketError(400, 'prize', 'That prize isn\'t in the booth.');
   const store = ticketStore(env.DB);
   if ((await store.waiting(uid, prize.id)) >= prize.limit) throw new TicketError(409, 'waiting', `You already have ${prize.name} waiting for a Ringleader.`);
+  const since = quarterStart(now);
+  const lock = lockedReason(prize, Number((await store.wallet(uid))?.lifetime || 0), await store.orderCounts(since, uid));
+  if (lock) throw new TicketError(lock === 'pending' || lock === 'gate' ? 403 : 409, lock, LOCKED_TEXT[lock](prize));
   const o = { id: newId(), user_id: uid, name, prize: prize.id, cost: prize.cost, detail: null, game_key: null, game_name: null };
   if (prize.needs === 'note') {
     o.detail = cleanText(detail, 200);
@@ -290,16 +334,41 @@ export async function redeem(env, uid, name, { prize: prizeId, detail, game } = 
     o.game_key = g.key;
     o.game_name = g.name;
   }
+  // Place the order first (so two people can't take the last of a capped prize), then take the Slivers; no Slivers, no order.
+  if (prize.cap != null) {
+    if (!(await store.orderWithinCap(o, prize.cap, since))) throw new TicketError(409, 'soldout', LOCKED_TEXT.soldout(prize));
+  } else {
+    await store.order(o);
+  }
   const balance = await store.spend(uid, prize.cost, 'redeem', `Prize Booth: ${prize.name}`);
-  if (balance === null) throw new TicketError(402, 'short', `${prize.name} costs ${ticketsText(prize.cost)}. Keep playing!`);
-  await store.order(o);
+  if (balance === null) {
+    await store.dropOrder(o.id);
+    throw new TicketError(402, 'short', `${prize.name} costs ${ticketsText(prize.cost)}. Keep playing!`);
+  }
+  // Double Night and drawing entries run themselves; everything else waits Backstage for a Ringleader.
   const channel = modChannel(env);
-  if (channel) {
+  if (channel && !prize.kind) {
     const what = o.game_name ? ` (${o.game_name})` : o.detail ? `: “${o.detail}”` : '';
     await postMessage(env, channel, { content: `🎟️ **${safeName(name)}** redeemed **${prize.name}**${what} for ${ticketsText(prize.cost)}.\nSort it out Backstage: https://belpire.com/backstage/#bs-prizes` })
       .catch((err) => console.warn(`Prize note failed: ${explain(err)}`));
   }
   return { order: publicOrder(o), balance };
+}
+
+// Backstage: draws this quarter's Golden Ticket winner from every entry waiting (each entry is one chance), and closes them.
+export async function drawGoldenTicket(env, by) {
+  const store = ticketStore(env.DB);
+  const entries = await store.pendingOf('golden-ticket');
+  if (!entries.length) throw new TicketError(409, 'no_entries', 'Nobody has entered the drawing yet.');
+  const win = entries[randomInt(entries.length)];
+  for (const e of entries) await store.decide(e.id, 'done', by, e.id === win.id ? 'You won the drawing!' : `Drawing won by ${win.name}`);
+  await sendDm(env, win.user_id, '🎟️ **You won the Golden Ticket drawing!** A Ringleader will be in touch about your $25 gift card.').catch(() => {});
+  const channel = modChannel(env);
+  if (channel) {
+    await postMessage(env, channel, { content: `🎟️ Golden Ticket drawing: **${safeName(win.name)}** won, out of ${entries.length} ${entries.length === 1 ? 'entry' : 'entries'} from ${new Set(entries.map((e) => e.user_id)).size} members. Sort out their $25 gift card.` })
+      .catch((err) => console.warn(`Drawing note failed: ${explain(err)}`));
+  }
+  return { winner: win.name, userId: win.user_id, entries: entries.length, players: new Set(entries.map((e) => e.user_id)).size };
 }
 
 const hourFmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' });
@@ -375,7 +444,7 @@ export async function highScores(env, uid = null, limit = 10) {
   return (await ticketStore(env.DB).leaderboard(limit)).map((r, i) => ({ rank: i + 1, name: r.name, lifetime: Number(r.lifetime), coin: coinFor(r.lifetime), badge: Boolean(r.badge_until && r.badge_until > now), me: r.user_id === uid }));
 }
 
-const publicOrder = (o) => ({ id: o.id, prize: o.prize, name: prizeById(o.prize)?.name || o.prize, cost: o.cost, detail: o.detail, game: o.game_name, status: o.status || 'pending', at: o.created_at || new Date().toISOString(), reason: o.reason || null });
+const publicOrder = (o) => ({ id: o.id, prize: o.prize, name: prizeName(o.prize), cost: o.cost, detail: o.detail, game: o.game_name, status: o.status || 'pending', at: o.created_at || new Date().toISOString(), reason: String(o.reason || '').startsWith('show:') ? 'Played at a game night' : o.reason || null });
 
 // Prize orders for "Put a game on the ballot", for the Backstage poll form.
 export async function prizePicks(env) {
@@ -406,7 +475,7 @@ export async function handleTickets(request, env) {
   const parts = url.pathname.replace(/\/+$/, '').split('/').slice(3); // after /api/tickets
   const session = await readSession(request, env);
   if (!session) return fail(401, 'signed_out', 'Sign in with Discord first.');
-  const staffAction = ['staff', 'members', 'award', 'orders', 'post-scores'].includes(parts[0]);
+  const staffAction = ['staff', 'members', 'award', 'orders', 'post-scores', 'draw'].includes(parts[0]);
   const store = ticketStore(env.DB);
 
   try {
@@ -415,14 +484,11 @@ export async function handleTickets(request, env) {
       if (!who.member) return fail(403, 'not_member', 'Slivers are for members of the Belpire Discord.');
       if (parts.length === 0) {
         const day = etDay();
-        const left = (game, plays) => store.countRefs(`${game}:${session.uid}:${day}:`).then((n) => Math.max(0, plays - n));
         // Everything below is independent, so ask for it all at once instead of one query after another.
-        const [show, wallet, shell, rings, striker, history, orders, scores, catalog] = await Promise.all([
-          currentShow(env).then((s) => (s ? store.getCheckin(session.uid, s.key).then((c) => ({ title: s.title, checkedIn: Boolean(c), paid: Number(c?.paid || 0), cap: RULES.attendCap })) : null)),
+        const [show, wallet, midway, history, orders, scores, catalog] = await Promise.all([
+          currentShow(env).then((s) => (s ? Promise.all([store.getCheckin(session.uid, s.key), store.doubledShow(s.key)]).then(([c, d]) => ({ title: s.title, checkedIn: Boolean(c), paid: Number(c?.paid || 0), cap: RULES.attendCap * (d ? 2 : 1), doubled: Boolean(d) })) : null)),
           summary(env, session.uid),
-          left('shell', RULES.shellPlays),
-          left('rings', RULES.ringPlays),
-          left('striker', RULES.strikerPlays),
+          midwayState(env, session.uid),
           store.history(session.uid, 25),
           store.myOrders(session.uid, 10),
           highScores(env, session.uid),
@@ -433,10 +499,11 @@ export async function handleTickets(request, env) {
           wallet,
           rules: RULES,
           coins: coinLadder(),
-          games: { shell: { left: shell }, rings: { left: rings }, striker: { left: striker } },
+          midway,
           show,
           history: history.map((h) => ({ amount: h.amount, kind: h.kind, note: h.note, at: h.created_at })),
-          prizes: PRIZES,
+          prizes: await shelf(env, session.uid, wallet.lifetime),
+          prizeResets: quarterResets(),
           orders: orders.map(publicOrder),
           highScores: scores,
           catalog: catalog.map((c) => ({ key: c.key, name: c.name, group: c.group }))
@@ -444,7 +511,14 @@ export async function handleTickets(request, env) {
       }
       if (!who.manager) return fail(403, 'not_manager', 'Staff only.');
       if (parts[0] === 'staff') {
-        return json({ orders: (await store.pendingOrders(100)).map((o) => ({ ...publicOrder(o), by: o.name })), announcements: Boolean(announceChannel(env)) });
+        const entries = await store.pendingOf('golden-ticket');
+        const sponsors = await store.pendingOf('double-night');
+        return json({
+          orders: (await store.pendingOrders(100, ['golden-ticket', 'double-night'])).map((o) => ({ ...publicOrder(o), by: o.name })),
+          drawing: { entries: entries.length, players: new Set(entries.map((e) => e.user_id)).size },
+          doubleNights: sponsors.length,
+          announcements: Boolean(announceChannel(env))
+        });
       }
       if (parts[0] === 'members') {
         const q = cleanText(url.searchParams.get('q'), 32);
@@ -487,6 +561,7 @@ export async function handleTickets(request, env) {
         throw new TicketError(502, 'discord', `Discord didn't take the post. ${explain(err)}`);
       }
     }
+    if (parts.length === 1 && parts[0] === 'draw') return json({ ok: true, ...(await drawGoldenTicket(env, who.name)) });
     if (parts.length === 1 && parts[0] === 'award') {
       const r = await award(env, who.name, body.userId, body.amount, body.note);
       if (r.amount > 0) await sendDm(env, body.userId, `🎟️ The Ringleaders handed you ${ticketsText(r.amount)}${body.note ? `: ${cleanText(body.note, 120)}` : '.'}`).catch(() => {});

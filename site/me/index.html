@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Your Ticket Booth — Belpire Carnival</title>
-  <meta name="description" content="Your Belpire Slivers, daily punch card, carnival games, Prize Booth and everything waiting for you.">
+  <meta name="description" content="Your Belpire Slivers, daily punch card, the Midway's booths, Prize Booth and everything waiting for you.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Belpire Carnival">
   <meta property="og:title" content="Your Ticket Booth — Belpire Carnival">
-  <meta property="og:description" content="Punch your card, find the pea, cash in at the Prize Booth.">
+  <meta property="og:description" content="Punch your card, play the Midway, cash in at the Prize Booth.">
   <meta property="og:url" content="https://belpire.com/me/">
   <meta property="og:image" content="https://belpire.com/og/join.jpg">
   <meta property="og:image:width" content="1200">
@@ -86,19 +86,29 @@
         <div id="tb-show"></div>
       </section>
 
-      <section id="games" class="panel tb-games" aria-labelledby="tb-games-h">
+      <section id="midway" class="panel tb-midway" aria-labelledby="tb-midway-h">
+        <div class="panel-head"><h2 id="tb-midway-h">The Midway</h2><span class="meta" id="tb-midway-week"></span></div>
+        <p class="meta">Twenty-five booths, and only a handful open each week. Every result is decided on our side with fair, posted odds; plays reset at midnight Eastern.</p>
+        <ul id="tb-midway-open" class="mw-grid"></ul>
+        <div class="mw-divider" role="separator"><span>Shuttered this week</span></div>
+        <p class="meta" id="tb-midway-turnover"></p>
+        <ul id="tb-midway-shut" class="mw-grid mw-shut"></ul>
+      </section>
+      <dialog id="mw-dialog" class="mw-dialog" aria-labelledby="mw-dialog-h"></dialog>
+
+      <section id="games" class="panel tb-games" hidden aria-labelledby="tb-games-h">
         <div class="panel-head"><h2 id="tb-games-h">Find the Pea</h2><span class="meta" id="tb-pea-left"></span></div>
         <p class="meta">The barker hides a pea under one of three shells. Pick the right one and win Slivers. The shells are shuffled on our side, fair and square.</p>
         <div id="tb-pea"></div>
       </section>
 
-      <div class="tb-grid">
-        <section id="rings" class="panel tb-rings" aria-labelledby="tb-rings-h">
+      <div class="tb-grid" data-midway>
+        <section id="rings" class="panel tb-rings" hidden aria-labelledby="tb-rings-h">
           <div class="panel-head"><h2 id="tb-rings-h">Ring Toss</h2><span class="meta" id="tb-rings-left"></span></div>
           <p class="meta">Land a ring on a bottle neck. The front row is easy and pays a little; the back row is a long shot that pays big. Pick your row.</p>
           <div id="tb-rings"></div>
         </section>
-        <section id="striker" class="panel tb-striker-panel" aria-labelledby="tb-striker-h">
+        <section id="striker" class="panel tb-striker-panel" hidden aria-labelledby="tb-striker-h">
           <div class="panel-head"><h2 id="tb-striker-h">High Striker</h2><span class="meta" id="tb-striker-left"></span></div>
           <p class="meta">Swing the mallet and send the puck flying. Ring the bell at the top for the jackpot.</p>
           <div id="tb-striker"></div>
@@ -130,9 +140,8 @@
         <ul class="tb-commands">
           <li><code>/slivers</code> your balance and rank</li>
           <li><code>/punch-card</code> the daily punch</li>
-          <li><code>/find-the-pea</code> the shell game</li>
-          <li><code>/ring-toss</code> pick a row and throw</li>
-          <li><code>/high-striker</code> swing for the bell</li>
+          <li><code>/midway</code> this week's open booths</li>
+          <li><code>/play</code> play any open booth</li>
           <li><code>/checkin</code> earn Slivers at a show from The Main Stage</li>
           <li><code>/prizes</code> and <code>/redeem</code> the Prize Booth</li>
           <li><code>/high-scores</code> the board, posted for all to see</li>
