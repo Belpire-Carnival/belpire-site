@@ -293,8 +293,10 @@
       "game": "guess-the-jar",
       "prop": "jar",
       "texture": 1024,
-      "polycount": 12000,
-      "prompt": "Large antique clear glass apothecary jar with ornate ground-glass stopper resting on a brass pedestal base."
+      "polycount": 8000,
+      "untextured": true,
+      "prompt": "A large wide carnival counting jar: a simple straight-sided cylindrical clear glass jar with thick transparent walls, rounded shoulders, a short wide mouth and a polished brass screw-top lid with a small knob. Empty, hollow, no label, no pedestal. Victorian carnival style.",
+      "note": "Regenerated as a plain wide jar: the spec's apothecary vase was too narrow to show the Slivers inside. Left untextured on purpose; the page gives the body glass and the lid brass, split at the shoulder."
     },
     {
       "game": "test-your-grip",

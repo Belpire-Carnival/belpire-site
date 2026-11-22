@@ -362,7 +362,8 @@
   const STAGE_3D = new Set([
     'find-the-pea', 'ring-toss', 'high-striker',
     'shooting-gallery', 'milk-bottle-knockdown', 'balloon-darts', 'skee-ball', 'dunk-tank', 'water-gun-race', 'goldfish-bowl-toss',
-    'rigged-hoop', 'plinko', 'big-six', 'duck-pond', 'derby-race', 'coin-pusher'
+    'rigged-hoop', 'plinko', 'big-six', 'duck-pond', 'derby-race', 'coin-pusher',
+    'knife-thrower', 'whac-a-mole', 'claw-machine', 'buzz-wire', 'frog-bog', 'rope-ladder-climb', 'guess-the-jar', 'test-your-grip', 'hall-of-mirrors'
   ]);
   let webgl = (() => {
     try { return Boolean(document.createElement('canvas').getContext('webgl2')); } catch { return false; }

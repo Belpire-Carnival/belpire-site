@@ -124,7 +124,7 @@ test('the page and the stage agree on which booths are 3D, and Three.js is the v
   }
 });
 
-test('every Meshy prop in the manifest is on disk, a glTF binary with WebP textures, under the 3 MB budget', async () => {
+test('every Meshy prop in the manifest is on disk, a glTF binary with WebP textures (or none), under the 3 MB budget', async () => {
   const { readFileSync: read, statSync } = await import('node:fs');
   const manifest = JSON.parse(read(new URL('../../scripts/meshy-manifest.json', import.meta.url), 'utf8'));
   assert.equal(manifest.assets.length, 43);
@@ -136,7 +136,9 @@ test('every Meshy prop in the manifest is on disk, a glTF binary with WebP textu
     assert.equal(b.readUInt32LE(0), 0x46546c67, `${a.game}/${a.prop} is a .glb`);
     const doc = JSON.parse(b.subarray(20, 20 + b.readUInt32LE(12)).toString('utf8'));
     assert.ok((doc.images || []).every((im) => im.mimeType === 'image/webp'), `${a.game}/${a.prop} textures are WebP`);
-    assert.ok(doc.extensionsUsed?.includes('EXT_texture_webp'));
+    // a prop the page paints itself (the glass jar) ships as bare geometry
+    if (a.untextured) assert.ok(!doc.images?.length, `${a.game}/${a.prop} is untextured`);
+    else assert.ok(doc.extensionsUsed?.includes('EXT_texture_webp'));
     assert.ok(a.prompt && a.polycount && [512, 1024].includes(a.texture));
   }
 });
@@ -280,5 +282,79 @@ test('Coin Pusher: as many coins tip into the tray as the tier allows', async ()
     const [lo, hi] = { 'no-drop': [0, 0], trickle: [2, 3], cascade: [6, 8], avalanche: [14, 16] }[tier];
     assert.equal(s.inTray, s.fell);
     assert.ok(s.fell >= lo && s.fell <= hi, `${tier}: ${s.fell}`);
+  });
+});
+
+// ---------------------------------------------------------------- Milestone 4: reflex and sideshow booths
+test('Knife Thrower: a bust bounces off, the apple splits only on the top tier', async () => {
+  await playAll('knife-thrower', [null], (s, tier) => {
+    assert.equal(s.stuck, tier !== 'bust', tier);
+    assert.equal(s.split, tier === 'apple', tier);
+  });
+});
+
+test('Whac-A-Mole: the tally lands on the server\'s count, golden only when rolled', async () => {
+  await playAll('whac-a-mole', [null], (s, tier, v) => {
+    assert.equal(s.score, v.hits, tier);
+    assert.equal(s.golden, Boolean(v.golden), tier);
+  });
+});
+
+test('Claw Machine: a slip drops the prize, otherwise the rolled prize reaches the chute; steering is free', async () => {
+  const mod = await booth('claw-machine');
+  const b = mod.create(fakeCtx(), gameFor('claw-machine'));
+  assert.ok(b.controls.filter((c) => c.steer).length === 2, 'left and right only steer');
+  b.steer('left');
+  await playAll('claw-machine', [null], (s, tier) => assert.equal(s.won, { slip: null, small: 'small', big: 'big', relic: 'relic' }[tier], tier));
+});
+
+test('Buzz Wire: the wand stops where the tier says; only a clean run reaches the end without a buzz', async () => {
+  await playAll('buzz-wire', [null], (s, tier, v, c, mod) => {
+    const [lo, hi] = mod.REACH[tier];
+    assert.ok(s.reached >= lo && s.reached <= hi, tier);
+    assert.equal(s.buzzed, tier !== 'clean', tier);
+    assert.ok(s.at.distanceTo(s.end) < 1e-6, 'the wand is on the wire where it stopped');
+  });
+});
+
+test('Frog Bog: the frog lands in the water, an outer pad, an inner pad or the crown', async () => {
+  await playAll('frog-bog', [null], (s, tier, v, c, mod) => {
+    assert.equal(s.landed, tier);
+    assert.equal(s.onPad, tier !== 'splash', tier);
+    if (tier !== 'splash') assert.ok(Math.abs(s.dist - mod.RING[tier]) < 0.02, `${tier} ${s.dist}`);
+  });
+});
+
+test('Rope Ladder Climb: the climber reaches the server\'s rung; only 10 rings the bell', async () => {
+  await playAll('rope-ladder-climb', [null], (s, tier, v) => {
+    assert.equal(s.reached, v.rung, tier);
+    assert.equal(s.rang, v.rung === 10, tier);
+    assert.equal(s.flipped, v.rung < 10, tier);
+  });
+});
+
+test('Guess the Jar: the board shows the guess and counts up to the real number', async () => {
+  const mod = await booth('guess-the-jar');
+  assert.deepEqual([mod.create(fakeCtx(), gameFor('guess-the-jar')).input.min, mod.create(fakeCtx(), gameFor('guess-the-jar')).input.max], [100, 500]);
+  await playAll('guess-the-jar', ['100', '250', '500'], (s, tier, v, choice) => {
+    assert.equal(s.guessed, Number(choice));
+    assert.equal(s.shown, v.actual, tier);
+  });
+});
+
+test('Test Your Grip: the needle settles in the rolled band; only the top tier shatters the dial', async () => {
+  await playAll('test-your-grip', [null], (s, tier, v, c, mod) => {
+    const [lo, hi] = mod.BAND[tier];
+    assert.ok(s.level >= lo && s.level <= hi, tier);
+    assert.ok(Math.abs(s.needle - (tier === 'shattered' ? 1.08 : s.level)) < 1e-6, `${tier} needle ${s.needle}`);
+    assert.equal(s.shattered, tier === 'shattered');
+  });
+});
+
+test('Hall of Mirrors: the picked mirror lets you through only when it is the exit; otherwise the exit glows', async () => {
+  await playAll('hall-of-mirrors', ['1', '2', '3', '4'], (s, tier, v, choice) => {
+    assert.equal(s.picked, Number(choice) - 1);
+    assert.equal(s.through, tier === 'exit', tier);
+    assert.equal(s.lit, v.exit - 1, tier);
   });
 });

@@ -28,7 +28,16 @@ const BOOTHS = {
   'big-six': () => import('./booths/big-six.js'),
   'duck-pond': () => import('./booths/duck-pond.js'),
   'derby-race': () => import('./booths/derby-race.js'),
-  'coin-pusher': () => import('./booths/coin-pusher.js')
+  'coin-pusher': () => import('./booths/coin-pusher.js'),
+  'knife-thrower': () => import('./booths/knife-thrower.js'),
+  'whac-a-mole': () => import('./booths/whac-a-mole.js'),
+  'claw-machine': () => import('./booths/claw-machine.js'),
+  'buzz-wire': () => import('./booths/buzz-wire.js'),
+  'frog-bog': () => import('./booths/frog-bog.js'),
+  'rope-ladder-climb': () => import('./booths/rope-ladder-climb.js'),
+  'guess-the-jar': () => import('./booths/guess-the-jar.js'),
+  'test-your-grip': () => import('./booths/test-your-grip.js'),
+  'hall-of-mirrors': () => import('./booths/hall-of-mirrors.js')
 };
 export const BOOTH_IDS = Object.keys(BOOTHS);
 
@@ -192,6 +201,7 @@ export async function openBooth({ game, play, onResult, message, onClose = () =>
     THREE, scene, camera, mats, audio, tween, sleep, reduced, low, kit: { lathe, mesh }, prop,
     rand: mulberry32(Math.floor(Math.random() * 2 ** 31)),
     camTarget,
+    camBase,
     canvas: renderer.domElement,
     request: (choice) => go(choice),
     shake(ms = 450, amount = 0.05) { if (!reduced) shaking = { start: time, dur: ms / 1000, amount }; },
@@ -304,10 +314,31 @@ export async function openBooth({ game, play, onResult, message, onClose = () =>
     const b = el('button', { type: 'button', class: `btn ${c.primary ? 'btn-gold' : 'btn-ghost'} mw-stage-btn` }, [
       el('strong', { text: c.label }), c.sub ? el('span', { class: 'meta', text: c.sub }) : null
     ]);
-    b.addEventListener('click', () => go(c.choice));
+    // steering buttons (the claw's gantry) move things without playing
+    b.addEventListener('click', () => (c.steer ? booth.steer?.(c.choice) : go(c.choice)));
     return b;
   });
-  controls.append(...buttons);
+  // A booth can ask for a number instead of (or as well as) buttons: Guess the Jar.
+  if (booth.input) {
+    const { label, min, max, button } = booth.input;
+    const id = `mw-input-${game.id}`;
+    const field = el('input', { type: 'number', id, min: String(min), max: String(max), step: '1', inputmode: 'numeric', class: 'mw-stage-input', required: true });
+    const submit = el('button', { type: 'submit', class: 'btn btn-gold mw-stage-btn' }, el('strong', { text: button }));
+    const form = el('form', { class: 'mw-stage-form' }, [el('label', { for: id, text: `${label} (${min}–${max})` }), field, submit]);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const n = Number(field.value);
+      if (!Number.isInteger(n) || n < min || n > max) {
+        status.textContent = `Pick a whole number from ${min} to ${max}.`;
+        field.focus();
+        return;
+      }
+      go(String(n));
+    });
+    controls.append(form);
+    buttons.push(submit, field);
+  }
+  controls.append(...buttons.filter((b) => !b.closest('form')));
   function refresh() {
     leftLine.textContent = left > 0 ? `${left} of ${game.playsMax} ${game.playsMax === 1 ? 'play' : 'plays'} left today` : 'No plays left today. The booth reopens at midnight Eastern.';
     for (const b of buttons) b.disabled = busy || left <= 0;

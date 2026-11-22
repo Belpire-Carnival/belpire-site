@@ -200,3 +200,6 @@
 @media (prefers-reduced-motion: reduce) {
   .mw-toast.show { animation: none; opacity: 1; }
 }
+.mw-stage-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mw-stage-form label { font-weight: 700; }
+.mw-stage-input { width: 7em; min-height: 44px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line-strong); background: #1B0E11; color: var(--text); font: inherit; }
