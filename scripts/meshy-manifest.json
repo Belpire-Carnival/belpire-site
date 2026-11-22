@@ -1,0 +1,314 @@
+{
+  "note": "The Midway's Meshy props (3D Carnival Midway spec, section 9). Each prompt is the global prefix plus the asset prompt. Models are generated at build time only, never at runtime; the optimized files live in site/assets/midway/<game>/<prop>.glb.",
+  "prefix": "Dark Victorian steampunk carnival prop, weathered hardwood, tarnished antique brass, subtle wear and patina, realistic PBR materials, game-ready single object, centered on origin, no background, neutral studio lighting.",
+  "assets": [
+    {
+      "game": "shared",
+      "prop": "brass-lamp",
+      "texture": 1024,
+      "polycount": 12000,
+      "prompt": "Hanging vintage carnival pendant lamp with tarnished brass dome shade, protective wire cage, warm Edison bulb inside, short iron chain."
+    },
+    {
+      "game": "shared",
+      "prop": "booth-counter",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Weathered dark mahogany carnival game booth counter with chipped burgundy trim, tarnished brass corner brackets, scratched tabletop."
+    },
+    {
+      "game": "shared",
+      "prop": "sliver-coin",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "Ornate antique silver-and-brass carnival token coin with embossed circus star emblem and milled edge, subtle tarnish."
+    },
+    {
+      "game": "find-the-pea",
+      "prop": "shell",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "A single dome-shaped shell-game cup: an upside-down polished dark walnut half-shell like a small bowl turned over, solid and closed on top, with a thin tarnished brass filigree band around the bottom rim and a small brass knob on top. One piece, no lid, no hinge.",
+      "note": "Reworded from the spec's prompt, which produced an open clamshell box instead of a cup that covers the pea."
+    },
+    {
+      "game": "ring-toss",
+      "prop": "bottle",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Vintage thick-glass carnival milk bottle with long narrow neck and embossed ring ridges."
+    },
+    {
+      "game": "ring-toss",
+      "prop": "ring",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "A single flat circular toss ring, like a quoit or donut-shaped hoop, made of thick braided hemp rope wrapped in three places with tarnished brass wire. Only the ring, nothing else.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "high-striker",
+      "prop": "mallet",
+      "texture": 1024,
+      "polycount": 12000,
+      "prompt": "Heavy wooden carnival strongman mallet with iron-banded head and taped hickory handle."
+    },
+    {
+      "game": "high-striker",
+      "prop": "bell",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Domed antique tarnished brass striker bell with iron mounting bracket."
+    },
+    {
+      "game": "shooting-gallery",
+      "prop": "duck",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Vintage stamped-tin shooting gallery duck target on a hinged iron base, chipped paint."
+    },
+    {
+      "game": "shooting-gallery",
+      "prop": "rifle",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Antique brass-and-walnut carnival cork pop rifle with octagonal barrel."
+    },
+    {
+      "game": "milk-bottle-knockdown",
+      "prop": "bottle",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Heavy weighted cast-aluminum carnival milk bottle with chipped cream paint and dents."
+    },
+    {
+      "game": "milk-bottle-knockdown",
+      "prop": "ball",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "Scuffed vintage stitched leather baseball with weathered red seams."
+    },
+    {
+      "game": "balloon-darts",
+      "prop": "dart",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "Antique carnival throwing dart with knurled brass barrel, steel needle tip, and crimson feather flights."
+    },
+    {
+      "game": "balloon-darts",
+      "prop": "board",
+      "texture": 1024,
+      "polycount": 10000,
+      "prompt": "Framed weathered corkboard target wall with tarnished brass corner plates."
+    },
+    {
+      "game": "skee-ball",
+      "prop": "lane",
+      "texture": 1024,
+      "polycount": 18000,
+      "prompt": "Vintage wooden skee-ball ramp and recessed circular target rings with brass trim."
+    },
+    {
+      "game": "skee-ball",
+      "prop": "ball",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "Heavy polished dark hardwood skee-ball sphere with subtle dings and scratches."
+    },
+    {
+      "game": "dunk-tank",
+      "prop": "jester",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Articulated vintage wooden carnival jester dummy with faded burgundy-and-gold motley."
+    },
+    {
+      "game": "dunk-tank",
+      "prop": "target",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Hinged round iron dunk-tank bullseye plate with chipped red-and-cream rings."
+    },
+    {
+      "game": "water-gun-race",
+      "prop": "pistol",
+      "texture": 512,
+      "polycount": 10000,
+      "prompt": "Mounted brass carnival water-jet pistol on a swivel joint with trigger lever."
+    },
+    {
+      "game": "water-gun-race",
+      "prop": "clown-head",
+      "texture": 1024,
+      "polycount": 12000,
+      "prompt": "Vintage painted wood Victorian clown target face with open mouth bullseye."
+    },
+    {
+      "game": "goldfish-bowl-toss",
+      "prop": "bowl",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "A single round clear glass fishbowl, a sphere with a wide open top and a rolled rim, empty. Only the bowl, nothing else.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "rigged-hoop",
+      "prop": "hoop",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Weathered red-and-cream striped wooden backboard with slightly oval rusted iron rim and chain net."
+    },
+    {
+      "game": "rigged-hoop",
+      "prop": "ball",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Vintage pebble-grain dark leather basketball with worn black seams."
+    },
+    {
+      "game": "knife-thrower",
+      "prop": "wheel",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Large round plank-wood Wheel of Death target with faded painted starburst and iron rim."
+    },
+    {
+      "game": "knife-thrower",
+      "prop": "dagger",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "One single straight throwing knife lying flat: a long polished steel blade, a small tarnished brass crossguard and a leather-wrapped grip. Only one knife, nothing else.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "whac-a-mole",
+      "prop": "mole",
+      "texture": 512,
+      "polycount": 10000,
+      "prompt": "Quirky clockwork brass-and-leather mole puppet with tiny goggles and spring base."
+    },
+    {
+      "game": "whac-a-mole",
+      "prop": "mallet",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Padded burgundy leather carnival arcade mallet with turned wooden handle."
+    },
+    {
+      "game": "claw-machine",
+      "prop": "claw",
+      "texture": 512,
+      "polycount": 10000,
+      "prompt": "Three-prong mechanical brass-and-steel arcade crane claw suspended from a pulley housing."
+    },
+    {
+      "game": "claw-machine",
+      "prop": "relic",
+      "texture": 512,
+      "polycount": 10000,
+      "prompt": "Ornate gilded Victorian pocket-watch relic box studded with tiny brass gears."
+    },
+    {
+      "game": "buzz-wire",
+      "prop": "wand",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "A thin straight wooden stick handle, like a pencil-thin walnut rod 20 cm long, ending in a small open circular loop of thin brass wire, like a bubble wand or a magnifying-glass frame with no glass. No hammer, no head, no block. Only the wand.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "buzz-wire",
+      "prop": "base",
+      "texture": 1024,
+      "polycount": 12000,
+      "prompt": "Mahogany electrical game box with brass binding posts and vintage red glass warning bulb."
+    },
+    {
+      "game": "frog-bog",
+      "prop": "frog",
+      "texture": 512,
+      "polycount": 10000,
+      "prompt": "Vintage molded rubber carnival frog toy in muted emerald green with painted brass eyes."
+    },
+    {
+      "game": "frog-bog",
+      "prop": "catapult",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "A small seesaw springboard catapult: a long flat wooden plank balanced on a brass fulcrum block, one end resting on the ground and a round black rubber pad on the other end where a toy frog sits. Only the catapult.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "rope-ladder-climb",
+      "prop": "ladder",
+      "texture": 1024,
+      "polycount": 14000,
+      "prompt": "Twisted hemp rope carnival ladder with worn ash-wood rungs and a single heavy iron swivel hook at the top."
+    },
+    {
+      "game": "plinko",
+      "prop": "board",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Upright dark walnut Plinko frame with tarnished brass trim and divider slots at the bottom."
+    },
+    {
+      "game": "plinko",
+      "prop": "puck",
+      "texture": 512,
+      "polycount": 6000,
+      "prompt": "A single flat round brass disc like a thick coin or hockey puck, with a ribbed edge and an engraved sunburst on its face. Only the disc, nothing else.",
+      "note": "Reworded from the spec's prompt: the first result was the wrong object."
+    },
+    {
+      "game": "big-six",
+      "prop": "wheel",
+      "texture": 1024,
+      "polycount": 18000,
+      "prompt": "Massive vertical Victorian carnival Big Six prize wheel, alternating burgundy and charcoal wood wedges, rimmed with brass pegs."
+    },
+    {
+      "game": "duck-pond",
+      "prop": "duck",
+      "texture": 512,
+      "polycount": 8000,
+      "prompt": "Vintage weathered matte-yellow rubber carnival duck with subtle scuffing and flat weighted base."
+    },
+    {
+      "game": "derby-race",
+      "prop": "horse",
+      "texture": 512,
+      "polycount": 12000,
+      "prompt": "Miniature Victorian clockwork carousel racing horse mounted on a brass rail slider, dark lacquered wood and gold saddle."
+    },
+    {
+      "game": "coin-pusher",
+      "prop": "cabinet",
+      "texture": 1024,
+      "polycount": 16000,
+      "prompt": "Antique brass-and-mahogany arcade coin pusher cabinet frame with ornate top marquee and stepped pusher shelf."
+    },
+    {
+      "game": "guess-the-jar",
+      "prop": "jar",
+      "texture": 1024,
+      "polycount": 12000,
+      "prompt": "Large antique clear glass apothecary jar with ornate ground-glass stopper resting on a brass pedestal base."
+    },
+    {
+      "game": "test-your-grip",
+      "prop": "tester",
+      "texture": 1024,
+      "polycount": 15000,
+      "prompt": "Antique oak-and-brass carnival grip strength machine with twin cast-iron squeeze handles and round vintage pressure dial."
+    },
+    {
+      "game": "hall-of-mirrors",
+      "prop": "frame",
+      "texture": 1024,
+      "polycount": 14000,
+      "prompt": "Tall arched Victorian funhouse mirror frame in tarnished gilded wood with carved filigree crest and side gas-lamp sconces."
+    }
+  ]
+}
