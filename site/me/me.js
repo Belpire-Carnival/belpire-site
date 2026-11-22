@@ -357,6 +357,48 @@
   const leftOf = (id) => { const g = gameOf(id); return g && g.isOpen ? g.playsMax - g.playsUsed : 0; };
   const used = (id, left) => { const g = gameOf(id); g.playsUsed = g.playsMax - left; midway(); };
   const OWN_TABLE = { 'find-the-pea': 'games', 'ring-toss': 'rings', 'high-striker': 'striker' };
+  // Booths with a 3D stage (site/midway/stage.js loads them, with Three.js, only when one is opened).
+  // Keep in step with BOOTHS in site/midway/stage.js; a test checks they match.
+  const STAGE_3D = new Set([
+    'find-the-pea', 'ring-toss', 'high-striker',
+    'shooting-gallery', 'milk-bottle-knockdown', 'balloon-darts', 'skee-ball', 'dunk-tank', 'water-gun-race', 'goldfish-bowl-toss',
+    'rigged-hoop', 'plinko', 'big-six', 'duck-pond', 'derby-race', 'coin-pusher',
+    'knife-thrower', 'whac-a-mole', 'claw-machine', 'buzz-wire', 'frog-bog', 'rope-ladder-climb', 'guess-the-jar', 'test-your-grip', 'hall-of-mirrors'
+  ]);
+  let webgl = (() => {
+    try { return Boolean(document.createElement('canvas').getContext('webgl2')); } catch { return false; }
+  })();
+  const in3d = (id) => webgl && STAGE_3D.has(id);
+  let stageOpen = false;
+  async function stage(g) {
+    if (stageOpen) return;
+    stageOpen = true;
+    try {
+      const { openBooth } = await import('/midway/stage.js');
+      await openBooth({
+        game: g,
+        play: (choice) => api(`/api/midway/play/${g.id}`, choice === null || choice === undefined ? {} : { choice }),
+        message: (r) => `${r.label}. ${describe(g, r) ? `${describe(g, r)} ` : ''}${r.totalPayout ? `+${tickets(r.totalPayout)}${r.sweepBonus ? ` (with the ${r.sweepBonus}-Sliver sweep bonus!)` : ''}.` : 'No prize this time.'}`,
+        onResult: (r) => {
+          won(r);
+          g.playsUsed = r.playsUsed;
+          wallet();
+          announce();
+          midway();
+        },
+        onClose: () => { stageOpen = false; }
+      });
+    } catch (err) {
+      stageOpen = false;
+      // Three.js failed to load or WebGL gave out: fall back to the 2D table or the booth panel.
+      webgl = false;
+      flash('The 3D booth wouldn\'t open here, so it\'s the classic table instead.', 'error');
+      if (OWN_TABLE[g.id]) {
+        await load();
+        document.getElementById(OWN_TABLE[g.id]).scrollIntoView();
+      } else booth(g.id);
+    }
+  }
   const dayName = (key) => new Date(`${key}T12:00:00Z`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
   function midway() {
@@ -377,7 +419,7 @@
           el('span', { class: 'meta', text: ` · about ${g.avgPerDay} Slivers a day, up to ${g.maxPerDay}` })
         ]));
         const btn = el('button', { type: 'button', class: 'btn btn-gold btn-sm', text: left ? 'Step up' : 'See the odds', 'aria-label': `${left ? 'Play' : 'See the odds for'} ${g.name}` });
-        btn.addEventListener('click', () => (OWN_TABLE[g.id] ? document.getElementById(OWN_TABLE[g.id]).scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth' }) : booth(g.id)));
+        btn.addEventListener('click', () => (in3d(g.id) ? stage(g) : OWN_TABLE[g.id] ? document.getElementById(OWN_TABLE[g.id]).scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth' }) : booth(g.id)));
         kids.push(el('div', { class: 'btn-row' }, [btn]));
       }
       return el('li', { class: `mw-booth ${g.isOpen ? 'open' : 'shut'}` }, kids);
@@ -385,7 +427,8 @@
     $('tb-midway-open').replaceChildren(...open.map(card));
     $('tb-midway-shut').replaceChildren(...shut.map(card));
     $('tb-midway-turnover').textContent = turnover;
-    for (const [id, section] of Object.entries(OWN_TABLE)) document.getElementById(section).hidden = !gameOf(id).isOpen;
+    // With a 3D stage the booth plays there; the 2D tables are the fallback for browsers without WebGL2.
+    for (const [id, section] of Object.entries(OWN_TABLE)) document.getElementById(section).hidden = !gameOf(id).isOpen || in3d(id);
     for (const grid of document.querySelectorAll('.tb-grid[data-midway]')) grid.hidden = [...grid.children].every((c) => c.hidden);
   }
 
@@ -616,9 +659,9 @@
     punchCard();
     show();
     midway();
-    if (!peaBusy && gameOf('find-the-pea').isOpen) pea();
-    if (!ringsBusy && gameOf('ring-toss').isOpen) rings();
-    if (!strikerBusy && gameOf('high-striker').isOpen) striker();
+    if (!peaBusy && gameOf('find-the-pea').isOpen && !in3d('find-the-pea')) pea();
+    if (!ringsBusy && gameOf('ring-toss').isOpen && !in3d('ring-toss')) rings();
+    if (!strikerBusy && gameOf('high-striker').isOpen && !in3d('high-striker')) striker();
     prizes();
     scores();
     history();
