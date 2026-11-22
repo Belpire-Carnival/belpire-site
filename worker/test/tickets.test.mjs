@@ -383,7 +383,8 @@ test('slash commands: signature checked, same bank as the website', async () => 
   assert.match((await signedInteraction(keys, slash('poll', U.boss, [], [MANAGER]))).body.data.content, /No poll is open right now/);
   const hs = await signedInteraction(keys, slash('high-scores', U.fan2));
   assert.equal(hs.body.data.flags, 0, 'High Scores are posted for everyone');
-  assert.match(hs.body.data.content, /1\. Fan One: 2\d\d/);
+  // 210 Slivers so far, plus whatever the three booth plays above won (they roll for real)
+  assert.ok(Number(hs.body.data.content.match(/1\. Fan One: (\d+)/)?.[1]) >= 210, hs.body.data.content);
   assert.match((await signedInteraction(keys, { ...slash('slivers', U.fan), guild_id: '999999999999999999' })).body.data.content, /only opens inside the Belpire server/);
 });
 
