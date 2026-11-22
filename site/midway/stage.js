@@ -15,7 +15,20 @@ import { easeInOut, mulberry32, shake as shakeAt } from './choreo.js';
 const BOOTHS = {
   'find-the-pea': () => import('./booths/find-the-pea.js'),
   'ring-toss': () => import('./booths/ring-toss.js'),
-  'high-striker': () => import('./booths/high-striker.js')
+  'high-striker': () => import('./booths/high-striker.js'),
+  'shooting-gallery': () => import('./booths/shooting-gallery.js'),
+  'milk-bottle-knockdown': () => import('./booths/milk-bottle-knockdown.js'),
+  'balloon-darts': () => import('./booths/balloon-darts.js'),
+  'skee-ball': () => import('./booths/skee-ball.js'),
+  'dunk-tank': () => import('./booths/dunk-tank.js'),
+  'water-gun-race': () => import('./booths/water-gun-race.js'),
+  'goldfish-bowl-toss': () => import('./booths/goldfish-bowl-toss.js'),
+  'rigged-hoop': () => import('./booths/rigged-hoop.js'),
+  'plinko': () => import('./booths/plinko.js'),
+  'big-six': () => import('./booths/big-six.js'),
+  'duck-pond': () => import('./booths/duck-pond.js'),
+  'derby-race': () => import('./booths/derby-race.js'),
+  'coin-pusher': () => import('./booths/coin-pusher.js')
 };
 export const BOOTH_IDS = Object.keys(BOOTHS);
 
@@ -179,6 +192,8 @@ export async function openBooth({ game, play, onResult, message, onClose = () =>
     THREE, scene, camera, mats, audio, tween, sleep, reduced, low, kit: { lathe, mesh }, prop,
     rand: mulberry32(Math.floor(Math.random() * 2 ** 31)),
     camTarget,
+    canvas: renderer.domElement,
+    request: (choice) => go(choice),
     shake(ms = 450, amount = 0.05) { if (!reduced) shaking = { start: time, dur: ms / 1000, amount }; },
     setHint(text) { hint.textContent = text || ''; }
   };

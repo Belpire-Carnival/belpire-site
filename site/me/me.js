@@ -359,7 +359,11 @@
   const OWN_TABLE = { 'find-the-pea': 'games', 'ring-toss': 'rings', 'high-striker': 'striker' };
   // Booths with a 3D stage (site/midway/stage.js loads them, with Three.js, only when one is opened).
   // Keep in step with BOOTHS in site/midway/stage.js; a test checks they match.
-  const STAGE_3D = new Set(['find-the-pea', 'ring-toss', 'high-striker']);
+  const STAGE_3D = new Set([
+    'find-the-pea', 'ring-toss', 'high-striker',
+    'shooting-gallery', 'milk-bottle-knockdown', 'balloon-darts', 'skee-ball', 'dunk-tank', 'water-gun-race', 'goldfish-bowl-toss',
+    'rigged-hoop', 'plinko', 'big-six', 'duck-pond', 'derby-race', 'coin-pusher'
+  ]);
   let webgl = (() => {
     try { return Boolean(document.createElement('canvas').getContext('webgl2')); } catch { return false; }
   })();

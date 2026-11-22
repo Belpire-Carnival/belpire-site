@@ -149,3 +149,136 @@ test('the vendored glTF loader is the published file with only its three import 
     assert.equal((src.match(/from '\.\.\/three\.module\.min\.js'/g) || []).length, 1, f);
   }
 });
+
+// ---------------------------------------------------------------- Milestone 3: aim and luck booths
+import { visualParamsFor } from '../midway.js';
+import { plinkoPath, raceProgress, fallenBottles, coinsForTier, nearestSlot, wheelAngle } from '../../site/midway/choreo.js';
+
+const booth = async (id) => (await import(`../../site/midway/booths/${id}.js`));
+// For every tier of a booth: build it headless, play the server's result, return what the scene shows.
+async function playAll(id, choices = [null], each) {
+  const mod = await booth(id);
+  for (const choice of choices) {
+    for (const tier of GAMES[id].tiers) {
+      const rand = mulberry32(tier[0].length * 31 + String(choice).length);
+      const v = { seed: 1, ...visualParamsFor(id, tier, choice, (n) => Math.floor(rand() * n)) };
+      const b = mod.create(fakeCtx(), gameFor(id));
+      await b.intro?.();
+      const r = await b.play(choice, result(tier[0], v));
+      assert.equal(r.outcomeTier, tier[0]);
+      await each(b._state(), tier[0], v, choice, mod);
+      await b.reset?.({ more: true });
+    }
+  }
+}
+
+test('choreography helpers: plinko paths, races, bottles, coins', () => {
+  for (let s = 0; s <= 12; s += 2) for (let e = 0; e <= 12; e += 2) {
+    if (Math.abs(e - s) > 10) continue;
+    const p = plinkoPath(s, e, 10, 12, mulberry32(s * 13 + e));
+    assert.equal(p.length, 11);
+    assert.equal(p.at(-1), e);
+    assert.ok(p.every((c, i) => c >= 0 && c <= 12 && (i === 0 || Math.abs(c - p[i - 1]) === 1)));
+  }
+  assert.equal(nearestSlot([0, 4, 10, 50, 10, 4, 0], 10, 2), 2);
+  assert.equal(nearestSlot([0, 4, 10, 50, 10, 4, 0], 10, 10), 4);
+  const order = [3, 1, 4, 2];
+  const crossed = [];
+  for (let t = 0; t <= 1.0001; t += 0.002) raceProgress(order, t).forEach((p, i) => { if (p >= 1 && !crossed.includes(i + 1)) crossed.push(i + 1); });
+  assert.deepEqual(crossed, order, 'they cross the line in the server\'s order');
+  assert.deepEqual(raceProgress(order, 1), [1, 1, 1, 1]);
+  for (let k = 0; k <= 6; k++) assert.equal(new Set(fallenBottles(k)).size, k);
+  for (const [tier, lo, hi] of [['no-drop', 0, 0], ['trickle', 2, 3], ['cascade', 6, 8], ['avalanche', 14, 16]]) {
+    for (let i = 0; i < 20; i++) { const n = coinsForTier(tier); assert.ok(n >= lo && n <= hi, tier); }
+  }
+  assert.ok(near(wheelAngle(6, 24, 0), Math.PI / 2));
+});
+
+test('Shooting Gallery: the cork hits what the server rolled', async () => {
+  await playAll('shooting-gallery', [null], (s, tier) => {
+    const plain = s.downs.reduce((a, d) => a + d, 0) - s.golden;
+    assert.equal(s.golden, tier === 'golden-duck' ? 1 : 0, tier);
+    assert.equal(plain, tier === 'tin-duck' ? 1 : 0, tier);
+    assert.equal(s.eyeSpun > 1, tier === 'bullseye', tier);
+  });
+});
+
+test('Milk Bottle Knockdown: exactly the rolled number of bottles fall', async () => {
+  await playAll('milk-bottle-knockdown', [null], (s, tier, v) => assert.equal(s.standing, 6 - v.knocked, tier));
+});
+
+test('Balloon Darts: dud, small, large or star, as rolled', async () => {
+  await playAll('balloon-darts', [null], (s, tier) => {
+    assert.equal(s.popped, { dud: null, small: 'small', large: 'large', star: 'star' }[tier]);
+  });
+});
+
+test('Skee-Ball: the ball drops into the rolled pocket', async () => {
+  await playAll('skee-ball', [null], (s, tier, v, c, mod) => {
+    assert.equal(s.landed, v.points);
+    const p = mod.POCKETS[v.points];
+    assert.ok(near(s.ball.x, p[0]) && near(s.ball.z, p[2]) && s.ball.y < p[1]);
+  });
+});
+
+test('Dunk Tank: only a direct hit dunks the jester', async () => {
+  await playAll('dunk-tank', [null], (s, tier) => assert.equal(s.dunked, tier === 'dunk', tier));
+});
+
+test('Water Gun Race: your balloon finishes in the rolled place, and the winner pops', async () => {
+  await playAll('water-gun-race', [null], (s, tier, v) => {
+    assert.equal(s.lane, v.lane);
+    assert.equal(s.order[v.place - 1], v.lane, tier);
+    assert.equal(s.popped, s.order[0]);
+  });
+});
+
+test('Goldfish Bowl Toss: out on the rim, into a bowl, or the golden bowl', async () => {
+  await playAll('goldfish-bowl-toss', [null], (s, tier) => assert.equal(s.landedIn, { rim: null, regular: 'regular', golden: 'golden' }[tier]));
+});
+
+test('Rigged Hoop: only swishes and bank shots go in', async () => {
+  await playAll('rigged-hoop', [null], (s, tier) => assert.equal(s.made, tier === 'swish' || tier === 'bank', tier));
+});
+
+test('Plinko: the token zig-zags peg by peg into a slot worth what was rolled', async () => {
+  await playAll('plinko', [null, '1', '3', '5'], (s, tier, v, choice, mod) => {
+    assert.equal(s.value, v.slot, `${tier} from lane ${v.lane}`);
+    assert.equal(s.path[0], mod.laneCol(v.lane));
+    assert.equal(s.path.at(-1), s.slot * 2);
+    assert.ok(near(s.tokenX, mod.colX(s.slot * 2)));
+    if (choice) assert.equal(v.lane, Number(choice));
+  });
+});
+
+test('Big Six: the wheel stops with the rolled wedge under the flapper', async () => {
+  await playAll('big-six', [null], (s, tier, v) => {
+    const label = { 5: '5', 15: '15', 20: '20', 200: '★' }[v.wedge];
+    assert.equal(s.landed, label);
+    assert.equal(s.atTop, label, tier);
+  });
+});
+
+test('Duck Pond: the scooped duck flips to show the rolled mark', async () => {
+  await playAll('duck-pond', [null, '7'], (s, tier, v, choice) => {
+    assert.equal(s.duck, v.duck);
+    if (choice) assert.equal(s.duck, 7);
+    assert.equal(s.mark, tier);
+    assert.equal(s.flipped, true);
+  });
+});
+
+test('Derby Race: the horses cross the line in the server\'s order', async () => {
+  await playAll('derby-race', ['1', '4'], (s, tier, v) => {
+    assert.deepEqual(s.order, v.order, 'the race runs in the server\'s order (crossing order is checked in the raceProgress test)');
+    assert.equal(s.order[0], v.winner, tier);
+  });
+});
+
+test('Coin Pusher: as many coins tip into the tray as the tier allows', async () => {
+  await playAll('coin-pusher', [null, '2'], (s, tier) => {
+    const [lo, hi] = { 'no-drop': [0, 0], trickle: [2, 3], cascade: [6, 8], avalanche: [14, 16] }[tier];
+    assert.equal(s.inTray, s.fell);
+    assert.ok(s.fell >= lo && s.fell <= hi, `${tier}: ${s.fell}`);
+  });
+});

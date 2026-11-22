@@ -66,3 +66,59 @@ export function shake(t, amount = 0.04, rand = Math.random) {
   const k = amount * (1 - clamp(t)) ** 2;
   return [(rand() - 0.5) * 2 * k, (rand() - 0.5) * 2 * k];
 }
+
+// Plinko: a bounce path down `rows` peg rows from column `start` to column `end` (columns are half-peg steps,
+// so every row moves the token one column left or right). Stays inside 0..maxCol and always ends on `end`.
+export function plinkoPath(start, end, rows, maxCol, rand = Math.random) {
+  if (Math.abs(end - start) > rows || (rows - Math.abs(end - start)) % 2) throw new Error('unreachable slot');
+  const path = [start];
+  let x = start;
+  for (let i = 0; i < rows; i++) {
+    const left = rows - i - 1;
+    const ok = [-1, 1].filter((m) => x + m >= 0 && x + m <= maxCol && Math.abs(end - (x + m)) <= left);
+    x += ok.length > 1 ? ok[Math.floor(rand() * 2)] : ok[0];
+    path.push(x);
+  }
+  return path;
+}
+
+// The slot (index into `values`) showing `value`, nearest the column the token starts above.
+export function nearestSlot(values, value, startCol, colOf = (i) => i * 2) {
+  let best = -1;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] !== value) continue;
+    if (best < 0 || Math.abs(colOf(i) - startCol) < Math.abs(colOf(best) - startCol)) best = i;
+  }
+  return best;
+}
+
+// Races (Derby, Water Gun): how far along each lane is at time t (0–1) so they finish in `order`
+// (lane numbers, winner first). Everyone finishes by t = 1; the winner crosses first.
+export function raceProgress(order, t, lanes = 4, wobble = 0.04) {
+  const out = new Array(lanes).fill(0);
+  order.forEach((lane, place) => {
+    const finish = 0.82 + place * 0.05;
+    const k = clamp(t / finish);
+    const w = Math.sin((t * 9 + lane * 1.7) * Math.PI) * wobble * (1 - k);
+    out[lane - 1] = clamp(easeInOut(k) * 0.92 + k * 0.08 + w * k);
+  });
+  return out;
+}
+
+// Big Six: the wheel angle (radians) that stops wedge `index` of `count` under the flapper at the top,
+// after `turns` full turns.
+export function wheelAngle(index, count, turns = 4) {
+  return turns * Math.PI * 2 + (index / count) * Math.PI * 2;
+}
+
+// Milk bottles: which of the six fall (0–2 bottom row, 3–4 middle, 5 top) for a knock-down of `knocked`.
+// A low throw takes the top first; more power takes the middle, then the bottom.
+export function fallenBottles(knocked) {
+  return [5, 3, 4, 0, 1, 2].slice(0, clamp(knocked, 0, 6));
+}
+
+// Coin pusher: how many coins tip over the edge for a tier.
+export function coinsForTier(tier, rand = Math.random) {
+  const [lo, hi] = { 'no-drop': [0, 0], trickle: [2, 3], cascade: [6, 8], avalanche: [14, 16] }[tier] || [0, 0];
+  return lo + Math.floor(rand() * (hi - lo + 1));
+}
