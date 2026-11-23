@@ -106,8 +106,9 @@
       "game": "skee-ball",
       "prop": "lane",
       "texture": 1024,
-      "polycount": 18000,
-      "prompt": "Vintage wooden skee-ball ramp and recessed circular target rings with brass trim."
+      "polycount": 12000,
+      "prompt": "A classic vintage skee-ball alley machine, long and narrow, about four times longer than wide. A long gently inclined polished oak bowling lane with low side rails runs from the front, ends in a small curved ramp hump, then a tall tilted target backboard at the far end with five concentric round ring cups stacked up the board and two small corner cups at the top. A tall wire safety net frame above the backboard. Victorian carnival style, dark walnut cabinet, brass trim. Viewed from the front, empty, no balls.",
+      "note": "Regenerated: the spec prompt produced only a squat ramp tray, not an alley. This one is the whole machine (lane plus cabinet with a round target face); the page adds the scoring rings on that face."
     },
     {
       "game": "skee-ball",
